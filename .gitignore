@@ -1,0 +1,5 @@
+# Large shipped binaries live on the GitHub Release of each version, not in git.
+portable/*/payload.tar.xz
+integrated-lu/files/
+__pycache__/
+*.pyc

@@ -1,0 +1,90 @@
+EveJS v0.12.5 Universal Linux Installer
+v1.4 Port Candidate 1 — Verification Boundary
+================================================
+
+Source-derived compatibility checks
+-----------------------------------
+PASS - selected release reports 0.12.5
+PASS - target client build remains 3396210
+PASS - v0.12.5 blue_patch_recipe.json is byte-identical to v0.12.4.1
+PASS - v0.12.5 config/server.json is byte-identical to v0.12.4.1
+PASS - StartServer.bat is byte-identical
+PASS - StartMarketServer.bat is byte-identical
+PASS - SetupEveJS.bat is byte-identical
+PASS - build-gateway-cert.js is byte-identical
+PASS - ImageEdge remains 26001
+PASS - RedshiftEdge remains 26400
+PASS - XMPP remains 5222
+PASS - Market daemon remains 40110/40111
+PASS - local secure gateway remains HTTP port + 1 (26003 from 26002)
+PASS - edge-worker paths still match the v1.4 stale-process classifier
+
+Ported installer checks
+-----------------------
+PASS - Bash syntax: installer
+PASS - Bash syntax: launcher
+PASS - Bash syntax: stale cleanup
+PASS - ZIP repository-root resolver supports v0.12.5/ wrapper
+PASS - exact v0.12.5 version gate
+PASS - exact 3396210 build gate
+PASS - Node 24 preferred path
+PASS - Node 21 excluded
+PASS - v1 market path
+PASS - v2 market path
+PASS - v3 doctor/snapshot/audit/build path
+PASS - v1.4 process-tree ownership gates retained
+PASS - v1.4 client ownership re-check retained
+PASS - v1.4 XMPP/TLS fix retained
+PASS - mods/*/loader.js loading retained
+
+Classification
+--------------
+SOURCE/STATIC VALIDATED
+LIVE EVEJS v0.12.5 ACCEPTANCE PENDING
+
+Machine verification summary
+----------------------------
+{
+  "install-evejs-linux.sh": {
+    "bash_n": 0,
+    "stderr": ""
+  },
+  "evejs-linux-launcher.sh": {
+    "bash_n": 0,
+    "stderr": ""
+  },
+  "evejs-v0.12.5-stale-processes.sh": {
+    "bash_n": 0,
+    "stderr": ""
+  },
+  "static_contract": {
+    "target_0125": true,
+    "target_build_3396210": true,
+    "node24": true,
+    "node21_excluded": true,
+    "nested_archive_root": true,
+    "market_v1": true,
+    "market_v2": true,
+    "market_v3": true,
+    "market_v3_audit": true,
+    "v14_market_ownership": true,
+    "v14_game_ownership": true,
+    "v14_redshift_ownership": true,
+    "v14_xmpp_fix": true,
+    "v14_tls": true,
+    "v14_loader": true,
+    "root_tree_cleanup": true
+  },
+  "actual_v0125_archive_layout_test": {
+    "resolved": "/mnt/data/_audit_125/v0.12.5",
+    "expected": "/mnt/data/_audit_125/v0.12.5",
+    "pass": true
+  },
+  "source_identity": {
+    "blue_recipe_same_as_01241": true,
+    "server_config_same_as_01241": true,
+    "start_server_same": true,
+    "start_market_same": true,
+    "setup_same": true
+  }
+}

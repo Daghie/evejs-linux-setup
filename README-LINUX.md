@@ -1,97 +1,92 @@
-# EveJS v0.12.5 — Universal Linux Installer
-## v1.4 Port Candidate 1
+# EveJS v0.12.5 — Universal Linux Installer v1.5
+## SteamOS Toolchain Hardening
 
-This is the first v0.12.5 port built directly from the **live-accepted
-v0.12.4.1 Universal Linux Installer v1.4**.
+v1.5 is based on the live-tested v0.12.5 Linux port and retains the v1.4
+process-ownership launcher architecture.
 
-It is intentionally a candidate until a clean v0.12.5 installation, startup,
-login, runtime, restart, and log review pass on Linux.
+The new work is specifically aimed at SteamOS and other Linux systems where a
+compiler executable exists but the native development headers/toolchain are
+incomplete.
 
-### Preserved v1.4 acceptance architecture
+## Problem addressed
 
-The installer/launcher retains the full v1.4 boundary:
-
-- Steam's installed official Proton discovery;
-- isolated Proton prefix per EveJS installation;
-- graphical Zenity/KDialog wizard with terminal fallback;
-- wrong interactive file/folder selections reopen the chooser;
-- user must select an existing empty destination root;
-- installer never creates the root installation folder;
-- standalone stale-process cleanup tool installed with EveJS;
-- stale cleanup resolves edge PIDs to the full EveJS process-tree root;
-- Market starts before the game server;
-- Market ports 40110/40111 must belong to the current Market process tree;
-- EveJS ports 443, 5222, 26000, 26001, 26002, 26003 and 26400 must belong
-  exclusively to the current Game/EveJS tree;
-- gateway health and TLS checks;
-- XMPP TLS verification;
-- XMPP connect host forced to 127.0.0.1 for Proton;
-- stale EvEJS Local CA cleanup in EVE client cacert.pem bundles;
-- Wine-visible `Z:\...` CA path;
-- removable `mods/*/loader.js` loading through Node `--require`.
-
-### v0.12.5-specific changes
-
-**Node.js:** v0.12.5 names Node 24 LTS as the native target. Candidate 1
-prefers Node 24 and can install a private current Node 24.x runtime. The release
-audit documents Node 20 and 22-26 as compatible with the current lock, while
-Node 21 is excluded.
-
-**Archive layout:** the uploaded v0.12.5 ZIP contains a top-level `v0.12.5/`
-directory. The installer now discovers the real repository root safely instead
-of assuming files are at ZIP root.
-
-**Market:** v0.12.5 adds three supported seed strategies:
-
-- `v1` — synthetic Jita + New Caldari. Offline/deterministic. **Recommended for
-  the first Linux acceptance run.**
-- `v2` — current Tranquility snapshot, using the shipped v2 local config.
-- `v3` — cost-priced Jita 4-4 index over the authentic TQ NPC catalog. The
-  installer runs doctor, explicitly caches the snapshot, runs the pump audit,
-  then builds.
-
-### Installation
-
-Keep these three scripts together:
+A SteamOS tester reached the v0.12.5 `market-seed` Rust build and Cargo failed
+inside `libsqlite3-sys v0.28.0` while compiling bundled SQLite:
 
 ```text
-install-evejs-linux.sh
-evejs-linux-launcher.sh
-evejs-v0.12.5-stale-processes.sh
+fatal error: stdio.h: No such file or directory
 ```
 
-Then:
+`tools/market-seed/Cargo.toml` enables rusqlite's `bundled` feature, so SQLite's
+C source must be compiled on the host. Testing only whether `cc` exists is not
+enough.
+
+## v1.5 behavior
+
+Before asking the researcher to spend time on the full EveJS install, v1.5:
+
+1. checks that required host commands exist;
+2. compiles and runs a tiny C test using standard libc headers;
+3. compiles and runs a tiny C++ test;
+4. only then continues to Node/Rust/EveJS installation.
+
+This catches missing `stdio.h`, broken libc headers, missing C++ headers,
+incomplete compiler sysroots, and basic native-linker failures early.
+
+## SteamOS-specific recovery
+
+If the native probe fails and SteamOS is detected, the installer explains the
+problem and offers to invoke SteamOS's own development restoration path:
+
+```text
+sudo steamos-readonly disable
+sudo steamos-devmode enable       (when the command exists)
+sudo steamos-unminimize --dev
+```
+
+Afterwards it repeats the real C/C++ compile-and-run probes. EveJS installation
+does not continue until they pass.
+
+The installer intentionally does **not** blindly reinstall Arch `glibc` from
+generic repositories on SteamOS.
+
+A SteamOS update can replace changes to the system image, so a future install
+may need the development restoration again.
+
+## Diagnostics
+
+A successful installation records:
+
+```text
+<EveJS>/LINUX-HOST-TOOLCHAIN.txt
+```
+
+with the OS release, compiler versions, root filesystem space, key header state,
+and SteamOS/pacman information where available.
+
+## Runtime launcher
+
+The v1.4 runtime safety architecture is retained:
+
+- Market 40110/40111 process ownership;
+- EveJS 443/5222/26000/26001/26002/26003/26400 process ownership;
+- XMPP/Gateway TLS validation;
+- stale EveJS process-tree cleanup;
+- Proton CA handling;
+- retry-safe launcher/restart behavior;
+- `mods/*/loader.js` support.
+
+No SteamOS-specific runtime workaround is required once the installation has
+successfully completed.
+
+## Installation
 
 ```bash
-chmod +x *.sh
+tar -xzf EveJS-v0.12.5-Universal-Linux-Installer-v1.5-SteamOS-Hardening.tar.gz
+cd EveJS-v0.12.5-Universal-Linux-Installer-v1.5-SteamOS-Hardening
 ./install-evejs-linux.sh
 ```
 
-For the first acceptance test, select **market v1**.
+On SteamOS, if development files are missing, follow the installer prompt.
 
-Text mode:
-
-```bash
-./install-evejs-linux.sh --text
-```
-
-Optional scripted market choice:
-
-```bash
-./install-evejs-linux.sh --market v1
-./install-evejs-linux.sh --market v2
-./install-evejs-linux.sh --market v3
-```
-
-### Acceptance status
-
-Current status:
-
-```text
-SOURCE AUDITED
-STATIC VALIDATED
-LIVE v0.12.5 ACCEPTANCE PENDING
-```
-
-Do not replace the protected v0.12.4.1 v1.4 baseline until this candidate passes
-a real v0.12.5 installation and runtime log review.
+Market `v1` remains the recommended first-test profile.

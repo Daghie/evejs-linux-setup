@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Installer v1.4 Port Candidate 1
+# EveJS Universal Linux Installer v1.5 — SteamOS Toolchain Hardening
 # Candidate target: EveJS v0.12.5 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -29,7 +29,7 @@ IFS=$'\n\t'
 
 INSTALLER_TARGET_VERSION="0.12.5"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.4 Port Candidate 1"
+INSTALLER_CANDIDATE_NAME="v1.5 SteamOS Toolchain Hardening"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -284,6 +284,248 @@ detect_os_family() {
     printf '%s %s\n' "$id" "$like"
 }
 
+
+is_steamos() {
+    local id="" like="" name=""
+    if [[ -r /etc/os-release ]]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        id="${ID:-}"
+        like="${ID_LIKE:-}"
+        name="${NAME:-}"
+    fi
+
+    [[ "$id" == "steamos" ]] \
+        || [[ "$like" == *"steamos"* ]] \
+        || [[ "$name" == *"SteamOS"* ]] \
+        || command -v steamos-unminimize >/dev/null 2>&1
+}
+
+native_toolchain_report() {
+    local destination="$1"
+    {
+        echo "EveJS Linux native build environment"
+        echo "===================================="
+        echo "Timestamp: $(date -Is 2>/dev/null || date)"
+        echo
+        echo "/etc/os-release:"
+        if [[ -r /etc/os-release ]]; then
+            cat /etc/os-release
+        else
+            echo "(not available)"
+        fi
+        echo
+        echo "Kernel:"
+        uname -a || true
+        echo
+        echo "Filesystem:"
+        df -h / 2>/dev/null || true
+        echo
+        echo "Compiler commands:"
+        echo "cc:  $(command -v cc 2>/dev/null || echo missing)"
+        echo "c++: $(command -v c++ 2>/dev/null || echo missing)"
+        cc --version 2>/dev/null | head -n 2 || true
+        c++ --version 2>/dev/null | head -n 2 || true
+        echo
+        echo "Core header state:"
+        for h in /usr/include/stdio.h /usr/include/stdlib.h /usr/include/string.h /usr/include/c++; do
+            if [[ -e "$h" ]]; then
+                echo "present: $h"
+            else
+                echo "MISSING: $h"
+            fi
+        done
+        echo
+        if command -v pacman >/dev/null 2>&1; then
+            echo "Pacman package state:"
+            pacman -Q glibc 2>&1 || true
+            pacman -Q base-devel 2>&1 || true
+            echo
+            echo "Does installed glibc metadata expect stdio.h?"
+            pacman -Ql glibc 2>/dev/null | grep -F 'usr/include/stdio.h' || true
+            echo
+        fi
+        if command -v steamos-readonly >/dev/null 2>&1; then
+            echo "SteamOS read-only state:"
+            steamos-readonly status 2>&1 || true
+            echo
+        fi
+    } > "$destination"
+}
+
+native_build_probe() {
+    # Do not merely test that `cc` exists. Native EveJS dependencies need a
+    # functioning libc/C++ development environment. This catches SteamOS images
+    # where the compiler binary exists but development headers were pruned.
+    local tmp c_log cpp_log
+    tmp="$(mktemp -d)"
+    c_log="$tmp/c-probe.log"
+    cpp_log="$tmp/cpp-probe.log"
+
+    cat > "$tmp/probe.c" <<'EOF'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main(void) {
+    const char *value = "evejs";
+    printf("%zu\n", strlen(value));
+    return value[0] == 'e' ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+EOF
+
+    cat > "$tmp/probe.cpp" <<'EOF'
+#include <iostream>
+#include <string>
+int main() {
+    std::string value = "evejs";
+    std::cout << value.size() << std::endl;
+    return value.empty();
+}
+EOF
+
+    NATIVE_BUILD_LAST_ERROR=""
+    if ! cc "$tmp/probe.c" -o "$tmp/probe-c" >"$c_log" 2>&1; then
+        NATIVE_BUILD_LAST_ERROR="$(cat "$c_log")"
+        rm -rf "$tmp"
+        return 1
+    fi
+    if ! c++ "$tmp/probe.cpp" -o "$tmp/probe-cpp" >"$cpp_log" 2>&1; then
+        NATIVE_BUILD_LAST_ERROR="$(cat "$cpp_log")"
+        rm -rf "$tmp"
+        return 1
+    fi
+    if ! "$tmp/probe-c" >/dev/null 2>&1 || ! "$tmp/probe-cpp" >/dev/null 2>&1; then
+        NATIVE_BUILD_LAST_ERROR="Compiler produced test binaries, but they did not execute successfully."
+        rm -rf "$tmp"
+        return 1
+    fi
+
+    rm -rf "$tmp"
+    return 0
+}
+
+STEAMOS_DEV_PREP_ATTEMPTED=0
+
+prepare_steamos_development_environment() {
+    local reason="$1"
+    local ro_state="" disk_state=""
+
+    (( STEAMOS_DEV_PREP_ATTEMPTED == 0 )) || return 0
+    STEAMOS_DEV_PREP_ATTEMPTED=1
+
+    command -v steamos-unminimize >/dev/null 2>&1 || die "SteamOS was detected, but 'steamos-unminimize' is unavailable.
+
+The native C/C++ development environment is incomplete:
+$reason
+
+This installer will not repair SteamOS with generic Arch package commands because that can mix package state with the immutable SteamOS image. Restore the SteamOS development environment first, then rerun the installer."
+
+    if command -v steamos-readonly >/dev/null 2>&1; then
+        ro_state="$(steamos-readonly status 2>&1 || true)"
+    fi
+    disk_state="$(df -h / 2>/dev/null || true)"
+
+    if ! ui_yesno "SteamOS development files are missing" \
+"The compiler exists, but SteamOS cannot compile a simple native program.
+
+This is the same class of problem that causes errors such as:
+
+  fatal error: stdio.h: No such file or directory
+
+SteamOS can ship with development files pruned from the system image. Merely disabling read-only mode does not restore those files.
+
+The installer can now use SteamOS's own development-restoration tools:
+
+  sudo steamos-readonly disable
+  sudo steamos-devmode enable       (when available)
+  sudo steamos-unminimize --dev
+
+Current SteamOS read-only status:
+${ro_state:-unknown}
+
+Current root filesystem space:
+$disk_state
+
+This changes the SteamOS system development layer and may be reverted by a later SteamOS system update.
+
+Run the SteamOS development restoration now?"; then
+        die "SteamOS native development files are required before EveJS can compile its market/SQLite components."
+    fi
+
+    stage "Preparing SteamOS native development environment"
+    sudo -v || die "sudo authentication failed."
+
+    if command -v steamos-readonly >/dev/null 2>&1; then
+        sudo steamos-readonly disable \
+            || die "Could not disable SteamOS read-only mode."
+    fi
+
+    if command -v steamos-devmode >/dev/null 2>&1; then
+        # On current SteamOS this initializes developer mode/package state.
+        # Do not fail the whole repair solely because devmode reports an
+        # already-enabled/nonfatal condition; unminimize is the decisive step.
+        sudo steamos-devmode enable || warn "steamos-devmode enable returned an error; continuing to steamos-unminimize --dev."
+    fi
+
+    sudo steamos-unminimize --dev \
+        || die "SteamOS development restoration failed.
+
+Review the output above. A common SteamOS failure mode is insufficient free space on the root filesystem.
+
+No EveJS files have been built yet. Resolve the SteamOS development-layer issue, then rerun the installer."
+
+    ok "SteamOS development restoration command completed."
+}
+
+ensure_native_build_environment() {
+    HOST_TOOLCHAIN_REPORT="$(mktemp)"
+    native_toolchain_report "$HOST_TOOLCHAIN_REPORT"
+
+    if native_build_probe; then
+        ok "Native C/C++ build environment passed compile + run probes."
+        return 0
+    fi
+
+    local first_error="$NATIVE_BUILD_LAST_ERROR"
+
+    if is_steamos; then
+        prepare_steamos_development_environment "$first_error"
+
+        native_toolchain_report "$HOST_TOOLCHAIN_REPORT"
+        if native_build_probe; then
+            ok "SteamOS native C/C++ environment repaired and verified."
+            return 0
+        fi
+
+        die "SteamOS development restoration completed, but the native compiler probe still fails.
+
+Compiler output:
+$NATIVE_BUILD_LAST_ERROR
+
+A diagnostic snapshot is available during this installer run at:
+$HOST_TOOLCHAIN_REPORT"
+    fi
+
+    local family install_cmd
+    family="$(detect_os_family)"
+    install_cmd="$(dependency_install_command)"
+
+    die "The compiler command exists, but the Linux native development environment is incomplete.
+
+Compiler output:
+$first_error
+
+This usually means libc/C/C++ development headers are missing or the compiler/sysroot is incomplete.
+
+Detected package family:
+$family
+
+Suggested dependency command:
+${install_cmd:-No automatic command is available for this distribution.}
+
+Install/repair the native development packages and rerun the installer."
+}
+
 dependency_install_command() {
     local family
     family="$(detect_os_family)"
@@ -322,7 +564,17 @@ ${missing[*]}
 
 EveJS needs them for database creation, native Node modules, Rust market compilation, TLS verification and local networking."
 
-    if [[ -n "$install_cmd" ]]; then
+    if is_steamos; then
+        prepare_steamos_development_environment "$msg"
+
+        # SteamOS development restoration may have supplied the missing tools.
+        missing=()
+        for cmd in python3 curl unzip openssl tar xz ss sysctl sudo sha256sum awk grep sed find make cc c++; do
+            command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+        done
+        ((${#missing[@]} == 0)) || die "SteamOS development restoration completed, but required host tools are still missing: ${missing[*]}"
+        return 0
+    elif [[ -n "$install_cmd" ]]; then
         msg+="
 
 Detected package-family command:
@@ -1176,9 +1428,10 @@ Be aware that a stale EveJS process can recreate its old folder and can occupy I
 }
 
 # ── Main wizard ───────────────────────────────────────────────────────────────
-trap '[[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"' EXIT
+trap '[[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"; [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "${HOST_TOOLCHAIN_REPORT:-}" ]] && rm -f "$HOST_TOOLCHAIN_REPORT"' EXIT
 
 check_system_tools
+ensure_native_build_environment
 ensure_node
 ensure_rust
 
@@ -1190,7 +1443,7 @@ preflight_existing_evejs_processes
 ui_info "EveJS Universal Linux Installer" \
 "This candidate installs a clean EveJS v0.12.5 baseline and prepares a copied EVE client for local play.
 
-It is designed for mainstream x86_64 Linux distributions with Steam installed.
+It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS development-mode installations.
 
 The installer:
 • keeps EveJS core source untouched after extraction;
@@ -1198,7 +1451,8 @@ The installer:
 • prepares the standalone market;
 • supports removable mods through mods/*/loader.js;
 • configures a Steam Proton launch environment;
-• copies the standalone stale-process cleanup tool into the completed EveJS folder.
+• copies the standalone stale-process cleanup tool into the completed EveJS folder;
+• compiles a tiny C and C++ test before installation so missing SteamOS development headers are caught immediately.
 
 For the EveJS destination, create/select an existing EMPTY folder. The installer
 will not create the destination folder for you.
@@ -1369,6 +1623,10 @@ stage "Extracting clean EveJS v$EVEJS_VERSION"
 [[ -z "$(find "$EVEJS_REPO" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]] || die "Selected EveJS destination is no longer empty: $EVEJS_REPO"
 cp -a "$SOURCE_ROOT"/. "$EVEJS_REPO"/
 mkdir -p "$EVEJS_REPO/mods"
+
+if [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "$HOST_TOOLCHAIN_REPORT" ]]; then
+    cp -a "$HOST_TOOLCHAIN_REPORT" "$EVEJS_REPO/LINUX-HOST-TOOLCHAIN.txt"
+fi
 ok "Clean repository extracted."
 
 export PATH="$(dirname "$NODE_BIN"):$HOME/.cargo/bin:$PATH"
@@ -1564,6 +1822,7 @@ Proton prefix:     $PROTON_PREFIX
 Market:            $MARKET_LABEL
 Launcher:          $EVEJS_REPO/evejs-linux-launcher.sh
 Stale cleanup:     $EVEJS_REPO/evejs-stale-process-cleanup.sh
+Host toolchain:    $EVEJS_REPO/LINUX-HOST-TOOLCHAIN.txt
 Mods directory:    $EVEJS_REPO/mods
 
 Mod convention:

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher — v1.4 architecture ported to EveJS v0.12.5 Candidate 1
+# EveJS Portable Linux Launcher v1.5 — v1.4 runtime architecture + SteamOS-hardened installer package
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -1032,7 +1032,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.5 Linux Launcher — v1.4 Port Candidate 1   ║"
+echo "║  EveJS v0.12.5 Linux Launcher — v1.5   ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"
@@ -1158,6 +1158,10 @@ while true; do
             echo "Proton:        $PROTON_DIR"
             echo "Proton prefix: $PROTON_PREFIX"
             echo "Market:        ${MARKET_LABEL:-${MARKET_PROFILE:-configured standalone market}}"
+            if [[ -r /etc/os-release ]]; then
+                . /etc/os-release
+                echo "Host OS:       ${PRETTY_NAME:-${NAME:-Linux}}"
+            fi
             echo "Mods:          $MODS_DIR"
             echo "Market log:    $MARKET_LOG"
             echo "Server log:    $SERVER_LOG"

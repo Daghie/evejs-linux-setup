@@ -1,0 +1,66 @@
+EveJS v0.12.5 Universal Linux Installer v1.5
+Verification Boundary
+===============================================
+
+Static:
+- installer Bash syntax
+- launcher Bash syntax
+- stale cleanup Bash syntax
+- SteamOS detection present
+- native C compile/run probe present
+- native C++ compile/run probe present
+- SteamOS steamos-unminimize --dev recovery present
+- native probe happens before Node/Rust/full install
+- successful install preserves LINUX-HOST-TOOLCHAIN.txt
+- v1.4 process ownership remains present
+- TLS/XMPP correction remains present
+
+Host smoke test:
+- compile/run C program with stdio.h
+- compile/run C++ program with iostream
+
+Classification:
+SOURCE/STATIC VALIDATED + LOCAL NATIVE TOOLCHAIN PROBE TESTED.
+STEAMOS LIVE ACCEPTANCE PENDING.
+
+Machine verification
+--------------------
+{
+  "install-evejs-linux.sh": {
+    "bash_n": 0,
+    "stderr": ""
+  },
+  "evejs-linux-launcher.sh": {
+    "bash_n": 0,
+    "stderr": ""
+  },
+  "evejs-v0.12.5-stale-processes.sh": {
+    "bash_n": 0,
+    "stderr": ""
+  },
+  "contract": {
+    "steamos_detection": true,
+    "c_probe_stdio": true,
+    "cpp_probe_iostream": true,
+    "compile_run_probe": true,
+    "steamos_readonly_disable": true,
+    "steamos_devmode": true,
+    "steamos_unminimize": true,
+    "probe_before_node": true,
+    "toolchain_report": true,
+    "v14_market_ownership": true,
+    "v14_image_ownership": true,
+    "v14_redshift_ownership": true,
+    "xmpp_fix": true
+  },
+  "local_native_smoke": {
+    "c_build": 0,
+    "c_run": 0,
+    "cpp_build": 0,
+    "cpp_run": 0
+  },
+  "source_dependency": {
+    "rusqlite_bundled": true,
+    "libsqlite3_sys_028": true
+  }
+}

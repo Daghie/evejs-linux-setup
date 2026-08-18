@@ -1,4 +1,4 @@
-EveJS v0.12.6 Universal Linux Setup v1.8
+EveJS v0.12.6 Universal Linux Setup v1.8.1
 Installer / Transactional Updater Design Audit
 =========================================================
 
@@ -106,3 +106,29 @@ No:
 Launcher
 --------
 The included launcher is byte-identical to v1.7.
+
+
+v1.8.1 live-test hotfix
+-----------------------
+Observed live failure:
+  /home/.../.cargo/bin/rustup build --release
+  error: unexpected argument '--release'
+
+Root cause:
+  v1.8 current_tool_path() called Path.resolve() on the rustup-managed
+  ~/.cargo/bin/cargo proxy/symlink, changing the executable identity to rustup.
+
+Correction:
+- executable path normalization uses abspath, not realpath/Path.resolve;
+- Cargo --version must identify itself as Cargo before staging;
+- Node --version is also sanity-checked;
+- failed pre-return stage directories created by the current attempt are cleaned;
+- complete mods tree gets exact content/metadata manifest conservation;
+- target better-sqlite3/protobufjs receive a real Node smoke test.
+
+Mod verdict:
+  The mod was not implicated in the failure. v1.8 already copied existing
+  mods/ as protected state. v1.8.1 makes that conservation provable.
+
+Launcher:
+  unchanged / byte-identical to v1.7.

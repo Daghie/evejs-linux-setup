@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.8 — Installer + Transactional Updater
+# EveJS Universal Linux Setup v1.8.1 — Updater Cargo/Mod Conservation Hotfix
 # Target: EveJS v0.12.6 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -29,7 +29,7 @@ IFS=$'\n\t'
 
 INSTALLER_TARGET_VERSION="0.12.6"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.8 Installer + Transactional Updater"
+INSTALLER_CANDIDATE_NAME="v1.8.1 Updater Cargo/Mod Conservation Hotfix"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"

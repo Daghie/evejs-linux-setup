@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EveJS Linux Installer Maintenance Engine v1.8
+EveJS Linux Installer Maintenance Engine v1.8.1
 Target release: EveJS v0.12.6 / EVE client build 3396210
 
 This file is an internal companion to install-evejs-linux.sh.
@@ -227,6 +227,41 @@ def tree_file_count(root: Path) -> int:
     if not root.exists():
         return 0
     return sum(1 for p in root.rglob("*") if p.is_file())
+
+
+def tree_manifest(root: Path) -> dict[str, dict]:
+    """Content+metadata manifest for a preserved mod tree.
+
+    Symlinks are recorded as symlinks rather than followed.  Directories are
+    included so an empty mod-owned directory is also conserved.
+    """
+    manifest: dict[str, dict] = {}
+    if not root.exists():
+        return manifest
+
+    for p in sorted(root.rglob("*"), key=lambda x: x.as_posix()):
+        rel = p.relative_to(root).as_posix()
+        st = p.lstat()
+        mode = oct(st.st_mode & 0o7777)
+        if p.is_symlink():
+            manifest[rel] = {"type": "symlink", "target": os.readlink(p), "mode": mode}
+        elif p.is_dir():
+            manifest[rel] = {"type": "dir", "mode": mode}
+        elif p.is_file():
+            manifest[rel] = {
+                "type": "file",
+                "size": st.st_size,
+                "sha256": sha256(p),
+                "mode": mode,
+            }
+        else:
+            manifest[rel] = {"type": "other", "mode": mode}
+    return manifest
+
+
+def manifest_digest(manifest: dict[str, dict]) -> str:
+    payload = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(payload).hexdigest()
 
 
 def read_version(root: Path) -> str:
@@ -592,12 +627,54 @@ def rebuild_static_database(ui: UI, stage: Path, node: Path, build: int):
 
 
 def current_tool_path(args, conf: dict, key: str, fallback_name: str) -> Path:
+    """Return the executable path WITHOUT dereferencing symlink/proxy launchers.
+
+    This is essential for rustup-managed Cargo.  ~/.cargo/bin/cargo is normally
+    a rustup proxy/symlink; Path.resolve() turns it into ~/.cargo/bin/rustup,
+    which changes `cargo build` into the invalid command `rustup build`.
+    """
     env_name = {
         "NODE_BIN": "EVEJS_SETUP_NODE_BIN",
         "CARGO_BIN": "EVEJS_SETUP_CARGO_BIN",
     }[key]
     value = os.environ.get(env_name) or conf.get(key) or shutil.which(fallback_name) or ""
-    return Path(value).expanduser().resolve() if value else Path("")
+    if not value:
+        return Path("")
+    value = os.path.expandvars(os.path.expanduser(value))
+    if not os.path.isabs(value):
+        found = shutil.which(value)
+        if found:
+            value = found
+    # abspath normalizes . and .. but deliberately does NOT follow symlinks.
+    return Path(os.path.abspath(value))
+
+
+def validate_tool_identity(ui: UI, path: Path, kind: str):
+    if not path.is_file():
+        die(ui, f"{kind} executable not found:\n{path}")
+
+    try:
+        cp = subprocess.run([str(path), "--version"], text=True, capture_output=True, timeout=10)
+    except Exception as exc:
+        die(ui, f"Could not execute {kind}:\n{path}\n\n{exc}")
+
+    output = (cp.stdout + "\n" + cp.stderr).strip()
+    if cp.returncode != 0:
+        die(ui, f"{kind} --version failed:\n{path}\n\n{output}")
+
+    if kind == "Cargo" and not re.search(r"(^|\n)cargo\s+\d", output, re.I):
+        die(
+            ui,
+            "The updater's Cargo path does not execute Cargo.\n\n"
+            f"Path:\n{path}\n\n"
+            f"Reported version output:\n{output}\n\n"
+            "The update was stopped before any existing EveJS files were replaced.",
+        )
+
+    if kind == "Node.js" and not re.search(r"(^|\n)v\d+\.\d+\.\d+", output):
+        die(ui, f"The selected Node.js path did not report a Node version:\n{path}\n\n{output}")
+
+    return output
 
 
 def validate_stage_runtime(ui: UI, stage: Path, node: Path, cargo: Path,
@@ -718,13 +795,29 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
     if (existing / "_local").is_dir():
         overlay_dir(existing / "_local", stage / "_local")
 
-    # Preserve installed mods and their own files exactly.
+    # Preserve installed mods and their own files exactly.  Mods are expected
+    # content, not an obstacle to updating EveJS.
+    existing_mod_manifest = tree_manifest(existing / "mods")
     if (existing / "mods").is_dir():
         if (stage / "mods").exists():
             shutil.rmtree(stage / "mods")
         copy_reflink(existing / "mods", stage / "mods")
     else:
         (stage / "mods").mkdir(exist_ok=True)
+
+    staged_mod_manifest = tree_manifest(stage / "mods")
+    if staged_mod_manifest != existing_mod_manifest:
+        die(
+            ui,
+            "Mod conservation check failed while staging the update.\n\n"
+            "The existing EveJS installation has NOT been replaced.\n"
+            "No mod file is permitted to be added, removed or changed by the updater.",
+        )
+
+    print(
+        f"    ✓ Preserved mods exactly: {tree_file_count(existing / 'mods')} files "
+        f"(manifest {manifest_digest(existing_mod_manifest)[:16]}…)"
+    )
 
     # Preserve logs for research continuity.
     if (existing / "logs").is_dir():
@@ -772,6 +865,23 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
 
     print("\n==> Installing v0.12.6 server dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage / "server", env=env)
+
+    # npm may warn about native install scripts depending on the user's npm
+    # policy.  Do not guess: prove that the native SQLite module actually loads
+    # and opens a database before the update can proceed.
+    run(
+        [
+            str(node), "-e",
+            "const DB=require('better-sqlite3');"
+            "const db=new DB(':memory:');"
+            "db.exec('CREATE TABLE t(x INTEGER)');"
+            "db.close();"
+            "require('protobufjs');"
+            "console.log('EveJS native Node dependency smoke test PASS');",
+        ],
+        cwd=stage / "server",
+        env=env,
+    )
 
     # Only perform official legacy migrations if legacy artifacts actually exist.
     if (stage / "_local" / "newDatabase").exists():
@@ -893,9 +1003,26 @@ def do_update(ui: UI, args):
         if not cargo.is_file():
             die(ui, f"Cargo runtime not found:\n{cargo}\n\nRun the update through install-evejs-linux.sh so prerequisites can be prepared.")
 
+        node_version = validate_tool_identity(ui, node, "Node.js")
+        cargo_version = validate_tool_identity(ui, cargo, "Cargo")
+        print(f"    ✓ Updater Node executable: {node} ({node_version.splitlines()[0]})")
+        print(f"    ✓ Updater Cargo executable: {cargo} ({cargo_version.splitlines()[0]})")
+
         stage = None
+        stage_pattern = f".evejs-update-stage-{existing.name}-*"
+        stages_before = {p.resolve() for p in existing.parent.glob(stage_pattern) if p.is_dir()}
         try:
-            stage, merge_report = prepare_stage(ui, existing, source_root, conf, node, cargo, game_hash, market_hash)
+            try:
+                stage, merge_report = prepare_stage(ui, existing, source_root, conf, node, cargo, game_hash, market_hash)
+            except BaseException:
+                # prepare_stage creates its sibling stage before doing any build
+                # work. If it fails before returning, `stage` is still None in
+                # this caller, so explicitly remove only stages created by this
+                # attempt. Pre-existing evidence folders are left untouched.
+                stages_after = {p.resolve() for p in existing.parent.glob(stage_pattern) if p.is_dir()}
+                for orphan in stages_after - stages_before:
+                    shutil.rmtree(orphan, ignore_errors=True)
+                raise
 
             backup_base = backup_base_for(existing)
             stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -903,13 +1030,14 @@ def do_update(ui: UI, args):
             backup_install = record_dir / "installation"
 
             mods_count = tree_file_count(existing / "mods")
+            mods_manifest_sha256 = manifest_digest(tree_manifest(existing / "mods"))
             summary = (
                 f"Existing EveJS:\n  v{old_version}\n  {existing}\n\n"
                 f"Target EveJS:\n  v{TARGET_VERSION}\n  {zip_path}\n\n"
                 "Protected state:\n"
                 f"  Player/world DB: {'present' if game_hash else 'not yet created'}\n"
                 f"  Market DB:       preserved exactly ({market_hash[:16]}…)\n"
-                f"  Mod files:       {mods_count}\n"
+                f"  Mod files:       {mods_count} (exact manifest {mods_manifest_sha256[:16]}…)\n"
                 "  _local runtime/mod state: preserved\n"
                 "  Certificates: preserved\n"
                 "  EVE client + Proton prefix: retained\n"
@@ -937,6 +1065,7 @@ def do_update(ui: UI, args):
                 "player_db_sha256": game_hash,
                 "market_db_sha256": market_hash,
                 "mods_file_count": mods_count,
+                "mods_manifest_sha256": mods_manifest_sha256,
                 "config_merge_conflicts": merge_report["conflicts"],
                 "status": "committing",
             }

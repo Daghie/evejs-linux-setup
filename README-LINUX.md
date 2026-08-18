@@ -1,5 +1,46 @@
-# EveJS v0.12.6 — Universal Linux Setup v1.8
+# EveJS v0.12.6 — Universal Linux Setup v1.8.1
 ## Installer + Transactional Updater
+
+
+## v1.8.1 hotfix
+
+The first live v0.12.5 → v0.12.6 update test exposed a Cargo proxy-path bug.
+
+Rustup normally installs:
+
+```text
+~/.cargo/bin/cargo -> rustup
+```
+
+v1.8 converted the configured Cargo path with Python `Path.resolve()`. That
+dereferenced the valid Cargo proxy to the underlying `rustup` executable, so the
+Market build accidentally became:
+
+```text
+rustup build --release
+```
+
+instead of:
+
+```text
+cargo build --release
+```
+
+v1.8.1 keeps the executable path without dereferencing symlinks and verifies
+that `<path> --version` actually identifies itself as Cargo before staging can
+continue.
+
+The failed run was **not caused by a mod**. Update mode explicitly preserves the
+entire existing `mods/` tree. v1.8.1 strengthens this with an exact manifest
+comparison (files, hashes, symlinks, modes and empty directories) between the
+existing and staged `mods/` trees. Any mod change aborts the update before
+commit.
+
+v1.8.1 also:
+
+- removes a newly-created staging directory when pre-commit staging fails;
+- smoke-tests `better-sqlite3` and `protobufjs` after target server `npm ci`;
+- retains the launcher byte-for-byte from v1.7.
 
 v1.8 adds **update/rollback management to the Installer**.
 

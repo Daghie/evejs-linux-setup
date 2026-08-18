@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Installer v1.5 — SteamOS Toolchain Hardening
-# Candidate target: EveJS v0.12.5 / EVE build 3396210
+# EveJS Universal Linux Installer v1.7 — EveJS v0.12.6
+# Target: EveJS v0.12.6 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
 # Goals:
@@ -27,13 +27,13 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-INSTALLER_TARGET_VERSION="0.12.5"
+INSTALLER_TARGET_VERSION="0.12.6"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.5 SteamOS Toolchain Hardening"
+INSTALLER_CANDIDATE_NAME="v1.7 EveJS v0.12.6 Port"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
-STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.5-stale-processes.sh"
+STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.6-stale-processes.sh"
 
 FORCE_TEXT=0
 ARG_ZIP=""
@@ -65,7 +65,7 @@ Options:
   --client PATH       EVE tq directory or copied shared-cache root.
   --dest PATH         Destination for clean EveJS installation.
   --proton PATH       Proton directory or proton executable.
-  --market PROFILE    v0.12.5 market profile: v1, v2, or v3.
+  --market PROFILE    v0.12.6 market profile: v1, v2, or v3.
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
 EOF
@@ -219,8 +219,8 @@ ui_choose_market() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="Choose EveJS v0.12.5 market" --width=960 --height=390 \
-                --text="Choose one v0.12.5 market seed strategy. v1 is recommended for the first Linux acceptance run because it is deterministic and matches the previously live-accepted baseline most closely." \
+                --title="Choose EveJS v0.12.6 market" --width=960 --height=390 \
+                --text="Choose one v0.12.6 market seed strategy. v1 is recommended for the first Linux acceptance run because it is deterministic, offline, and removes live market downloads as an extra variable." \
                 --column="Use" --column="Profile" --column="Description" \
                 TRUE  "v1" "Synthetic Jita + New Caldari — deterministic, offline, recommended first test" \
                 FALSE "v2" "Live Tranquility snapshot — Jita live market + NPC catalog; downloads current snapshot" \
@@ -229,7 +229,7 @@ ui_choose_market() {
             ;;
         kdialog)
             local pick
-            pick="$(kdialog --title "Choose EveJS v0.12.5 market" --menu \
+            pick="$(kdialog --title "Choose EveJS v0.12.6 market" --menu \
                 "Choose one market seed strategy. v1 is recommended for the first Linux acceptance run." \
                 v1 "Synthetic Jita + New Caldari — deterministic/offline" \
                 v2 "Live TQ snapshot — Jita + NPC catalog" \
@@ -238,7 +238,7 @@ ui_choose_market() {
             ;;
         *)
             local pick
-            printf '\nChoose EveJS v0.12.5 market profile:\n' >&2
+            printf '\nChoose EveJS v0.12.6 market profile:\n' >&2
             printf '  [1] v1 — Synthetic Jita + New Caldari (recommended first test)\n' >&2
             printf '  [2] v2 — Live TQ snapshot, Jita + NPC catalog\n' >&2
             printf '  [3] v3 — Cost-priced Jita 4-4 + authentic NPC catalog\n' >&2
@@ -353,14 +353,10 @@ native_toolchain_report() {
     } > "$destination"
 }
 
-native_build_probe() {
-    # Do not merely test that `cc` exists. Native EveJS dependencies need a
-    # functioning libc/C++ development environment. This catches SteamOS images
-    # where the compiler binary exists but development headers were pruned.
-    local tmp c_log cpp_log
+native_c_probe() {
+    local tmp log
     tmp="$(mktemp -d)"
-    c_log="$tmp/c-probe.log"
-    cpp_log="$tmp/cpp-probe.log"
+    log="$tmp/c-probe.log"
 
     cat > "$tmp/probe.c" <<'EOF'
 #include <stdio.h>
@@ -373,6 +369,26 @@ int main(void) {
 }
 EOF
 
+    NATIVE_C_LAST_ERROR=""
+    if ! cc "$tmp/probe.c" -o "$tmp/probe-c" >"$log" 2>&1; then
+        NATIVE_C_LAST_ERROR="$(cat "$log")"
+        rm -rf "$tmp"
+        return 1
+    fi
+    if ! "$tmp/probe-c" >/dev/null 2>&1; then
+        NATIVE_C_LAST_ERROR="C compiler produced a test binary, but it did not execute successfully."
+        rm -rf "$tmp"
+        return 1
+    fi
+    rm -rf "$tmp"
+    return 0
+}
+
+native_cpp_probe() {
+    local tmp log
+    tmp="$(mktemp -d)"
+    log="$tmp/cpp-probe.log"
+
     cat > "$tmp/probe.cpp" <<'EOF'
 #include <iostream>
 #include <string>
@@ -383,76 +399,183 @@ int main() {
 }
 EOF
 
-    NATIVE_BUILD_LAST_ERROR=""
-    if ! cc "$tmp/probe.c" -o "$tmp/probe-c" >"$c_log" 2>&1; then
-        NATIVE_BUILD_LAST_ERROR="$(cat "$c_log")"
+    NATIVE_CPP_LAST_ERROR=""
+    if ! c++ "$tmp/probe.cpp" -o "$tmp/probe-cpp" >"$log" 2>&1; then
+        NATIVE_CPP_LAST_ERROR="$(cat "$log")"
         rm -rf "$tmp"
         return 1
     fi
-    if ! c++ "$tmp/probe.cpp" -o "$tmp/probe-cpp" >"$cpp_log" 2>&1; then
-        NATIVE_BUILD_LAST_ERROR="$(cat "$cpp_log")"
+    if ! "$tmp/probe-cpp" >/dev/null 2>&1; then
+        NATIVE_CPP_LAST_ERROR="C++ compiler produced a test binary, but it did not execute successfully."
         rm -rf "$tmp"
         return 1
     fi
-    if ! "$tmp/probe-c" >/dev/null 2>&1 || ! "$tmp/probe-cpp" >/dev/null 2>&1; then
-        NATIVE_BUILD_LAST_ERROR="Compiler produced test binaries, but they did not execute successfully."
-        rm -rf "$tmp"
-        return 1
-    fi
-
     rm -rf "$tmp"
     return 0
 }
 
-STEAMOS_DEV_PREP_ATTEMPTED=0
+native_build_probe() {
+    NATIVE_BUILD_LAST_ERROR=""
+    NATIVE_BUILD_FAILED_STAGE=""
 
-prepare_steamos_development_environment() {
-    local reason="$1"
-    local ro_state="" disk_state=""
+    if ! native_c_probe; then
+        NATIVE_BUILD_FAILED_STAGE="c"
+        NATIVE_BUILD_LAST_ERROR="$NATIVE_C_LAST_ERROR"
+        return 1
+    fi
 
-    (( STEAMOS_DEV_PREP_ATTEMPTED == 0 )) || return 0
-    STEAMOS_DEV_PREP_ATTEMPTED=1
+    if ! native_cpp_probe; then
+        NATIVE_BUILD_FAILED_STAGE="cpp"
+        NATIVE_BUILD_LAST_ERROR="$NATIVE_CPP_LAST_ERROR"
+        return 1
+    fi
 
-    command -v steamos-unminimize >/dev/null 2>&1 || die "SteamOS was detected, but 'steamos-unminimize' is unavailable.
+    return 0
+}
 
-The native C/C++ development environment is incomplete:
-$reason
+declare -A STEAMOS_REPAIR_DONE=()
+STEAMOS_REPAIR_LOG=""
 
-This installer will not repair SteamOS with generic Arch package commands because that can mix package state with the immutable SteamOS image. Restore the SteamOS development environment first, then rerun the installer."
+steamos_installed_version() {
+    LC_ALL=C pacman -Q "$1" 2>/dev/null | awk '{print $2; exit}'
+}
+
+steamos_sync_version() {
+    LC_ALL=C pacman -Si "$1" 2>/dev/null | awk -F': *' '$1 ~ /^Version[[:space:]]*$/ {print $2; exit}'
+}
+
+steamos_sync_repo() {
+    LC_ALL=C pacman -Si "$1" 2>/dev/null | awk -F': *' '$1 ~ /^Repository[[:space:]]*$/ {print $2; exit}'
+}
+
+steamos_sync_download_size() {
+    LC_ALL=C pacman -Si "$1" 2>/dev/null | awk -F': *' '$1 ~ /^Download Size[[:space:]]*$/ {print $2; exit}'
+}
+
+steamos_preview_single_package() {
+    local pkg="$1" line
+    local -a transaction=()
+
+    mapfile -t transaction < <(
+        LC_ALL=C pacman -Sp --print-format '%n|%v' "$pkg" 2>/dev/null | awk 'NF'
+    )
+
+    ((${#transaction[@]} > 0)) || return 1
+
+    # Absolute guard: v1.6 will not approve a dependency cascade. The dry-run
+    # must contain exactly the single package we deliberately requested.
+    ((${#transaction[@]} == 1)) || return 2
+
+    line="${transaction[0]}"
+    [[ "${line%%|*}" == "$pkg" ]] || return 2
+    printf '%s\n' "$line"
+}
+
+steamos_reinstall_exact_package() {
+    local pkg="$1" purpose="$2"
+    local installed sync repo download preview preview_version ro_state=""
+
+    [[ -n "${STEAMOS_REPAIR_DONE[$pkg]:-}" ]] && return 0
+
+    command -v pacman >/dev/null 2>&1 \
+        || die "SteamOS minimal repair requires Pacman, but pacman was not found."
+
+    installed="$(steamos_installed_version "$pkg")"
+    [[ -n "$installed" ]] || die "SteamOS minimal repair expected '$pkg' to already be installed, but it is not.
+
+v1.6 will not add an unbounded package/dependency set automatically. Please send the installer output so this case can be reviewed."
+
+    sync="$(steamos_sync_version "$pkg")"
+    repo="$(steamos_sync_repo "$pkg")"
+    download="$(steamos_sync_download_size "$pkg")"
+
+    [[ -n "$sync" ]] || die "Could not read the SteamOS repository version for '$pkg'.
+
+v1.6 deliberately does not run 'pacman -Sy' because refreshing only the package database and then changing core packages can create a partial-upgrade situation.
+
+Update SteamOS normally, reboot if requested, then rerun the EveJS installer."
+
+    if [[ "$installed" != "$sync" ]]; then
+        die "SteamOS package-version safety check refused to repair '$pkg'.
+
+Installed version:
+  $installed
+
+Configured SteamOS repository version:
+  $sync
+
+v1.6 only reinstalls the EXACT version SteamOS already has installed. It will not partially upgrade a core system package.
+
+Update SteamOS normally first, then rerun the installer."
+    fi
+
+    local preview_rc=0
+    preview="$(steamos_preview_single_package "$pkg")" || preview_rc=$?
+    case "$preview_rc" in
+        0) ;;
+        1)
+            die "Pacman could not preview a reinstall of '$pkg'. No system changes were made."
+            ;;
+        2)
+            local full_preview
+            full_preview="$(LC_ALL=C pacman -Sp --print-format '%n %v' "$pkg" 2>/dev/null || true)"
+            die "SteamOS minimal-repair safety guard STOPPED the operation.
+
+EveJS requested only:
+  $pkg
+
+But Pacman proposed more than that one package:
+$full_preview
+
+v1.6 will not approve a dependency cascade or broad SteamOS restoration. No system changes were made."
+            ;;
+        *)
+            die "Unexpected Pacman preview error for '$pkg'. No system changes were made."
+            ;;
+    esac
+
+    preview_version="${preview#*|}"
+    [[ "$preview_version" == "$installed" ]] || die "Pacman preview version for '$pkg' changed unexpectedly.
+
+Installed: $installed
+Preview:   $preview_version
+
+No system changes were made."
 
     if command -v steamos-readonly >/dev/null 2>&1; then
         ro_state="$(steamos-readonly status 2>&1 || true)"
     fi
-    disk_state="$(df -h / 2>/dev/null || true)"
 
-    if ! ui_yesno "SteamOS development files are missing" \
-"The compiler exists, but SteamOS cannot compile a simple native program.
+    if ! ui_yesno "Repair one SteamOS package?" \
+"EveJS proved that a native development file is missing.
 
-This is the same class of problem that causes errors such as:
+Required repair:
+  $purpose
 
-  fatal error: stdio.h: No such file or directory
+v1.6 proposes to REINSTALL exactly ONE already-installed SteamOS package:
 
-SteamOS can ship with development files pruned from the system image. Merely disabling read-only mode does not restore those files.
+  Package:     $pkg
+  Version:     $installed
+  Repository:  ${repo:-unknown}
+  Download:    ${download:-unknown}
 
-The installer can now use SteamOS's own development-restoration tools:
+Pacman's dry-run contains exactly this one package and no dependency cascade.
 
-  sudo steamos-readonly disable
-  sudo steamos-devmode enable       (when available)
-  sudo steamos-unminimize --dev
+This is NOT steamos-unminimize.
+This is NOT base-devel.
+This is NOT a 959-package restoration.
 
-Current SteamOS read-only status:
+SteamOS read-only status:
 ${ro_state:-unknown}
 
-Current root filesystem space:
-$disk_state
+SteamOS updates may replace system-image changes later.
 
-This changes the SteamOS system development layer and may be reverted by a later SteamOS system update.
-
-Run the SteamOS development restoration now?"; then
-        die "SteamOS native development files are required before EveJS can compile its market/SQLite components."
+Reinstall this one exact package and retry the compiler test?"; then
+        die "The required SteamOS development file is still missing. Installation stopped without changing '$pkg'."
     fi
 
-    stage "Preparing SteamOS native development environment"
+    stage "SteamOS minimal repair: reinstalling only $pkg"
+
     sudo -v || die "sudo authentication failed."
 
     if command -v steamos-readonly >/dev/null 2>&1; then
@@ -460,21 +583,134 @@ Run the SteamOS development restoration now?"; then
             || die "Could not disable SteamOS read-only mode."
     fi
 
-    if command -v steamos-devmode >/dev/null 2>&1; then
-        # On current SteamOS this initializes developer mode/package state.
-        # Do not fail the whole repair solely because devmode reports an
-        # already-enabled/nonfatal condition; unminimize is the decisive step.
-        sudo steamos-devmode enable || warn "steamos-devmode enable returned an error; continuing to steamos-unminimize --dev."
+    # Re-run the transaction preview immediately before the write.
+    local second_preview second_rc=0
+    second_preview="$(steamos_preview_single_package "$pkg")" || second_rc=$?
+    [[ "$second_rc" == "0" && "$second_preview" == "$pkg|$installed" ]] \
+        || die "Pacman transaction changed after approval. v1.6 aborted before modifying '$pkg'."
+
+    sudo pacman -S --noconfirm "$pkg" \
+        || die "SteamOS failed to reinstall the single approved package '$pkg'."
+
+    STEAMOS_REPAIR_DONE["$pkg"]=1
+    STEAMOS_REPAIR_LOG+="${pkg} ${installed} — ${purpose}"$'\n'
+    ok "Reinstalled only $pkg $installed."
+}
+
+steamos_repair_from_c_failure() {
+    local err="$1"
+
+    # The exact tester failure: bundled SQLite -> cc -> stdio.h missing.
+    if [[ ! -e /usr/include/stdio.h ]] || grep -Eq 'fatal error: (stdio\.h|stdlib\.h|string\.h): No such file or directory' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "glibc" \
+            "restore the standard C library development headers (including stdio.h)"
+        return 0
     fi
 
-    sudo steamos-unminimize --dev \
-        || die "SteamOS development restoration failed.
+    # Kernel-facing userspace headers are a separate package.
+    if grep -Eq 'fatal error: (linux/|asm/|asm-generic/)[^:]*: No such file or directory' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "linux-api-headers" \
+            "restore Linux userspace API headers required by native compilation"
+        return 0
+    fi
 
-Review the output above. A common SteamOS failure mode is insufficient free space on the root filesystem.
+    # Missing linker binary.
+    if ! command -v ld >/dev/null 2>&1 \
+        || grep -Eq '(cannot find .*ld|cannot execute .*ld|linker .* not found)' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "binutils" \
+            "restore the native linker/toolchain utilities"
+        return 0
+    fi
 
-No EveJS files have been built yet. Resolve the SteamOS development-layer issue, then rerun the installer."
+    # Startup objects and libc link files belong to glibc too.
+    if grep -Eq '(cannot find (Scrt1\.o|crt1\.o|crti\.o|crtn\.o)|cannot find -lc)' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "glibc" \
+            "restore libc startup/link files required by the C compiler"
+        return 0
+    fi
 
-    ok "SteamOS development restoration command completed."
+    return 1
+}
+
+steamos_repair_from_cpp_failure() {
+    local err="$1"
+
+    if grep -Eq 'fatal error: (iostream|string|bits/[^:]+): No such file or directory' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "gcc" \
+            "restore the GCC C++ standard-library development headers"
+        return 0
+    fi
+
+    if ! command -v ld >/dev/null 2>&1 \
+        || grep -Eq '(cannot find .*ld|cannot execute .*ld|linker .* not found)' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "binutils" \
+            "restore the native linker/toolchain utilities"
+        return 0
+    fi
+
+    if grep -Eq '(cannot find (Scrt1\.o|crt1\.o|crti\.o|crtn\.o)|cannot find -lc)' <<<"$err"; then
+        steamos_reinstall_exact_package \
+            "glibc" \
+            "restore libc startup/link files required by the C++ compiler"
+        return 0
+    fi
+
+    return 1
+}
+
+repair_steamos_native_build_environment() {
+    local attempts=0 max_attempts=5
+
+    while (( attempts < max_attempts )); do
+        if native_c_probe; then
+            break
+        fi
+
+        warn "SteamOS C compiler probe failed:"
+        printf '%s\n' "$NATIVE_C_LAST_ERROR" >&2
+
+        steamos_repair_from_c_failure "$NATIVE_C_LAST_ERROR" \
+            || die "The SteamOS C compiler still fails, but v1.6 cannot prove that one of its approved minimal packages is the cause.
+
+No broad SteamOS repair will be attempted.
+
+Compiler output:
+$NATIVE_C_LAST_ERROR"
+
+        attempts=$((attempts + 1))
+    done
+
+    native_c_probe || die "SteamOS C compiler did not recover after minimal targeted repair."
+
+    attempts=0
+    while (( attempts < max_attempts )); do
+        if native_cpp_probe; then
+            break
+        fi
+
+        warn "SteamOS C++ compiler probe failed:"
+        printf '%s\n' "$NATIVE_CPP_LAST_ERROR" >&2
+
+        steamos_repair_from_cpp_failure "$NATIVE_CPP_LAST_ERROR" \
+            || die "The SteamOS C++ compiler still fails, but v1.6 cannot prove that one of its approved minimal packages is the cause.
+
+No broad SteamOS repair will be attempted.
+
+Compiler output:
+$NATIVE_CPP_LAST_ERROR"
+
+        attempts=$((attempts + 1))
+    done
+
+    native_cpp_probe || die "SteamOS C++ compiler did not recover after minimal targeted repair."
+
+    ok "SteamOS native C/C++ environment passed after minimal targeted repair."
 }
 
 ensure_native_build_environment() {
@@ -489,21 +725,9 @@ ensure_native_build_environment() {
     local first_error="$NATIVE_BUILD_LAST_ERROR"
 
     if is_steamos; then
-        prepare_steamos_development_environment "$first_error"
-
+        repair_steamos_native_build_environment
         native_toolchain_report "$HOST_TOOLCHAIN_REPORT"
-        if native_build_probe; then
-            ok "SteamOS native C/C++ environment repaired and verified."
-            return 0
-        fi
-
-        die "SteamOS development restoration completed, but the native compiler probe still fails.
-
-Compiler output:
-$NATIVE_BUILD_LAST_ERROR
-
-A diagnostic snapshot is available during this installer run at:
-$HOST_TOOLCHAIN_REPORT"
+        return 0
     fi
 
     local family install_cmd
@@ -546,6 +770,28 @@ dependency_install_command() {
     fi
 }
 
+steamos_package_for_command() {
+    case "$1" in
+        python3) printf 'python\n' ;;
+        curl) printf 'curl\n' ;;
+        unzip) printf 'unzip\n' ;;
+        openssl) printf 'openssl\n' ;;
+        tar) printf 'tar\n' ;;
+        xz) printf 'xz\n' ;;
+        ss) printf 'iproute2\n' ;;
+        sysctl) printf 'procps-ng\n' ;;
+        sudo) printf 'sudo\n' ;;
+        sha256sum) printf 'coreutils\n' ;;
+        awk) printf 'gawk\n' ;;
+        grep) printf 'grep\n' ;;
+        sed) printf 'sed\n' ;;
+        find) printf 'findutils\n' ;;
+        make) printf 'make\n' ;;
+        cc|c++) printf 'gcc\n' ;;
+        *) return 1 ;;
+    esac
+}
+
 check_system_tools() {
     local missing=()
     local cmd
@@ -553,6 +799,23 @@ check_system_tools() {
         command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
     done
     if ((${#missing[@]} == 0)); then
+        return 0
+    fi
+
+    if is_steamos; then
+        warn "SteamOS is missing required command(s): ${missing[*]}"
+        local pkg
+        for cmd in "${missing[@]}"; do
+            pkg="$(steamos_package_for_command "$cmd" 2>/dev/null || true)"
+            [[ -n "$pkg" ]] || die "No approved minimal SteamOS package mapping exists for missing command '$cmd'."
+
+            steamos_reinstall_exact_package \
+                "$pkg" \
+                "restore the missing '$cmd' command required by the EveJS installer"
+
+            command -v "$cmd" >/dev/null 2>&1 \
+                || die "Reinstalling '$pkg' did not restore required command '$cmd'."
+        done
         return 0
     fi
 
@@ -564,17 +827,7 @@ ${missing[*]}
 
 EveJS needs them for database creation, native Node modules, Rust market compilation, TLS verification and local networking."
 
-    if is_steamos; then
-        prepare_steamos_development_environment "$msg"
-
-        # SteamOS development restoration may have supplied the missing tools.
-        missing=()
-        for cmd in python3 curl unzip openssl tar xz ss sysctl sudo sha256sum awk grep sed find make cc c++; do
-            command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
-        done
-        ((${#missing[@]} == 0)) || die "SteamOS development restoration completed, but required host tools are still missing: ${missing[*]}"
-        return 0
-    elif [[ -n "$install_cmd" ]]; then
+    if [[ -n "$install_cmd" ]]; then
         msg+="
 
 Detected package-family command:
@@ -606,7 +859,7 @@ ensure_node() {
         version="$(node --version 2>/dev/null || true)"
     fi
 
-    # EveJS v0.12.5 README specifies Node.js 24 LTS.
+    # EveJS v0.12.6 README specifies Node.js 24 LTS.
     if [[ "$major" == "24" ]] && command -v npm >/dev/null 2>&1; then
         NODE_BIN="$(command -v node)"
         NPM_BIN="$(command -v npm)"
@@ -614,13 +867,13 @@ ensure_node() {
         return 0
     fi
 
-    # v0.12.5 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
+    # v0.12.6 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
     # compatible with Node 20 and 22-26, but not Node 21.
     if [[ "$major" =~ ^(20|22|23|25|26)$ ]] && command -v npm >/dev/null 2>&1; then
         if ui_yesno "Use compatible Node $version?" \
-"EveJS v0.12.5 recommends Node.js 24 LTS.
+"EveJS v0.12.6 recommends Node.js 24 LTS.
 
-The detected $version is within the compatibility range documented by the v0.12.5 non-Docker setup audit, but it is not the recommended Node 24 target.
+The detected $version is within the compatibility range documented by the v0.12.6 non-Docker setup audit, but it is not the recommended Node 24 target.
 
 Use this existing Node installation?
 
@@ -632,14 +885,14 @@ Choose No to install a private Node 24.x runtime for EveJS."; then
         fi
     elif [[ "$major" == "21" ]]; then
         ui_warn "Unsupported Node 21 detected" \
-"EveJS v0.12.5's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
+"EveJS v0.12.6's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
 
 The installer will offer Node 24 LTS instead."
     elif [[ "$major" =~ ^[0-9]+$ ]] && (( major > 0 )); then
         ui_warn "Unvalidated Node version" \
 "Detected $version.
 
-EveJS v0.12.5 recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
+EveJS v0.12.6 recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
     fi
 
     local arch
@@ -650,7 +903,7 @@ EveJS v0.12.5 recommends Node 24 LTS. The installer will offer a private Node 24
     esac
 
     if ! ui_yesno "Install Node.js 24 LTS?" \
-"EveJS v0.12.5 recommends Node.js 24 LTS.
+"EveJS v0.12.6 recommends Node.js 24 LTS.
 
 Install the newest Node 24.x binary in your user account under:
 
@@ -695,7 +948,7 @@ ensure_rust() {
         return 0
     fi
 
-    if ! ui_yesno "Install Rust?" "EveJS v0.12.5 includes a Rust standalone market daemon.
+    if ! ui_yesno "Install Rust?" "EveJS v0.12.6 includes a Rust standalone market daemon.
 
 Rust/Cargo was not found. Install the official rustup toolchain in your user account under ~/.cargo and ~/.rustup?"; then
         die "Rust/Cargo is required for the standalone market server."
@@ -832,7 +1085,7 @@ resolve_archive_root() {
         return 0
     fi
 
-    # v0.12.5 is distributed with a top-level v0.12.5/ directory. Search a
+    # v0.12.6 is distributed with a top-level v0.12.6/ directory. Search a
     # shallow bounded depth so future packaging wrappers do not break selection.
     local config_file candidate
     mapfile -t version_files < <(
@@ -1206,7 +1459,7 @@ PY
 choose_valid_evejs_zip() {
     local selected=""
     while true; do
-        selected="$(ui_file "Select the EveJS v0.12.5 release ZIP" "$SCRIPT_DIR")" || return 1
+        selected="$(ui_file "Select the EveJS v0.12.6 release ZIP" "$SCRIPT_DIR")" || return 1
         [[ -n "$selected" ]] || continue
 
         if [[ ! -f "$selected" ]]; then
@@ -1215,7 +1468,7 @@ choose_valid_evejs_zip() {
 
 $selected
 
-Please select the EveJS v0.12.5 ZIP."
+Please select the EveJS v0.12.6 ZIP."
             continue
         fi
 
@@ -1231,7 +1484,7 @@ Please select the EveJS v0.12.5 ZIP."
 
 $selected
 
-Please select the EveJS v0.12.5 release ZIP."
+Please select the EveJS v0.12.6 release ZIP."
             continue
         fi
 
@@ -1241,7 +1494,7 @@ Please select the EveJS v0.12.5 release ZIP."
             ui_warn "Wrong ZIP selected" \
 "The selected ZIP does not contain a recognizable EveJS repository.
 
-Please select the EveJS v0.12.5 release ZIP."
+Please select the EveJS v0.12.6 release ZIP."
             continue
         fi
 
@@ -1349,7 +1602,7 @@ Please select a complete copied EVE shared-cache/client."
 choose_existing_empty_destination() {
     local selected
     while true; do
-        selected="$(ui_dir "Select an existing EMPTY folder for EveJS v0.12.5" "$HOME")" || return 1
+        selected="$(ui_dir "Select an existing EMPTY folder for EveJS v0.12.6" "$HOME")" || return 1
         [[ -n "$selected" ]] || continue
         selected="$(readlink -f "$selected" 2>/dev/null || true)"
 
@@ -1372,7 +1625,7 @@ _local/runtime-performance/
 
 This is not something the installer creates before installation. It strongly suggests an older EveJS process is/was still writing telemetry to this path and recreated the folder after it had been removed.
 
-Run evejs-v0.12.5-stale-processes.sh, remove the leftover folder after the process is stopped, then select the empty folder again.
+Run evejs-v0.12.6-stale-processes.sh, remove the leftover folder after the process is stopped, then select the empty folder again.
 
 The installer will not delete this data automatically."
             else
@@ -1441,9 +1694,9 @@ ensure_rust
 preflight_existing_evejs_processes
 
 ui_info "EveJS Universal Linux Installer" \
-"This candidate installs a clean EveJS v0.12.5 baseline and prepares a copied EVE client for local play.
+"This candidate installs a clean EveJS v0.12.6 baseline and prepares a copied EVE client for local play.
 
-It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS development-mode installations.
+It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS installations with minimized development files.
 
 The installer:
 • keeps EveJS core source untouched after extraction;
@@ -1452,7 +1705,7 @@ The installer:
 • supports removable mods through mods/*/loader.js;
 • configures a Steam Proton launch environment;
 • copies the standalone stale-process cleanup tool into the completed EveJS folder;
-• compiles a tiny C and C++ test before installation so missing SteamOS development headers are caught immediately.
+• compiles tiny C/C++ tests before installation and, on SteamOS, can repair only the exact already-installed package proven missing.
 
 For the EveJS destination, create/select an existing EMPTY folder. The installer
 will not create the destination folder for you.
@@ -1494,8 +1747,8 @@ PY
         if (( probe_ok )); then
             SOURCE_ZIP="$candidate"
         else
-            ui_warn "Detected ZIP is not EveJS v0.12.5" \
-"The ZIP beside the installer is not the required EveJS v0.12.5 release.
+            ui_warn "Detected ZIP is not EveJS v0.12.6" \
+"The ZIP beside the installer is not the required EveJS v0.12.6 release.
 
 Please select the correct file."
             SOURCE_ZIP="$(choose_valid_evejs_zip)" || exit 1
@@ -1535,7 +1788,7 @@ fi
 resolve_proton "$SELECTED_PROTON" "$PROTON_RECORDS"
 ok "Selected Proton: $(basename "$PROTON_DIR")"
 
-# v0.12.5 market profile
+# v0.12.6 market profile
 if [[ -n "$ARG_MARKET" ]]; then
     MARKET_PROFILE="${ARG_MARKET,,}"
 else
@@ -1576,7 +1829,7 @@ ok "Resource cache: $CACHE_ROOT/ResFiles"
 # Destination
 # v1.2 deliberately NEVER creates the destination root. The researcher creates
 # and selects an existing empty folder. This avoids leaving behind an automatic
-# EveJS-v0.12.5-Clean directory that then interferes with their own naming.
+# EveJS-v0.12.6-Clean directory that then interferes with their own naming.
 if [[ -n "$ARG_DEST" ]]; then
     EVEJS_REPO="$(readlink -f "$ARG_DEST" 2>/dev/null || true)"
     [[ -d "$EVEJS_REPO" ]] || die "Destination must already exist as a directory: $ARG_DEST"
@@ -1626,6 +1879,13 @@ mkdir -p "$EVEJS_REPO/mods"
 
 if [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "$HOST_TOOLCHAIN_REPORT" ]]; then
     cp -a "$HOST_TOOLCHAIN_REPORT" "$EVEJS_REPO/LINUX-HOST-TOOLCHAIN.txt"
+fi
+if [[ -n "${STEAMOS_REPAIR_LOG:-}" ]]; then
+    {
+        echo "SteamOS packages minimally repaired by EveJS installer"
+        echo "====================================================="
+        printf '%s' "$STEAMOS_REPAIR_LOG"
+    } > "$EVEJS_REPO/STEAMOS-MINIMAL-REPAIR.txt"
 fi
 ok "Clean repository extracted."
 
@@ -1719,7 +1979,7 @@ case "$MARKET_PROFILE" in
         ;;
     v2)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv2"
-        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.5 market-seederv2 is missing."
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.6 market-seederv2 is missing."
         (
             cd "$MARKET_SEED_DIR"
             cargo run --release -- \
@@ -1729,7 +1989,7 @@ case "$MARKET_PROFILE" in
         ;;
     v3)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv3"
-        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.5 market-seederv3 is missing."
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.6 market-seederv3 is missing."
         (
             cd "$MARKET_SEED_DIR"
 
@@ -1744,7 +2004,7 @@ case "$MARKET_PROFILE" in
                 --config config/market-seederv3.local.toml \
                 snapshot-info --download --reuse-download
 
-            # The v0.12.5 README says the pump audit is the meaningful build
+            # The v0.12.6 seeder contract keeps the pump audit as the meaningful build
             # gate and should be run before every direct seeder build.
             cargo run --release -- \
                 --config config/market-seederv3.local.toml \
@@ -1823,6 +2083,7 @@ Market:            $MARKET_LABEL
 Launcher:          $EVEJS_REPO/evejs-linux-launcher.sh
 Stale cleanup:     $EVEJS_REPO/evejs-stale-process-cleanup.sh
 Host toolchain:    $EVEJS_REPO/LINUX-HOST-TOOLCHAIN.txt
+SteamOS repair:    $EVEJS_REPO/STEAMOS-MINIMAL-REPAIR.txt (only if a repair was needed)
 Mods directory:    $EVEJS_REPO/mods
 
 Mod convention:

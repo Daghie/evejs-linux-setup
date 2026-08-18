@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Recovery helper for EveJS v0.12.5 Universal Linux Installer v1.4 Port Candidate 1.
+# Recovery helper for EveJS v0.12.6 Universal Linux Installer v1.4 Port Candidate 1.
 # It never kills an unidentified process.
 
 set -Eeuo pipefail

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.5 — v1.4 runtime architecture + SteamOS-hardened installer package
+# EveJS Portable Linux Launcher v1.7 — EveJS v0.12.6 + protected process-ownership architecture
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -1032,7 +1032,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.5 Linux Launcher — v1.5   ║"
+echo "║  EveJS v0.12.6 Linux Launcher — v1.7   ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

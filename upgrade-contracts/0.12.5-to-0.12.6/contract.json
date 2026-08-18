@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "source_version": "0.12.5",
+  "target_version": "0.12.6",
+  "supported_build": 3396210,
+  "installation_family": "EveJS Universal Linux Installer",
+  "preserve": {
+    "_local_except_generated_static_refresh": true,
+    "gamestore_sqlite": true,
+    "market_sqlite": true,
+    "mods": true,
+    "certificates": true,
+    "launcher_configuration": true,
+    "proton_prefix": true,
+    "eve_client": true,
+    "logs": true
+  },
+  "refresh": {
+    "program_source": true,
+    "root_node_dependencies": true,
+    "server_node_dependencies": true,
+    "game_static_data_and_manifest": true,
+    "market_server_binary": true,
+    "launcher_script": true,
+    "stale_cleanup_script": true
+  },
+  "never_during_update": {
+    "market_reseed": true,
+    "fresh_player_database": true,
+    "fresh_proton_prefix": true,
+    "repatch_same_build_eve_client": true
+  },
+  "config_merge": "three-way-old-default-vs-user-vs-new-default"
+}

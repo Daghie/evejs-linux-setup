@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Installer v1.7 — EveJS v0.12.6
+# EveJS Universal Linux Setup v1.8 — Installer + Transactional Updater
 # Target: EveJS v0.12.6 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -29,11 +29,12 @@ IFS=$'\n\t'
 
 INSTALLER_TARGET_VERSION="0.12.6"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.7 EveJS v0.12.6 Port"
+INSTALLER_CANDIDATE_NAME="v1.8 Installer + Transactional Updater"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
 STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.6-stale-processes.sh"
+MAINTENANCE_SOURCE="$SCRIPT_DIR/evejs-linux-maintenance.py"
 
 FORCE_TEXT=0
 ARG_ZIP=""
@@ -43,6 +44,9 @@ ARG_PROTON=""
 ARG_MARKET=""
 ARG_NO_LAUNCH=0
 ARG_NO_DESKTOP=0
+ARG_MODE=""
+ARG_EXISTING=""
+ARG_BACKUP=""
 
 while (($#)); do
     case "$1" in
@@ -54,6 +58,9 @@ while (($#)); do
         --market) ARG_MARKET="${2:-}"; shift 2 ;;
         --no-launch) ARG_NO_LAUNCH=1; shift ;;
         --no-desktop) ARG_NO_DESKTOP=1; shift ;;
+        --mode) ARG_MODE="${2:-}"; shift 2 ;;
+        --existing) ARG_EXISTING="${2:-}"; shift 2 ;;
+        --backup) ARG_BACKUP="${2:-}"; shift 2 ;;
         -h|--help)
             cat <<'EOF'
 Usage:
@@ -68,6 +75,9 @@ Options:
   --market PROFILE    v0.12.6 market profile: v1, v2, or v3.
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
+  --mode MODE         install, update, restore, or backups.
+  --existing PATH     Existing EveJS installation for update/restore/backups.
+  --backup PATH       Backup record path for non-interactive restore.
 EOF
             exit 0
             ;;
@@ -252,6 +262,50 @@ ui_choose_market() {
             ;;
     esac
 }
+
+
+ui_choose_setup_action() {
+    case "$UI" in
+        zenity)
+            zenity --list --radiolist \
+                --title="EveJS Universal Linux Setup" --width=880 --height=420 \
+                --text="Install a fresh EveJS copy, update an existing installation in place, or manage transactional upgrade backups." \
+                --column="Use" --column="Action" --column="Description" \
+                TRUE  "install"  "Install EveJS v0.12.6 into an existing empty folder" \
+                FALSE "update"   "Update an existing Universal Linux installation to v0.12.6 while preserving player data/mods" \
+                FALSE "restore"  "Restore a previous transactional EveJS upgrade backup" \
+                FALSE "backups"  "Inspect or delete EveJS upgrade backups" \
+                --print-column=2
+            ;;
+        kdialog)
+            kdialog --title "EveJS Universal Linux Setup" --menu \
+                "Choose what you want to do:" \
+                install "Install EveJS v0.12.6 into an empty folder" \
+                update "Update an existing EveJS installation in place" \
+                restore "Restore an upgrade backup" \
+                backups "Inspect or delete upgrade backups"
+            ;;
+        *)
+            local pick
+            printf '\nEveJS Universal Linux Setup\n' >&2
+            printf '  [1] Install EveJS v0.12.6\n' >&2
+            printf '  [2] Update an existing EveJS installation\n' >&2
+            printf '  [3] Restore an upgrade backup\n' >&2
+            printf '  [4] Manage upgrade backups\n' >&2
+            printf '  [5] Exit\n' >&2
+            read -r -p "Choose [1-5]: " pick
+            case "$pick" in
+                1) printf 'install\n' ;;
+                2) printf 'update\n' ;;
+                3) printf 'restore\n' ;;
+                4) printf 'backups\n' ;;
+                5|'') printf 'exit\n' ;;
+                *) return 1 ;;
+            esac
+            ;;
+    esac
+}
+
 
 stage() {
     printf '\n\033[1;36m==> %s\033[0m\n' "$*"
@@ -462,7 +516,7 @@ steamos_preview_single_package() {
 
     ((${#transaction[@]} > 0)) || return 1
 
-    # Absolute guard: v1.6 will not approve a dependency cascade. The dry-run
+    # Absolute guard: This setup will not approve a dependency cascade. The dry-run
     # must contain exactly the single package we deliberately requested.
     ((${#transaction[@]} == 1)) || return 2
 
@@ -483,7 +537,7 @@ steamos_reinstall_exact_package() {
     installed="$(steamos_installed_version "$pkg")"
     [[ -n "$installed" ]] || die "SteamOS minimal repair expected '$pkg' to already be installed, but it is not.
 
-v1.6 will not add an unbounded package/dependency set automatically. Please send the installer output so this case can be reviewed."
+This setup will not add an unbounded package/dependency set automatically. Please send the installer output so this case can be reviewed."
 
     sync="$(steamos_sync_version "$pkg")"
     repo="$(steamos_sync_repo "$pkg")"
@@ -491,7 +545,7 @@ v1.6 will not add an unbounded package/dependency set automatically. Please send
 
     [[ -n "$sync" ]] || die "Could not read the SteamOS repository version for '$pkg'.
 
-v1.6 deliberately does not run 'pacman -Sy' because refreshing only the package database and then changing core packages can create a partial-upgrade situation.
+This setup deliberately does not run 'pacman -Sy' because refreshing only the package database and then changing core packages can create a partial-upgrade situation.
 
 Update SteamOS normally, reboot if requested, then rerun the EveJS installer."
 
@@ -504,7 +558,7 @@ Installed version:
 Configured SteamOS repository version:
   $sync
 
-v1.6 only reinstalls the EXACT version SteamOS already has installed. It will not partially upgrade a core system package.
+This setup only reinstalls the EXACT version SteamOS already has installed. It will not partially upgrade a core system package.
 
 Update SteamOS normally first, then rerun the installer."
     fi
@@ -527,7 +581,7 @@ EveJS requested only:
 But Pacman proposed more than that one package:
 $full_preview
 
-v1.6 will not approve a dependency cascade or broad SteamOS restoration. No system changes were made."
+This setup will not approve a dependency cascade or broad SteamOS restoration. No system changes were made."
             ;;
         *)
             die "Unexpected Pacman preview error for '$pkg'. No system changes were made."
@@ -552,7 +606,7 @@ No system changes were made."
 Required repair:
   $purpose
 
-v1.6 proposes to REINSTALL exactly ONE already-installed SteamOS package:
+This setup proposes to REINSTALL exactly ONE already-installed SteamOS package:
 
   Package:     $pkg
   Version:     $installed
@@ -587,7 +641,7 @@ Reinstall this one exact package and retry the compiler test?"; then
     local second_preview second_rc=0
     second_preview="$(steamos_preview_single_package "$pkg")" || second_rc=$?
     [[ "$second_rc" == "0" && "$second_preview" == "$pkg|$installed" ]] \
-        || die "Pacman transaction changed after approval. v1.6 aborted before modifying '$pkg'."
+        || die "Pacman transaction changed after approval. the setup aborted before modifying '$pkg'."
 
     sudo pacman -S --noconfirm "$pkg" \
         || die "SteamOS failed to reinstall the single approved package '$pkg'."
@@ -676,7 +730,7 @@ repair_steamos_native_build_environment() {
         printf '%s\n' "$NATIVE_C_LAST_ERROR" >&2
 
         steamos_repair_from_c_failure "$NATIVE_C_LAST_ERROR" \
-            || die "The SteamOS C compiler still fails, but v1.6 cannot prove that one of its approved minimal packages is the cause.
+            || die "The SteamOS C compiler still fails, but this setup cannot prove that one of its approved minimal packages is the cause.
 
 No broad SteamOS repair will be attempted.
 
@@ -698,7 +752,7 @@ $NATIVE_C_LAST_ERROR"
         printf '%s\n' "$NATIVE_CPP_LAST_ERROR" >&2
 
         steamos_repair_from_cpp_failure "$NATIVE_CPP_LAST_ERROR" \
-            || die "The SteamOS C++ compiler still fails, but v1.6 cannot prove that one of its approved minimal packages is the cause.
+            || die "The SteamOS C++ compiler still fails, but this setup cannot prove that one of its approved minimal packages is the cause.
 
 No broad SteamOS repair will be attempted.
 
@@ -1125,7 +1179,7 @@ print(c.get("evejsVersion") or c.get("version") or "")
 PY
 )"
     [[ -n "$EVEJS_VERSION" ]] || die "Could not read EveJS version from config/version.json."
-    [[ "$EVEJS_VERSION" == "$INSTALLER_TARGET_VERSION" ]] || die "Selected archive is EveJS v$EVEJS_VERSION; this candidate is for EveJS v$INSTALLER_TARGET_VERSION."
+    [[ "$EVEJS_VERSION" == "$INSTALLER_TARGET_VERSION" ]] || die "Selected archive is EveJS v$EVEJS_VERSION; this setup build is for EveJS v$INSTALLER_TARGET_VERSION."
 
     BLUE_RECIPE="$SOURCE_ROOT/tools/ClientSETUP/blue_patch_recipe.json"
     [[ -f "$BLUE_RECIPE" ]] || die "This release does not contain tools/ClientSETUP/blue_patch_recipe.json."
@@ -1135,7 +1189,7 @@ print(json.load(open(sys.argv[1]))["supportedBuild"])
 PY
 )"
     [[ "$SUPPORTED_BUILD" =~ ^[0-9]+$ ]] || die "Invalid supportedBuild in blue patch recipe."
-    [[ "$SUPPORTED_BUILD" == "$INSTALLER_TARGET_BUILD" ]] || die "EveJS v$EVEJS_VERSION patch recipe targets build $SUPPORTED_BUILD, but this candidate was audited for build $INSTALLER_TARGET_BUILD."
+    [[ "$SUPPORTED_BUILD" == "$INSTALLER_TARGET_BUILD" ]] || die "EveJS v$EVEJS_VERSION patch recipe targets build $SUPPORTED_BUILD, but this setup build was audited for build $INSTALLER_TARGET_BUILD."
 }
 
 # ── EVE client resolution and preparation ─────────────────────────────────────
@@ -1515,7 +1569,7 @@ PY
 
 ${probe_version:-unknown}
 
-This installer candidate is for EveJS v$INSTALLER_TARGET_VERSION.
+This setup build is for EveJS v$INSTALLER_TARGET_VERSION.
 
 Please select the correct release ZIP."
             continue
@@ -1683,6 +1737,51 @@ Be aware that a stale EveJS process can recreate its old folder and can occupy I
 # ── Main wizard ───────────────────────────────────────────────────────────────
 trap '[[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"; [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "${HOST_TOOLCHAIN_REPORT:-}" ]] && rm -f "$HOST_TOOLCHAIN_REPORT"' EXIT
 
+SETUP_ACTION="${ARG_MODE,,}"
+if [[ -z "$SETUP_ACTION" ]]; then
+    SETUP_ACTION="$(ui_choose_setup_action)" || exit 1
+fi
+
+case "$SETUP_ACTION" in
+    exit) exit 0 ;;
+    update)
+        [[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater engine is missing beside the Installer: $MAINTENANCE_SOURCE"
+        check_system_tools
+        ensure_native_build_environment
+        ensure_node
+        ensure_rust
+        export EVEJS_SETUP_NODE_BIN="$NODE_BIN"
+        export EVEJS_SETUP_CARGO_BIN="$CARGO_BIN"
+        maintenance_args=(--mode update)
+        (( FORCE_TEXT )) && maintenance_args+=(--text)
+        [[ -n "$ARG_ZIP" ]] && maintenance_args+=(--zip "$ARG_ZIP")
+        [[ -n "$ARG_EXISTING" ]] && maintenance_args+=(--existing "$ARG_EXISTING")
+        exec python3 "$MAINTENANCE_SOURCE" "${maintenance_args[@]}"
+        ;;
+    restore)
+        [[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater engine is missing beside the Installer: $MAINTENANCE_SOURCE"
+        command -v python3 >/dev/null 2>&1 || die "Python 3 is required for backup restore."
+        maintenance_args=(--mode restore)
+        (( FORCE_TEXT )) && maintenance_args+=(--text)
+        [[ -n "$ARG_EXISTING" ]] && maintenance_args+=(--existing "$ARG_EXISTING")
+        [[ -n "$ARG_BACKUP" ]] && maintenance_args+=(--backup "$ARG_BACKUP")
+        exec python3 "$MAINTENANCE_SOURCE" "${maintenance_args[@]}"
+        ;;
+    backups)
+        [[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater engine is missing beside the Installer: $MAINTENANCE_SOURCE"
+        command -v python3 >/dev/null 2>&1 || die "Python 3 is required for backup management."
+        maintenance_args=(--mode backups)
+        (( FORCE_TEXT )) && maintenance_args+=(--text)
+        [[ -n "$ARG_EXISTING" ]] && maintenance_args+=(--existing "$ARG_EXISTING")
+        exec python3 "$MAINTENANCE_SOURCE" "${maintenance_args[@]}"
+        ;;
+    install) ;;
+    *)
+        die "Unknown setup mode '$SETUP_ACTION'. Choose install, update, restore, or backups."
+        ;;
+esac
+
+# Fresh installation continues through the established v1.7 path.
 check_system_tools
 ensure_native_build_environment
 ensure_node
@@ -1690,11 +1789,12 @@ ensure_rust
 
 [[ -f "$LAUNCHER_SOURCE" ]] || die "Launcher template is missing beside the installer: $LAUNCHER_SOURCE"
 [[ -f "$STALE_CLEANUP_SOURCE" ]] || die "Stale-process cleanup tool is missing beside the installer: $STALE_CLEANUP_SOURCE"
+[[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater/backup engine is missing beside the installer: $MAINTENANCE_SOURCE"
 
 preflight_existing_evejs_processes
 
-ui_info "EveJS Universal Linux Installer" \
-"This candidate installs a clean EveJS v0.12.6 baseline and prepares a copied EVE client for local play.
+ui_info "EveJS Universal Linux Setup" \
+"This mode installs a clean EveJS v0.12.6 baseline and prepares a copied EVE client for local play.
 
 It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS installations with minimized development files.
 

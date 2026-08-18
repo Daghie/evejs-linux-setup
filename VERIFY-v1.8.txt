@@ -1,0 +1,63 @@
+EveJS v0.12.6 Universal Linux Setup v1.8
+Final Verification Report
+================================================
+
+{
+  "shell_syntax": {
+    "installer": "PASS",
+    "launcher": "PASS",
+    "cleanup": "PASS"
+  },
+  "python_syntax": "PASS",
+  "maintenance_self_test": {
+    "status": "PASS",
+    "tests": [
+      "new target setting added",
+      "user setting wins true three-way conflict",
+      "unchanged user setting adopts target default",
+      "backup path stays sibling to installation"
+    ]
+  },
+  "launcher_boundary": {
+    "byte_identical_to_v1.7": true,
+    "sha256": "b51ec9ffa84eb7b96b85ca95c124134dcd29c16dfd9c250b454273f996612b82",
+    "contains_update_option": false
+  },
+  "installer_entrypoints": {
+    "install": true,
+    "update": true,
+    "restore": true,
+    "backups": true,
+    "text_console_fallback": true
+  },
+  "update_contract": {
+    "only_0.12.5_to_0.12.6": true,
+    "never_calls_market_seeder": true,
+    "gamestore_integrity_and_hash": true,
+    "market_integrity_and_hash": true,
+    "three_way_config_merge": true,
+    "old_install_atomic_backup": true,
+    "target_atomic_commit": true,
+    "postcommit_any_failure_rolls_back": true,
+    "restore_safety_backup": true,
+    "missing_user_config_restored_from_target": true,
+    "mods_preserved": true,
+    "unknown_local_preserved": true,
+    "certificates_preserved": true,
+    "proton_prefix_retained": true
+  },
+  "source_authority": {
+    "target_version": "0.12.6",
+    "target_build": 3396210,
+    "old_config_snapshots_exact": true
+  }
+}
+
+Classification
+--------------
+SOURCE/STATIC VALIDATED
+INSTALLER/UPDATER ENTRYPOINTS VALIDATED
+CONFIG MERGE SELF-TESTED
+TRANSACTION/ROLLBACK CONTRACT STATICALLY VALIDATED
+LAUNCHER BYTE-IDENTICAL TO v1.7
+LIVE v0.12.5 -> v0.12.6 UPDATE ACCEPTANCE PENDING

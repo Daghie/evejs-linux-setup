@@ -1,108 +1,200 @@
-# EveJS v0.12.6 — Universal Linux Installer v1.7
+# EveJS v0.12.6 — Universal Linux Setup v1.8
+## Installer + Transactional Updater
 
-v1.7 ports the accepted Linux installer/launcher architecture to **EveJS
-v0.12.6** while retaining the SteamOS minimal-native safeguards introduced in
-v1.6.
+v1.8 adds **update/rollback management to the Installer**.
 
-## What is preserved
+The normal EveJS launcher is intentionally unchanged from v1.7. It does not
+contain an Update option and does not manage upgrade backups.
 
-- graphical Zenity/KDialog installer with terminal fallback;
-- retrying selectors for invalid ZIP/client/destination choices;
-- user-selected existing empty destination root;
-- Steam Proton discovery and isolated Proton prefix;
-- EVE build 3396210 client validation and patching;
-- native host build so EveJS mods use the same environment as the server;
-- `mods/*/loader.js` loading through Node `--require`;
-- stale EveJS process-tree cleanup;
-- Market-before-Game startup ordering;
-- process-tree ownership checks for every required service;
-- XMPP `127.0.0.1` Linux/Proton correction;
-- EVE client CA reconciliation and Wine-visible CA path;
-- XMPP and Gateway TLS verification before EVE launches.
+## Opening menu
 
-## SteamOS minimal-native repair
-
-v1.7 retains v1.6's conservative SteamOS behavior.
-
-It does **not** use:
+GUI and text-console variants expose the same setup functions:
 
 ```text
-steamos-unminimize --dev
-base-devel group repair
-pacman -Sy
-pacman -Syu
-containerized EveJS builds
+[1] Install EveJS v0.12.6
+[2] Update an existing EveJS installation
+[3] Restore an upgrade backup
+[4] Manage upgrade backups
+[5] Exit
 ```
 
-If SteamOS has pruned a required native development file, real C/C++ probes
-identify the failure.
+## Fresh Install
 
-A mapped package can be reinstalled only if:
+The existing v1.7 fresh-install path is retained:
 
-1. that package is already installed;
-2. the installed version exactly matches the configured SteamOS repository
-   version;
-3. Pacman's dry-run contains exactly that **one package**;
-4. the user explicitly approves it;
-5. the one-package preview is repeated immediately before the write.
+- Steam Proton discovery;
+- EVE build 3396210 preparation;
+- Market v1/v2/v3;
+- process-tree ownership launcher;
+- TLS/XMPP Linux fixes;
+- SteamOS single-package native repair;
+- removable `mods/*/loader.js` support.
 
-For the known `stdio.h` failure, the first candidate is only `glibc`.
+## Audited Update: v0.12.5 → v0.12.6
 
-## v0.12.6 source audit highlights
-
-The following remain compatible with the previous Linux release:
-
-- EVE client build: `3396210`;
-- `blue.dll` patch recipe: unchanged;
-- Node 24 LTS recommendation: unchanged;
-- native setup audit: unchanged;
-- startup batch scripts: unchanged;
-- client certificate setup: unchanged;
-- XMPP/Game/Image/Gateway/Redshift ports: unchanged;
-- Market HTTP/RPC ports: `40110/40111`.
-
-v0.12.6 changes that the installer intentionally preserves:
-
-- the Market daemon now enforces loopback internally;
-- Market v1's shipped stock quantity is now `9,999,999` per station/type;
-- Market v3 includes decryptors in its junk-seed category;
-- Docker explicitly publishes Market RPC `40111`;
-- the shipped PlayerConnect development token defaults to blank.
-
-None of those require a new Proton/TLS/process-ownership architecture.
-
-## Market choices
-
-For the first v0.12.6 acceptance run choose:
+v1.8 currently supports exactly one in-place upgrade contract:
 
 ```text
-v1 — Synthetic Jita + New Caldari
+EveJS v0.12.5 → EveJS v0.12.6
+EVE build 3396210 → 3396210
 ```
 
-It is deterministic/offline and removes an external live snapshot as a test
-variable.
+Other source versions are refused instead of guessed.
 
-The installer also supports the shipped v2 and v3 seeders.
+### Preserved
 
-## Installation
+- `_local/gameStore/gamestore.sqlite` player/world state;
+- the existing Market `market.sqlite`, including player orders/history;
+- all other `_local` content, including mod-owned runtime state;
+- `mods/`;
+- current local certificates;
+- `.evejs-linux.conf`;
+- the copied EVE client;
+- the existing Proton prefix;
+- logs.
 
-Recommended package:
+### Refreshed
+
+- EveJS program/source tree;
+- root/server Node dependencies;
+- v0.12.6 generated static game data + manifest;
+- v0.12.6 Market daemon binary;
+- launcher/cleanup files from the current package.
+
+### Explicitly NOT done during an update
+
+- Market reseed;
+- new player database;
+- new Proton prefix;
+- unnecessary EVE-client repatch.
+
+## Configuration merge
+
+The update contains the audited v0.12.5 default config snapshot and performs a
+three-way merge:
+
+```text
+old v0.12.5 default
+        +
+user's existing config
+        +
+new v0.12.6 default
+```
+
+Rules:
+
+- unchanged old setting → adopt new EveJS default;
+- user-changed setting → preserve user value;
+- new v0.12.6 setting → add it;
+- if both user and EveJS changed the same setting → preserve the user value and
+  record a merge conflict.
+
+`CONFIG-MERGE-REPORT.txt` records what happened.
+
+This means the new v0.12.6 combat setting is added automatically, while a custom
+PlayerConnect token is retained rather than overwritten.
+
+## Transactional filesystem update
+
+The working installation is not overwritten while the new version is built.
+
+v1.8 first creates a complete staging tree beside the installation, installs
+dependencies there, rebuilds static authority, compiles the new Market daemon,
+and validates SQLite conservation.
+
+Only after validation:
+
+```text
+existing EveJS folder
+        ↓ atomic rename
+full rollback backup
+
+validated v0.12.6 staging folder
+        ↓ atomic rename
+original EveJS path
+```
+
+The user's EveJS path therefore stays exactly the same after a successful update.
+
+## Conservation checks
+
+Before and after staging, the updater checkpoints and runs SQLite
+`integrity_check` on:
+
+- `gamestore.sqlite`;
+- `market.sqlite`.
+
+Their SHA-256 hashes must remain identical across the update.
+
+If either changes unexpectedly, the update stops before the existing
+installation is replaced.
+
+## Backups
+
+Upgrade backups are stored beside the EveJS installation:
+
+```text
+<parent>/.evejs-upgrade-backups/<installation-name>/
+```
+
+The old complete installation is retained as the rollback backup.
+
+The Installer can later:
+
+- inspect a backup;
+- delete a backup;
+- restore a backup.
+
+A restore preserves the currently installed version as an additional safety
+backup before replacing it.
+
+## Automatic rollback
+
+After the filesystem swap, v1.8 validates:
+
+- target EveJS version/build;
+- JSON config parsing;
+- launcher/cleanup Bash syntax;
+- player/world SQLite integrity;
+- Market SQLite integrity;
+- exact DB conservation hashes;
+- new Market daemon `doctor`.
+
+If that validation fails, the old installation is moved back to its original
+path automatically.
+
+## Launcher boundary
+
+`evejs-linux-launcher.sh` in this package is byte-for-byte identical to the v1.7
+launcher.
+
+It remains runtime-only:
+
+- Market start/stop;
+- Game start/stop;
+- EVE client start/stop;
+- restart/reload mods;
+- diagnostics;
+- paths/logs;
+- stale-process handling.
+
+No updater option is present.
+
+## Usage
 
 ```bash
-tar -xzf EveJS-v0.12.6-Universal-Linux-Installer-v1.7.tar.gz
-cd EveJS-v0.12.6-Universal-Linux-Installer-v1.7
+tar -xzf EveJS-v0.12.6-Universal-Linux-Setup-v1.8-Installer-Updater.tar.gz
+cd EveJS-v0.12.6-Universal-Linux-Setup-v1.8-Installer-Updater
 ./install-evejs-linux.sh
 ```
 
-Select the original `EveJS-v0.12.6.zip` release when requested.
+Choose Install, Update, Restore, or Manage Backups.
 
-## Acceptance status
+## Status
 
 ```text
-SOURCE AUDITED
-STATIC VALIDATED
-LIVE v0.12.6 ACCEPTANCE PENDING
+SOURCE/STATIC VALIDATED
+UPDATER MERGE/TRANSACTION SELF-TESTED
+LIVE FRESH-INSTALL ACCEPTANCE PENDING FOR v1.8 WRAPPER
+LIVE v0.12.5 → v0.12.6 UPDATE ACCEPTANCE PENDING
 ```
-
-Do not treat v1.7 as the new protected live baseline until a fresh install,
-first launch, launcher restart, gameplay session, and log review pass.

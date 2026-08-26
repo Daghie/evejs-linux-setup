@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.7 — EveJS v0.12.6 + protected process-ownership architecture
+# EveJS Portable Linux Launcher v1.9 — stock + loader-LU + X-Patch-LU compatibility
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -14,8 +14,13 @@
 #   5. Initialize the selected Steam Proton prefix if needed.
 #   6. Launch EVE only after all backend/TLS checks pass.
 #
-# Optional bridge-style mods:
-#   <repo>/mods/<name>/loader.js
+# Supported mutually-exclusive Living Universe modes:
+#   * Stock EveJS v0.12.6
+#   * Loader LU: <repo>/mods/x-eve-living-universe/loader.js
+#   * X-Patch LU 0.3.2: verified _local/x-eve-patch/install.json state
+#
+# The launcher never installs/repairs/rewrites either LU variant or EveJS source.
+# Market binaries are verified external runtime builds matched to installed source.
 # ==============================================================================
 
 set -uo pipefail
@@ -33,8 +38,17 @@ MODS_DIR="$EVEJS_REPO/mods"
 MARKET_DIR="$EVEJS_REPO/externalservices/market-server"
 MARKET_CONFIG="$MARKET_DIR/config/market-server.local.toml"
 MARKET_DB="$MARKET_DIR/data/generated/market.sqlite"
-MARKET_BIN="$MARKET_DIR/target/release/market-server"
+MARKET_BIN=""
 MARKET_HTTP="http://127.0.0.1:40110"
+COMPAT_HELPER="$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py"
+[[ -f "$COMPAT_HELPER" ]] || COMPAT_HELPER="$EVEJS_REPO/evejs-linux-lu-compat.py"
+EVEJS_RUNTIME_MODE=""
+EVEJS_RUNTIME_LABEL=""
+EVEJS_MARKET_PROFILE=""
+EVEJS_MARKET_SOURCE_DIGEST=""
+EVEJS_MARKET_RUNTIME_SHA256=""
+EVEJS_RUNTIME_ROOT=""
+EVEJS_XPATCH_VERSION=""
 MARKET_RPC_PORT="40111"
 
 XMPP_BIND_HOST="127.0.0.1"
@@ -69,7 +83,7 @@ PID_DIR="$LOG_DIR/.pids"
 MARKET_LOG="$LOG_DIR/market-latest.log"
 SERVER_LOG="$LOG_DIR/server-latest.log"
 CLIENT_LOG="$LOG_DIR/client-latest.log"
-mkdir -p "$LOG_DIR" "$ARCHIVE_DIR" "$RUNNER_DIR" "$PID_DIR" "$MODS_DIR" "$PROTON_PREFIX"
+mkdir -p "$LOG_DIR" "$ARCHIVE_DIR" "$RUNNER_DIR" "$PID_DIR" "$PROTON_PREFIX"
 
 MARKET_PID=""
 SERVER_PID=""
@@ -532,12 +546,66 @@ detect_mods() {
 
 show_mods() {
     if (( MOD_COUNT == 0 )); then
-        echo "  [MODS] none detected — vanilla EveJS"
+        if [[ "$EVEJS_RUNTIME_MODE" == "xpatch-lu" ]]; then
+            echo "  [MODS] no loader mods; X-Patch Living Universe active"
+        else
+            echo "  [MODS] none detected"
+        fi
     else
         echo "  [MODS] $MOD_COUNT loader(s):"
         local n
         for n in "${MOD_NAMES[@]}"; do echo "         • $n"; done
     fi
+}
+
+refresh_runtime_compatibility() {
+    [[ -f "$COMPAT_HELPER" ]] || {
+        echo "[ERROR] Missing LU compatibility helper: $COMPAT_HELPER" >&2
+        echo "Run the EveJS Universal Linux Installer and choose Prepare/Verify Runtime Compatibility." >&2
+        return 1
+    }
+    local assignments
+    if ! assignments="$(python3 "$COMPAT_HELPER" verify-runtime --repo "$EVEJS_REPO" --shell)"; then
+        echo >&2
+        echo "[RUNTIME COMPATIBILITY BLOCKED]" >&2
+        echo "No protected files were changed." >&2
+        echo "Run the EveJS Universal Linux Installer and choose Prepare/Verify Runtime Compatibility." >&2
+        return 1
+    fi
+    # Output comes only from our packaged helper and every value is shell-quoted.
+    eval "$assignments"
+    MARKET_BIN="$EVEJS_MARKET_RUNTIME_BIN"
+    [[ -x "$MARKET_BIN" ]] || { echo "[ERROR] Verified Market runtime binary is not executable: $MARKET_BIN" >&2; return 1; }
+    return 0
+}
+
+market_process_binary_matches() {
+    local pid="$1" expected actual
+    is_pid_running "$pid" || return 1
+    expected="$(readlink -f "$MARKET_BIN" 2>/dev/null || true)"
+    actual="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
+    [[ -n "$expected" && "$actual" == "$expected" ]]
+}
+
+prepare_xpatch_market_topology() {
+    [[ "$EVEJS_RUNTIME_MODE" == "xpatch-lu" ]] || return 0
+    local sync_script="$EVEJS_REPO/server/scripts/syncLivingEconomyMarketTopology.js"
+    [[ -f "$sync_script" ]] || { echo "[ERROR] Verified X-Patch state is missing topology sync script: $sync_script" >&2; return 1; }
+    echo "  [X-PATCH] Running its installed Living Economy market-topology synchronization..."
+    "$NODE_BIN" "$sync_script" --database "$MARKET_DB" --static-data "$EVEJS_REPO/_local/gameStore/data" || {
+        echo "[ERROR] X-Patch Living Economy topology synchronization failed." >&2
+        return 1
+    }
+}
+
+probe_xpatch_market_rpc() {
+    [[ "$EVEJS_RUNTIME_MODE" == "xpatch-lu" ]] || return 0
+    echo "  [X-PATCH] Probing required Market RPC surface..."
+    python3 "$COMPAT_HELPER" probe-xpatch-rpc --port "$MARKET_RPC_PORT" || {
+        echo "[ERROR] X-Patch Market binary does not expose the required LU RPC interface." >&2
+        return 1
+    }
+    echo "  ✓ X-Patch RPC: GetSeedStocks + AdjustSeedStocks"
 }
 
 ensure_loopback_443_permission() {
@@ -687,7 +755,7 @@ done
 [[ -d "$EVEJS_REPO" ]] || { echo "[ERROR] EveJS repo missing: $EVEJS_REPO" >&2; exit 1; }
 [[ -x "$PROTON_BIN" || -f "$PROTON_BIN" ]] || { echo "[ERROR] Proton missing: $PROTON_BIN" >&2; exit 1; }
 [[ -s "$MARKET_DB" ]] || { echo "[ERROR] Market database missing." >&2; exit 1; }
-[[ -x "$MARKET_BIN" ]] || { echo "[ERROR] Market server binary missing." >&2; exit 1; }
+[[ -f "$COMPAT_HELPER" ]] || { echo "[ERROR] LU compatibility helper missing. Run Installer → Prepare/Verify Runtime Compatibility." >&2; exit 1; }
 [[ -f "$EVEJS_REPO/_local/gameStore/manifest.json" ]] || { echo "[ERROR] EveJS game database missing." >&2; exit 1; }
 [[ -f "$CA_CERT" && -f "$XMPP_CERT" && -f "$GATEWAY_CERT" ]] || { echo "[ERROR] EveJS TLS certificates missing." >&2; exit 1; }
 [[ -f "$TQ_PATH/bin64/exefile.exe" ]] || { echo "[ERROR] EVE client missing." >&2; exit 1; }
@@ -718,6 +786,10 @@ cd $(printf '%q' "$MARKET_DIR") || exit 1
 exec > >(tee -a $(printf '%q' "$MARKET_LOG")) 2>&1
 echo '══════════════════════════════════════════'
 echo '  EveJS $EVEJS_VERSION Standalone Market'
+echo '  Runtime: $(printf '%s' "$EVEJS_RUNTIME_LABEL")'
+echo '  Binary:  $(printf '%s' "$MARKET_BIN")'
+echo '  SHA256:  $(printf '%s' "$EVEJS_MARKET_RUNTIME_SHA256")'
+echo '  Source:  $(printf '%s' "$EVEJS_MARKET_SOURCE_DIGEST")'
 echo '  HTTP: 127.0.0.1:40110'
 echo '  RPC : 127.0.0.1:40111'
 echo '══════════════════════════════════════════'
@@ -728,7 +800,17 @@ EOF
 }
 
 launch_market_server() {
-    if is_pid_running "$MARKET_PID"; then return 0; fi
+    refresh_runtime_compatibility || return 1
+    if is_pid_running "$MARKET_PID"; then
+        if market_process_binary_matches "$MARKET_PID"; then
+            probe_xpatch_market_rpc || return 1
+            return 0
+        fi
+        echo "[ERROR] Running Market process is not the binary verified for the current installed source." >&2
+        echo "Perform a Full ordered reload after preparing compatibility." >&2
+        return 1
+    fi
+    prepare_xpatch_market_topology || return 1
     rotate_one_log "$MARKET_LOG" market
     rm -f "$PID_DIR/market.pid"
     local runner
@@ -758,14 +840,24 @@ launch_market_server() {
         return 1
     fi
 
+    if ! market_process_binary_matches "$MARKET_PID"; then
+        echo "  ✗ Market PID does not execute the exact verified runtime binary."
+        stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
+        return 1
+    fi
+    if ! probe_xpatch_market_rpc; then
+        stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
+        return 1
+    fi
     echo "  ✓ Market HTTP: 127.0.0.1:40110 (owned by current market tree)"
     echo "  ✓ Market RPC:  127.0.0.1:$MARKET_RPC_PORT (owned by current market tree)"
+    echo "  ✓ Market binary: $MARKET_BIN"
 }
 
 write_server_runner() {
     local runner="$RUNNER_DIR/run-server.sh" pidfile="$PID_DIR/server.pid"
-    local mod_info="Vanilla (no mod loaders)"
-    (( MOD_COUNT > 0 )) && mod_info="$MOD_COUNT mod loader(s): ${MOD_NAMES[*]}"
+    local mod_info="${EVEJS_RUNTIME_LABEL:-Stock EveJS}"
+    (( MOD_COUNT > 0 )) && mod_info+=" + $MOD_COUNT loader(s): ${MOD_NAMES[*]}"
 
     local node_args=(
         "$NODE_BIN"
@@ -822,6 +914,12 @@ EOF
 
 launch_game_server() {
     if is_pid_running "$SERVER_PID"; then return 0; fi
+    refresh_runtime_compatibility || return 1
+    market_process_binary_matches "$MARKET_PID" || {
+        echo "  Market process binary does not match the current verified source; game start blocked."
+        return 1
+    }
+    probe_xpatch_market_rpc || return 1
     curl -sf --max-time 2 "$MARKET_HTTP/health" >/dev/null 2>&1 \
         && port_exclusively_owned_by_tree 40110 "$MARKET_PID" \
         && port_exclusively_owned_by_tree "$MARKET_RPC_PORT" "$MARKET_PID" || {
@@ -1007,6 +1105,7 @@ launch_client() {
 }
 
 start_all() {
+    refresh_runtime_compatibility || return 1
     reconcile_required_ports || return 1
     ensure_loopback_443_permission || return 1
     repair_client_ca_bundles || return 1
@@ -1032,7 +1131,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.6 Linux Launcher — v1.7   ║"
+echo "║  EveJS v0.12.6 Linux Launcher — v1.9 LU Compatible  ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"
@@ -1044,7 +1143,14 @@ echo " Mods:    $MODS_DIR"
 echo
 
 detect_mods
-show_mods
+if refresh_runtime_compatibility; then
+    show_mods
+    echo "  [RUNTIME] $EVEJS_RUNTIME_LABEL"
+    echo "  [MARKET]  verified external binary"
+else
+    show_mods
+    echo "  [RUNTIME] compatibility preparation required"
+fi
 if ! start_all; then
     echo
     echo "[STARTUP STOPPED] One required stage failed. Inspect the service windows/logs."
@@ -1083,6 +1189,7 @@ while true; do
     fi
     echo "Client: $(status_line "$CLIENT_PID")"
     echo "Mods:   $MOD_COUNT"
+    echo "Mode:   ${EVEJS_RUNTIME_LABEL:-unverified}"
     echo
     echo "[1] Start/stop Market"
     echo "[2] Start/stop Game"
@@ -1158,6 +1265,11 @@ while true; do
             echo "Proton:        $PROTON_DIR"
             echo "Proton prefix: $PROTON_PREFIX"
             echo "Market:        ${MARKET_LABEL:-${MARKET_PROFILE:-configured standalone market}}"
+            echo "Runtime mode:  ${EVEJS_RUNTIME_LABEL:-unverified}"
+            echo "Market binary: ${MARKET_BIN:-unverified}"
+            echo "Market SHA256: ${EVEJS_MARKET_RUNTIME_SHA256:-unverified}"
+            echo "Source digest: ${EVEJS_MARKET_SOURCE_DIGEST:-unverified}"
+            echo "Runtime cache: ${EVEJS_RUNTIME_ROOT:-unverified}"
             if [[ -r /etc/os-release ]]; then
                 . /etc/os-release
                 echo "Host OS:       ${PRETTY_NAME:-${NAME:-Linux}}"

@@ -1,0 +1,91 @@
+EveJS v0.12.6 Universal Linux Setup v1.9.1
+Living Universe Package-Owned Installation Integration Audit
+=============================================================
+
+Live v1.9 stop
+--------------
+The supplied fresh-install log reaches:
+- clean EveJS extraction;
+- root/server npm dependencies;
+- fresh certificates;
+- static database generation;
+- Market v1 seed/build/doctor;
+- copied EVE client patch/trust repair.
+
+It then fails at the first portable-launcher installation helper with:
+  line 1745: repo: unbound variable
+
+Root cause:
+  local repo="$1" tools="$repo/.evejs-linux-tools"
+under set -u expands $repo before the local assignment has established it.
+
+v1.9.1 correction:
+  local repo="$1"
+  local tools="$repo/.evejs-linux-tools"
+
+Package-owned LU installation
+-----------------------------
+Mod Living Universe authority inspected from current v0.12.6 Candidate 5D.3C.2:
+  Usage: ./install-linux.sh [EVEJS_ROOT]
+The package states that this installer writes only its own program material
+under mods/x-eve-living-universe and performs its own clean-EveJS and self-check
+gates. The Universal Setup therefore invokes that exact package-supplied script
+with the selected EveJS root. It does not manually copy the mod payload.
+
+X-Patch Living Universe 0.3.2 authority inspected from the supplied Linux ZIP:
+  xeve-patch install <evejs-path>
+  xeve-patch verify <evejs-path>
+  xeve-patch verify --integrity
+The Universal Setup invokes the supplied xeve-patch CLI for release integrity,
+baseline verify, install and post-install verify. X-Patch itself owns its
+backup/application/verification/rollback behavior.
+
+The supplied X-Patch ZIP is FAT-mode 0644 for xeve-patch. To preserve the
+selected package file exactly, v1.9.1 makes an exact-byte ephemeral executable
+copy outside the extracted package tree; SHA-256 equality is required. The CLI
+is then pointed to its own patches/ directory with its documented --data-root
+option. No chmod is performed on the selected package copy.
+
+Mutual exclusion
+----------------
+- loader.js + _local/x-eve-patch/install.json => refuse.
+- Mod LU installer is refused if X-Patch install state exists.
+- X-Patch installer is refused if Mod LU loader.js exists.
+
+Runtime integration after package-owned install
+-----------------------------------------------
+The Installer/Launcher compatibility layer does not replace either package's
+installer. After the package reports successful installation, the separate
+compatibility authority verifies the resulting state and prepares the
+source-matched Market executable outside the EveJS source tree.
+
+Launcher
+--------
+The v1.9.1 package intentionally carries the same v1.9 Launcher runtime code.
+No EveJS Update option and no LU installation option is added to the Launcher.
+LU installation remains Installer-owned.
+
+Direct package-owned method validation
+--------------------------------------
+Exact Mod Living Universe package tested:
+  X-EVE-Candidate-5D.3C.2.zip
+  own install-linux.sh --help: PASS
+  own install-linux.sh <disposable-clean-v0.12.6>: PASS
+  own self-check: 41/41 PASS
+  own clean EveJS audit: 1465 changed0 missing0 PASS
+  v1.9.1 detector: Loader Living Universe PASS
+  own uninstall-linux.sh: PASS
+  post-uninstall clean audit: PASS
+
+Exact supplied X-Patch package tested:
+  X-Eve-Living-Universe-0.3.2-EveJs[12.6]-linux-amd64.zip
+  own version: 0.3.2
+  own verify --integrity: 210 overlay files PASS
+  own clean baseline verify: 210 files PASS
+  own install: PASS
+  own installed-state verify: 210 files PASS
+  v1.9.1 detector: X-Patch Living Universe 0.3.2 PASS
+  own uninstall + clean verify: PASS
+
+The supplied X-Patch CLI bytes were checked before/after the test and remained
+identical; only an exact-byte external executable copy received chmod +x.

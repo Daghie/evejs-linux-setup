@@ -1,241 +1,321 @@
-# EveJS v0.12.6 — Universal Linux Setup v1.8.1
-## Installer + Transactional Updater
+# EveJS v0.12.6 — Universal Linux Setup v1.9.1
+## Installer/Updater + Package-Owned Living Universe Handoff
 
+v1.9.1 extends the v1.8.1 Installer/Updater and v1.9 runtime Launcher so one launcher
+architecture can safely operate three factual, mutually-exclusive installation
+states:
 
-## v1.8.1 hotfix
+1. **Stock EveJS v0.12.6**
+2. **Loader Living Universe** at `mods/x-eve-living-universe/loader.js`
+3. **X-Patch Living Universe 0.3.2**, identified and verified through
+   `_local/x-eve-patch/install.json`
 
-The first live v0.12.5 → v0.12.6 update test exposed a Cargo proxy-path bug.
+The loader Living Universe and X-Patch Living Universe are not supported
+simultaneously. If both are active, startup fails closed before Market/Game/EVE
+are launched.
 
-Rustup normally installs:
+## Protected-file / installation-authority rule
+
+The **runtime compatibility layer** does not manually patch, repair, install,
+uninstall, or rewrite EveJS source, loader-LU files, or X-Patch-LU files.
+
+When the user explicitly chooses to install a Living Universe package from the
+Installer, v1.9.1 delegates the installation to that selected package's **own
+supplied installer** instead of recreating its installation logic:
+
+- Mod Living Universe: its own `install-linux.sh <EVEJS_ROOT>`;
+- X-Patch Living Universe: its own `xeve-patch verify/install/verify` sequence.
+
+Therefore any files intentionally added/replaced by a Living Universe package
+are changed by that package's own installer under its own validation, backup and
+rollback contract—not by a new Universal-Setup overlay method.
+
+The source-matched Rust Market executable is built from a temporary **external
+copy** of the installed, verified Market Rust build inputs. Cargo's target
+output and the accepted runtime binary are stored outside the EveJS tree:
 
 ```text
-~/.cargo/bin/cargo -> rustup
+<evejs-parent>/.evejs-linux-runtime/<path-id>/market-builds/<source-digest>/
 ```
 
-v1.8 converted the configured Cargo path with Python `Path.resolve()`. That
-dereferenced the valid Cargo proxy to the underlying `rustup` executable, so the
-Market build accidentally became:
+Normal runtime data remains normal runtime data: when EveJS/Living Universe is
+actually played, databases/logs can naturally change. X-Patch's own topology
+synchronization is invoked before its Market daemon because it is part of the
+provided X-Patch startup contract; it acts on the runtime Market database, not
+on EveJS/X-Patch source files.
+
+## Why this exists
+
+Living Universe 0.3.2's Node economy calls two X-Patch Market RPC methods:
 
 ```text
-rustup build --release
+GetSeedStocks
+AdjustSeedStocks
 ```
 
-instead of:
+Stock EveJS v0.12.6's Rust Market daemon does not implement those methods.
+X-Patch LU 0.3.2 does implement them in its patched Rust source.
+
+A Linux installation can therefore fail if X-Patch source is present but an
+older stock/stale Market executable is launched. v1.9 prevents that
+source/binary skew.
+
+## Audited Market source identities
+
+The compatibility authority hashes the same Rust build-input class used by the
+provided X-Patch Windows freshness orchestration: Market `Cargo.toml`,
+`Cargo.lock`, Rust source, and crate Cargo/Rust files.
+
+### Stock EveJS v0.12.6 / loader-LU
 
 ```text
-cargo build --release
+E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A
 ```
 
-v1.8.1 keeps the executable path without dereferencing symlinks and verifies
-that `<path> --version` actually identifies itself as Cargo before staging can
-continue.
+### X-Patch Living Universe 0.3.2
 
-The failed run was **not caused by a mod**. Update mode explicitly preserves the
-entire existing `mods/` tree. v1.8.1 strengthens this with an exact manifest
-comparison (files, hashes, symlinks, modes and empty directories) between the
-existing and staged `mods/` trees. Any mod change aborts the update before
-commit.
+```text
+CA8F89FB0175B9207014E9EEC1461376C195DE0A9F34E7E4490B92C230435A8C
+```
 
-v1.8.1 also:
+Unknown or modified Market source is refused instead of guessed.
 
-- removes a newly-created staging directory when pre-commit staging fails;
-- smoke-tests `better-sqlite3` and `protobufjs` after target server `npm ci`;
-- retains the launcher byte-for-byte from v1.7.
+## X-Patch installed-state verification
 
-v1.8 adds **update/rollback management to the Installer**.
+X-Patch mode requires all of the following:
 
-The normal EveJS launcher is intentionally unchanged from v1.7. It does not
-contain an Update option and does not manage upgrade backups.
+- EveJS exactly `0.12.6`;
+- X-Patch plugin exactly `0.3.2`;
+- X-Patch state declares EveJS `0.12.6`;
+- exactly 210 tracked installed files;
+- every tracked file exists with its recorded size and SHA-256;
+- the X-Patch Market Rust build-input manifest matches exactly;
+- loader-LU is not simultaneously active.
 
-## Opening menu
+A partial X-Patch signature without a valid install record is rejected.
 
-GUI and text-console variants expose the same setup functions:
+## Loader-LU verification
+
+The known loader Living Universe is detected by the established path:
+
+```text
+mods/x-eve-living-universe/loader.js
+```
+
+Its complete mod directory receives a read-only tree digest during compatibility
+classification/preparation. Because this loader implementation preserves clean
+EveJS Market Rust source, it uses the same stock Market build profile as stock
+EveJS.
+
+Other normal `mods/*/loader.js` modules continue to be supplied through Node
+`--require` as before.
+
+## Launcher startup contract
+
+The Launcher remains runtime-only. It has **no Update option and no LU installer**.
+
+Before Market starts it:
+
+1. detects stock / loader-LU / X-Patch-LU;
+2. rejects loader-LU + X-Patch-LU together;
+3. verifies the installed Market source identity;
+4. requires a cached Market executable built for that exact source digest;
+5. verifies the cached executable SHA-256;
+6. starts that exact binary with the normal EveJS Market working directory;
+7. verifies the listener PID is executing that exact binary;
+8. retains the existing HTTP/RPC ownership checks.
+
+For X-Patch LU only, it additionally:
+
+1. runs the installed X-Patch `syncLivingEconomyMarketTopology.js` against the
+   runtime Market DB;
+2. starts the exact source-matched external Market binary;
+3. probes `GetSeedStocks` with an empty key set;
+4. probes `AdjustSeedStocks` with an empty adjustment set;
+5. requires both RPC responses to return `ok=true`;
+6. only then starts the EveJS Node server.
+
+This directly blocks the observed failure mode where Market appears healthy but
+is missing the Living Economy RPC surface.
+
+## Installer opening menu
+
+GUI and console fallback expose the same Setup functions:
 
 ```text
 [1] Install EveJS v0.12.6
 [2] Update an existing EveJS installation
-[3] Restore an upgrade backup
-[4] Manage upgrade backups
-[5] Exit
+[3] Install/prepare Living Universe or verify runtime compatibility
+[4] Restore an upgrade backup
+[5] Manage upgrade backups
+[6] Exit
 ```
 
-## Fresh Install
+### Install/prepare or verify compatibility
 
-The existing v1.7 fresh-install path is retained:
+Use option 3 when:
 
-- Steam Proton discovery;
-- EVE build 3396210 preparation;
-- Market v1/v2/v3;
-- process-tree ownership launcher;
-- TLS/XMPP Linux fixes;
-- SteamOS single-package native repair;
-- removable `mods/*/loader.js` support.
+- attaching v1.9.1 to an existing Universal Linux v0.12.6 installation;
+- installing one Living Universe variant onto an existing stock v0.12.6 tree using that package's own installer;
+- X-Patch LU 0.3.2 has already been applied with its own patch manager;
+- an earlier runtime cache is missing;
+- the Launcher explicitly reports that compatibility preparation is required.
 
-## Audited Update: v0.12.5 → v0.12.6
+The operation requires EveJS/Market/EVE to be stopped. If the selected tree is
+stock, the Installer can first offer Mod LU or X-Patch LU and invoke that
+package's own installer. Afterward it validates the resulting tree, builds from
+an external source copy, runs Market `doctor`, verifies that compatibility
+preparation did not change the recognized LU/source identity, and installs only
+the Universal Setup's own Launcher/helper files.
 
-v1.8 currently supports exactly one in-place upgrade contract:
+The compatibility layer never calls X-Patch `repair`/`uninstall`; an explicit
+X-Patch install choice calls the selected package's own `xeve-patch install`.
 
-```text
-EveJS v0.12.5 → EveJS v0.12.6
-EVE build 3396210 → 3396210
-```
+## Fresh install
 
-Other source versions are refused instead of guessed.
+A fresh stock EveJS v0.12.6 installation still follows the established Linux
+flow (client build 3396210, Proton, certificates, static DB, selected Market
+profile, SteamOS minimal-native guard). At completion, the just-built stock
+Market executable is also recorded into the external verified runtime cache.
 
-### Preserved
+If the loader-LU is installed later, it can use that same stock Market cache.
 
-- `_local/gameStore/gamestore.sqlite` player/world state;
-- the existing Market `market.sqlite`, including player orders/history;
-- all other `_local` content, including mod-owned runtime state;
-- `mods/`;
-- current local certificates;
-- `.evejs-linux.conf`;
-- the copied EVE client;
-- the existing Proton prefix;
-- logs.
+If X-Patch LU is chosen at the fresh-install end prompt, its own `xeve-patch`
+installer applies the package and v1.9.1 immediately prepares the corresponding
+external X-Patch Market runtime. If X-Patch is applied separately later, the
+Launcher blocks until Installer option 3 prepares that runtime.
 
-### Refreshed
+## EveJS update workflow
 
-- EveJS program/source tree;
-- root/server Node dependencies;
-- v0.12.6 generated static game data + manifest;
-- v0.12.6 Market daemon binary;
-- launcher/cleanup files from the current package.
+Installer-owned update/backup behavior remains separate from the Launcher.
+The audited v0.12.5 -> v0.12.6 updater still preserves loader mods and player
+state. After a successful target commit, it prepares the source-matched external
+Market runtime before accepting the update.
 
-### Explicitly NOT done during an update
+The updater does not attempt to reinterpret or rewrite an X-Patch source
+overlay as part of an EveJS version transition.
 
-- Market reseed;
-- new player database;
-- new Proton prefix;
-- unnecessary EVE-client repatch.
+## SteamOS
 
-## Configuration merge
+The v1.8.1 native safeguards remain:
 
-The update contains the audited v0.12.5 default config snapshot and performs a
-three-way merge:
+- no `steamos-unminimize --dev`;
+- no broad `base-devel` repair;
+- no `pacman -Sy` / partial upgrade;
+- one proven missing SteamOS package at a time;
+- installed package version must exactly equal repository version;
+- Pacman dry-run must contain exactly that one package.
 
-```text
-old v0.12.5 default
-        +
-user's existing config
-        +
-new v0.12.6 default
-```
-
-Rules:
-
-- unchanged old setting → adopt new EveJS default;
-- user-changed setting → preserve user value;
-- new v0.12.6 setting → add it;
-- if both user and EveJS changed the same setting → preserve the user value and
-  record a merge conflict.
-
-`CONFIG-MERGE-REPORT.txt` records what happened.
-
-This means the new v0.12.6 combat setting is added automatically, while a custom
-PlayerConnect token is retained rather than overwritten.
-
-## Transactional filesystem update
-
-The working installation is not overwritten while the new version is built.
-
-v1.8 first creates a complete staging tree beside the installation, installs
-dependencies there, rebuilds static authority, compiles the new Market daemon,
-and validates SQLite conservation.
-
-Only after validation:
-
-```text
-existing EveJS folder
-        ↓ atomic rename
-full rollback backup
-
-validated v0.12.6 staging folder
-        ↓ atomic rename
-original EveJS path
-```
-
-The user's EveJS path therefore stays exactly the same after a successful update.
-
-## Conservation checks
-
-Before and after staging, the updater checkpoints and runs SQLite
-`integrity_check` on:
-
-- `gamestore.sqlite`;
-- `market.sqlite`.
-
-Their SHA-256 hashes must remain identical across the update.
-
-If either changes unexpectedly, the update stops before the existing
-installation is replaced.
-
-## Backups
-
-Upgrade backups are stored beside the EveJS installation:
-
-```text
-<parent>/.evejs-upgrade-backups/<installation-name>/
-```
-
-The old complete installation is retained as the rollback backup.
-
-The Installer can later:
-
-- inspect a backup;
-- delete a backup;
-- restore a backup.
-
-A restore preserves the currently installed version as an additional safety
-backup before replacing it.
-
-## Automatic rollback
-
-After the filesystem swap, v1.8 validates:
-
-- target EveJS version/build;
-- JSON config parsing;
-- launcher/cleanup Bash syntax;
-- player/world SQLite integrity;
-- Market SQLite integrity;
-- exact DB conservation hashes;
-- new Market daemon `doctor`.
-
-If that validation fails, the old installation is moved back to its original
-path automatically.
-
-## Launcher boundary
-
-`evejs-linux-launcher.sh` in this package is byte-for-byte identical to the v1.7
-launcher.
-
-It remains runtime-only:
-
-- Market start/stop;
-- Game start/stop;
-- EVE client start/stop;
-- restart/reload mods;
-- diagnostics;
-- paths/logs;
-- stale-process handling.
-
-No updater option is present.
+The Rustup Cargo proxy-path fix also remains: Cargo paths are preserved without
+symlink dereference, preventing `cargo` from accidentally becoming `rustup`.
 
 ## Usage
 
 ```bash
-tar -xzf EveJS-v0.12.6-Universal-Linux-Setup-v1.8-Installer-Updater.tar.gz
-cd EveJS-v0.12.6-Universal-Linux-Setup-v1.8-Installer-Updater
+tar -xzf EveJS-v0.12.6-Universal-Linux-Setup-v1.9.1-LU-Install-Flow-Hotfix.tar.gz
+cd EveJS-v0.12.6-Universal-Linux-Setup-v1.9.1-LU-Install-Flow-Hotfix
 ./install-evejs-linux.sh
 ```
 
-Choose Install, Update, Restore, or Manage Backups.
-
-## Status
+## Validation status
 
 ```text
-SOURCE/STATIC VALIDATED
-UPDATER MERGE/TRANSACTION SELF-TESTED
-LIVE FRESH-INSTALL ACCEPTANCE PENDING FOR v1.8 WRAPPER
-LIVE v0.12.5 → v0.12.6 UPDATE ACCEPTANCE PENDING
+STOCK SOURCE CLASSIFICATION                         PASS
+LOADER-LU CLASSIFICATION                            PASS
+X-PATCH LU 0.3.2 / 210-FILE VERIFICATION            PASS
+LOADER-LU + X-PATCH CONFLICT REJECTION              PASS
+PARTIAL/UNKNOWN X-PATCH FAIL-CLOSED                 PASS
+STOCK/X-PATCH MARKET SOURCE MANIFESTS               PASS
+EXTERNAL-COPY BUILD ORCHESTRATION UNIT TEST          PASS
+LOADER-LU TREE CONSERVATION                         PASS
+X-PATCH 210-FILE CONSERVATION                       PASS
+MARKET RUST SOURCE CONSERVATION                     PASS
+GETSEEDSTOCKS / ADJUSTSEEDSTOCKS RPC FIXTURE        PASS
+UNSUPPORTED X-PATCH RPC REJECTION                   PASS
+LAUNCHER HAS NO UPDATE/INSTALL-LU FUNCTION           PASS
+MOD-LU OWN install-linux.sh METHOD TEST               PASS
+X-PATCH OWN verify/install/verify METHOD TEST         PASS
+UNIVERSAL SETUP MANUAL LU PAYLOAD OVERLAY             ABSENT
+REAL NATIVE STOCK/X-PATCH RUST BUILD                 LIVE TEST PENDING
+X-PATCH RPC LIVE STARTUP PROBE                       LIVE TEST PENDING
 ```
+
+## v1.9.1 live-install hotfix
+
+The first fresh v1.9 live run completed EveJS dependencies, certificates,
+database creation, Market seeding/build/doctor and copied-client preparation,
+then stopped while installing the portable Launcher with:
+
+```text
+line 1745: repo: unbound variable
+```
+
+The cause was Bash `set -u` combined with one declaration that referenced
+`$repo` in the same `local` command that first assigned `repo`:
+
+```bash
+local repo="$1" tools="$repo/.evejs-linux-tools"
+```
+
+v1.9.1 splits those assignments, so the already-completed clean installation
+can continue through Launcher/runtime-tool installation.
+
+### Optional Living Universe handoff after a fresh install
+
+After the clean v0.12.6 setup and stock runtime compatibility preparation pass,
+the Installer asks whether to:
+
+```text
+1. Keep clean EveJS v0.12.6
+2. Install Mod Living Universe
+3. Install X-Patch Living Universe
+```
+
+The Universal Setup does **not invent a replacement installation procedure**.
+
+For Mod Living Universe, the user selects that mod's release ZIP and v1.9.1
+executes the package's own documented Linux entry point:
+
+```text
+./install-linux.sh <EVEJS_ROOT>
+```
+
+For X-Patch Living Universe 0.3.2, the user selects that release ZIP and v1.9.1
+uses the supplied `xeve-patch` CLI itself:
+
+```text
+xeve-patch verify --integrity
+xeve-patch verify <EVEJS_ROOT>
+xeve-patch install <EVEJS_ROOT> --yes
+xeve-patch verify <EVEJS_ROOT>
+```
+
+The supplied X-Patch Linux ZIP stores `xeve-patch` without a Unix execute bit.
+The setup does not chmod/rewrite the package file. It runs an exact-byte
+temporary executable copy outside the package tree and supplies the CLI's own
+documented `--data-root` path back to the package's `patches/` directory.
+
+The two Living Universe forms remain mutually exclusive and startup fails
+closed if both are present.
+
+After either package's own installer succeeds, v1.9.1 only performs the
+separate Launcher compatibility step: detect the resulting installed state,
+prepare/verify the matching external Market binary, and leave the selected
+Living Universe package's source authority to that package.
+
+The same package-owned installation handoff is available from Installer option
+3 for an existing stock Universal-Linux EveJS v0.12.6 tree.
+
+### v1.9.1 package-owned-method validation
+
+The exact current Mod Living Universe Candidate 5D.3C.2 package was exercised on
+a disposable clean v0.12.6 tree using **its own** `install-linux.sh`; its 41/41
+self-check and 1,465-file clean-EveJS audit passed. Its own `uninstall-linux.sh`
+then returned the disposable tree to a clean audit.
+
+The exact supplied X-Patch 0.3.2 Linux package was likewise exercised with its
+own CLI: release integrity 210/210, clean baseline 210/210, install, installed
+state 210/210, and uninstall/clean verification all passed.
+
+This validates the delegation contract; a full end-to-end user-machine fresh
+install followed by the final prompt remains the live acceptance gate.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EveJS Linux Installer Maintenance Engine v1.8.1
+EveJS Linux Installer Maintenance Engine v1.9
 Target release: EveJS v0.12.6 / EVE client build 3396210
 
 This file is an internal companion to install-evejs-linux.sh.
@@ -38,6 +38,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.5-to-0.12.6"
 LAUNCHER_SOURCE = SCRIPT_DIR / "evejs-linux-launcher.sh"
 CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.6-stale-processes.sh"
+COMPAT_SOURCE = SCRIPT_DIR / "evejs-linux-lu-compat.py"
+COMPAT_DATA_SOURCE = SCRIPT_DIR / "compatibility"
 
 
 class UI:
@@ -901,8 +903,15 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
     # Install current runtime scripts. Launcher remains runtime-only.
     shutil.copy2(LAUNCHER_SOURCE, stage / "evejs-linux-launcher.sh")
     shutil.copy2(CLEANUP_SOURCE, stage / "evejs-stale-process-cleanup.sh")
+    tools_dir = stage / ".evejs-linux-tools"
+    (tools_dir / "compatibility").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(COMPAT_SOURCE, tools_dir / "evejs-linux-lu-compat.py")
+    for compat_file in COMPAT_DATA_SOURCE.iterdir():
+        if compat_file.is_file():
+            shutil.copy2(compat_file, tools_dir / "compatibility" / compat_file.name)
     (stage / "evejs-linux-launcher.sh").chmod(0o755)
     (stage / "evejs-stale-process-cleanup.sh").chmod(0o755)
+    (tools_dir / "evejs-linux-lu-compat.py").chmod(0o755)
 
     updated_conf = dict(conf)
     updated_conf["EVEJS_REPO"] = str(existing)
@@ -1089,6 +1098,14 @@ def do_update(ui: UI, args):
             # back before the updater can return control to the user.
             try:
                 validate_stage_runtime(ui, existing, node, cargo, game_hash, market_hash)
+                compat_helper = existing / ".evejs-linux-tools" / "evejs-linux-lu-compat.py"
+                candidate_market = existing / "externalservices" / "market-server" / "target" / "release" / "market-server"
+                run([
+                    sys.executable, str(compat_helper), "prepare",
+                    "--repo", str(existing),
+                    "--cargo", str(cargo),
+                    "--candidate-binary", str(candidate_market),
+                ])
             except (Exception, SystemExit) as exc:
                 failed_target = record_dir / "failed-target"
                 rollback_error = None
@@ -1146,7 +1163,7 @@ def do_update(ui: UI, args):
                 "• Market database and player orders/history\n"
                 "• mods and mod-owned _local state\n"
                 "• certificates\n"
-                "• EVE client and Proton prefix\n\n"
+                "• EVE client and Proton prefix\n• source-matched external Market runtime\n\n"
                 f"Rollback backup:\n{record_dir}\n\n"
                 "Use this Installer's Restore/Manage Backup options if that backup is ever needed.\n\n"
                 "Launch EveJS normally with the existing evejs-linux-launcher.sh.",

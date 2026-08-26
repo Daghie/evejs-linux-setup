@@ -1,0 +1,49 @@
+{
+  "schema": "evejs-linux-market-build-inputs/1",
+  "kind": "stock",
+  "evejsVersion": "0.12.6",
+  "generatedFrom": "uploaded EveJS-v0.12.6.zip SHA-256 b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182",
+  "sourceDigest": "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "size": 28581,
+      "sha256": "5E377597076C16D313CF5483D49D7625D7190E5793A99EFC9E8F762176B68507"
+    },
+    {
+      "path": "Cargo.toml",
+      "size": 612,
+      "sha256": "4A5ED461834535DC4D04DC59FDE3AD082AB3C7333DB6B33BB131F069B76414DE"
+    },
+    {
+      "path": "crates/market-common/Cargo.toml",
+      "size": 229,
+      "sha256": "80FAD73C83BF3764202391FA28BF815CDD64F149B096B36E00BF6D10C008D435"
+    },
+    {
+      "path": "crates/market-common/src/lib.rs",
+      "size": 19624,
+      "sha256": "1E4A9C3FB2DF29D4F2006DEF81EA9A06A4FE82A7765373645B4DDC8E088AE0E5"
+    },
+    {
+      "path": "src/config.rs",
+      "size": 7282,
+      "sha256": "50A3E4864449057D8107E73D7237FBFDEDF624421C20D59781774DA378E93782"
+    },
+    {
+      "path": "src/main.rs",
+      "size": 24491,
+      "sha256": "352781A30FD57AB4967BA8CC136869E39F18AFAD3584431D44F1D5A680E4F01A"
+    },
+    {
+      "path": "src/rpc.rs",
+      "size": 11388,
+      "sha256": "49BAB7A7A5DF24BFF9334747ED5AB1EDD6468C8E167DD1C46FF213296AE918A0"
+    },
+    {
+      "path": "src/state.rs",
+      "size": 137261,
+      "sha256": "6910B24E95CFDEDD00692B0D311868D6119340AFF520248DC673B93C80F060ED"
+    }
+  ]
+}

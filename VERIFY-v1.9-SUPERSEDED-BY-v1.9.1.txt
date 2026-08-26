@@ -1,0 +1,92 @@
+EveJS v0.12.6 Universal Linux Setup v1.9
+Living Universe Compatibility Verification
+============================================================
+
+Scope
+-----
+One Installer/Launcher architecture supports three mutually-exclusive runtime states:
+1. Stock EveJS v0.12.6.
+2. Loader Living Universe at mods/x-eve-living-universe/loader.js.
+3. X-Patch Living Universe 0.3.2 with verified _local/x-eve-patch/install.json.
+
+Loader-LU + X-Patch-LU together are deliberately rejected.
+
+Protected-source rule
+---------------------
+The v1.9 compatibility layer does not invoke X-Patch install/repair/uninstall and
+does not write build output into the installed EveJS/LU/X-Patch Rust source.
+Market compatibility builds use an external copied source tree and external
+CARGO_TARGET_DIR under the sibling .evejs-linux-runtime hierarchy.
+
+Normal game runtime persistence is not classified as source rewriting. X-Patch's
+own supplied topology synchronization remains part of its startup contract and
+acts on the runtime Market database, not on its tracked source payload.
+
+Authoritative inputs
+--------------------
+EveJS-v0.12.6.zip SHA-256:
+  b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182
+
+X-Eve-Living-Universe-0.3.2-EveJs[12.6]-linux-amd64.zip SHA-256:
+  c6cb5b8c6f37cc8f3bb1b2a75c917943c15841eb4a9375eacb50a3008797b5d3
+
+Direct X-Patch release check:
+  [X-Eve] Release data integrity passed (210 overlay files verified).
+
+Direct independently-installed X-Patch fixture check:
+  [X-Eve] Installed deployment state verification passed (210 files).
+
+Audited Market source identities
+--------------------------------
+Stock EveJS v0.12.6 / loader-LU:
+  E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A
+
+X-Patch LU 0.3.2:
+  CA8F89FB0175B9207014E9EEC1461376C195DE0A9F34E7E4490B92C230435A8C
+
+Regression results
+------------------
+PASS  Stock EveJS exact source classification.
+PASS  Loader-LU classification using the established loader.js path.
+PASS  Loader-LU retains the exact stock Market source profile.
+PASS  Exact X-Patch 0.3.2 installed-state classification.
+PASS  All 210 X-Patch tracked files verified before X-Patch acceptance.
+PASS  Partial/unknown X-Patch signatures fail closed.
+PASS  Loader-LU + X-Patch-LU simultaneous activation fails closed.
+PASS  External Market runtime preparation writes outside the EveJS source tree.
+PASS  Loader-LU tree digest unchanged across compatibility preparation.
+PASS  Stock Market Rust source unchanged across compatibility preparation.
+PASS  X-Patch 210 tracked files unchanged across compatibility preparation.
+PASS  X-Patch Market Rust source unchanged across compatibility preparation.
+PASS  Cached Market executable SHA-256 verification.
+PASS  GetSeedStocks {keys:[]} positive RPC fixture.
+PASS  AdjustSeedStocks {adjustments:[]} positive RPC fixture.
+PASS  Unsupported GetSeedStocks response is rejected.
+PASS  Launcher contains no Cargo build operation.
+PASS  Launcher contains no EveJS Update option.
+PASS  Installer/helper contain no xeve-patch install/repair/uninstall invocation.
+PASS  Installer Bash syntax.
+PASS  Launcher Bash syntax.
+PASS  stale-process cleanup Bash syntax.
+PASS  maintenance/helper Python syntax and helper self-test.
+
+Known live-test boundary
+------------------------
+This execution environment has no native Cargo/rustc toolchain, so v1.9 does not
+claim a real Rust compilation of stock and X-Patch Market here. The exact build
+orchestration is tested with an external-copy fixture, but final host-native
+compile/start acceptance remains a live Linux test.
+
+The X-Patch-specific startup gate must be accepted live only after its external
+Market binary is compiled on the user's host and both no-op RPC probes pass
+before the EveJS Node server starts.
+
+Classification
+--------------
+SOURCE/STATIC VALIDATED
+THREE-MODE CLASSIFICATION TESTED
+X-PATCH 210-FILE AUTHORITY VERIFIED
+PROTECTED-SOURCE CONSERVATION TESTED
+EXTERNAL MARKET BUILD ORCHESTRATION TESTED
+X-PATCH RPC GATE UNIT-TESTED
+LIVE STOCK / LOADER-LU / X-PATCH-LU ACCEPTANCE PENDING

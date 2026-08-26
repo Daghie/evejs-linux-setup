@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.8.1 — Updater Cargo/Mod Conservation Hotfix
+# EveJS Universal Linux Setup v1.9.1 — LU Install-Flow + Launcher Setup Hotfix
 # Target: EveJS v0.12.6 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -29,12 +29,14 @@ IFS=$'\n\t'
 
 INSTALLER_TARGET_VERSION="0.12.6"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.8.1 Updater Cargo/Mod Conservation Hotfix"
+INSTALLER_CANDIDATE_NAME="v1.9.1 LU Install-Flow + Launcher Setup Hotfix"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
 STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.6-stale-processes.sh"
 MAINTENANCE_SOURCE="$SCRIPT_DIR/evejs-linux-maintenance.py"
+COMPAT_SOURCE="$SCRIPT_DIR/evejs-linux-lu-compat.py"
+COMPAT_DATA_SOURCE="$SCRIPT_DIR/compatibility"
 
 FORCE_TEXT=0
 ARG_ZIP=""
@@ -75,7 +77,7 @@ Options:
   --market PROFILE    v0.12.6 market profile: v1, v2, or v3.
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
-  --mode MODE         install, update, restore, or backups.
+  --mode MODE         install, update, compat, restore, or backups.
   --existing PATH     Existing EveJS installation for update/restore/backups.
   --backup PATH       Backup record path for non-interactive restore.
 EOF
@@ -268,11 +270,12 @@ ui_choose_setup_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="EveJS Universal Linux Setup" --width=880 --height=420 \
-                --text="Install a fresh EveJS copy, update an existing installation in place, or manage transactional upgrade backups." \
+                --title="EveJS Universal Linux Setup" --width=940 --height=470 \
+                --text="Install/update EveJS, or install/prepare one Living Universe variant using that package's own installer before runtime compatibility." \
                 --column="Use" --column="Action" --column="Description" \
                 TRUE  "install"  "Install EveJS v0.12.6 into an existing empty folder" \
-                FALSE "update"   "Update an existing Universal Linux installation to v0.12.6 while preserving player data/mods" \
+                FALSE "update"   "Update an existing Universal Linux v0.12.5 installation to v0.12.6" \
+                FALSE "compat"   "Install/prepare Living Universe for an existing v0.12.6 tree, or verify stock/LU runtime compatibility" \
                 FALSE "restore"  "Restore a previous transactional EveJS upgrade backup" \
                 FALSE "backups"  "Inspect or delete EveJS upgrade backups" \
                 --print-column=2
@@ -282,6 +285,7 @@ ui_choose_setup_action() {
                 "Choose what you want to do:" \
                 install "Install EveJS v0.12.6 into an empty folder" \
                 update "Update an existing EveJS installation in place" \
+                compat "Install/prepare Living Universe or verify stock/LU runtime compatibility" \
                 restore "Restore an upgrade backup" \
                 backups "Inspect or delete upgrade backups"
             ;;
@@ -290,16 +294,55 @@ ui_choose_setup_action() {
             printf '\nEveJS Universal Linux Setup\n' >&2
             printf '  [1] Install EveJS v0.12.6\n' >&2
             printf '  [2] Update an existing EveJS installation\n' >&2
-            printf '  [3] Restore an upgrade backup\n' >&2
-            printf '  [4] Manage upgrade backups\n' >&2
-            printf '  [5] Exit\n' >&2
-            read -r -p "Choose [1-5]: " pick
+            printf '  [3] Install/prepare Living Universe or verify runtime compatibility\n' >&2
+            printf '  [4] Restore an upgrade backup\n' >&2
+            printf '  [5] Manage upgrade backups\n' >&2
+            printf '  [6] Exit\n' >&2
+            read -r -p "Choose [1-6]: " pick
             case "$pick" in
                 1) printf 'install\n' ;;
                 2) printf 'update\n' ;;
-                3) printf 'restore\n' ;;
-                4) printf 'backups\n' ;;
-                5|'') printf 'exit\n' ;;
+                3) printf 'compat\n' ;;
+                4) printf 'restore\n' ;;
+                5) printf 'backups\n' ;;
+                6|'') printf 'exit\n' ;;
+                *) return 1 ;;
+            esac
+            ;;
+    esac
+}
+
+
+ui_choose_lu_install_action() {
+    case "$UI" in
+        zenity)
+            zenity --list --radiolist \
+                --title="Optional Living Universe installation" --width=980 --height=430 \
+                --text="Clean EveJS is ready. Optionally install ONE Living Universe variant now using that package's own supplied installer. The two Living Universe variants are mutually exclusive." \
+                --column="Use" --column="Choice" --column="Description" \
+                TRUE  "none"      "Keep clean EveJS v0.12.6 — install no Living Universe package" \
+                FALSE "loader-lu" "Mod Living Universe — select its release ZIP; run its own install-linux.sh against this EveJS root" \
+                FALSE "xpatch-lu" "X-Patch Living Universe — select its release ZIP; run its own xeve-patch verify/install commands" \
+                --print-column=2
+            ;;
+        kdialog)
+            kdialog --title "Optional Living Universe installation" --menu \
+                "Clean EveJS is ready. Choose at most one Living Universe variant:" \
+                none "Keep clean EveJS v0.12.6" \
+                loader-lu "Mod Living Universe — use the package's own install-linux.sh" \
+                xpatch-lu "X-Patch Living Universe — use the package's own xeve-patch CLI"
+            ;;
+        *)
+            local pick
+            printf '\nOptional Living Universe installation\n' >&2
+            printf '  [1] Keep clean EveJS v0.12.6\n' >&2
+            printf '  [2] Install Mod Living Universe using its own install-linux.sh\n' >&2
+            printf '  [3] Install X-Patch Living Universe using its own xeve-patch CLI\n' >&2
+            read -r -p "Choose [1-3, default 1]: " pick
+            case "${pick:-1}" in
+                1) printf 'none\n' ;;
+                2) printf 'loader-lu\n' ;;
+                3) printf 'xpatch-lu\n' ;;
                 *) return 1 ;;
             esac
             ;;
@@ -1734,6 +1777,299 @@ Be aware that a stale EveJS process can recreate its old folder and can occupy I
     fi
 }
 
+
+install_runtime_compatibility_files() {
+    local repo="$1"
+    local tools="$repo/.evejs-linux-tools"
+    mkdir -p "$tools/compatibility"
+    cp -a "$COMPAT_SOURCE" "$tools/evejs-linux-lu-compat.py"
+    cp -a "$COMPAT_DATA_SOURCE"/. "$tools/compatibility/"
+    chmod +x "$tools/evejs-linux-lu-compat.py"
+    cp -a "$LAUNCHER_SOURCE" "$repo/evejs-linux-launcher.sh"
+    cp -a "$STALE_CLEANUP_SOURCE" "$repo/evejs-stale-process-cleanup.sh"
+    chmod +x "$repo/evejs-linux-launcher.sh" "$repo/evejs-stale-process-cleanup.sh"
+}
+
+
+validate_lu_archive_safety() {
+    local zip="$1"
+    python3 - "$zip" <<'PYLUZIP'
+import stat, sys, zipfile
+zpath=sys.argv[1]
+try:
+    with zipfile.ZipFile(zpath) as z:
+        infos=z.infolist()
+        if not infos:
+            raise SystemExit("archive is empty")
+        for info in infos:
+            name=info.filename.replace('\\','/')
+            parts=[p for p in name.split('/') if p not in ('', '.')]
+            if name.startswith('/') or '..' in parts:
+                raise SystemExit(f"unsafe archive path: {info.filename}")
+            mode=(info.external_attr >> 16) & 0xFFFF
+            if stat.S_ISLNK(mode):
+                raise SystemExit(f"symlink entry not accepted by setup wrapper: {info.filename}")
+except Exception as exc:
+    print(exc, file=sys.stderr)
+    raise SystemExit(1)
+PYLUZIP
+}
+
+extract_lu_package_zip() {
+    local zip="$1" out="$2"
+    validate_lu_archive_safety "$zip" || die "The selected Living Universe ZIP failed archive-safety validation. Nothing was installed."
+    mkdir -p "$out"
+    unzip -q "$zip" -d "$out" || die "Could not extract the selected Living Universe package."
+}
+
+find_unique_package_file() {
+    local root="$1" name="$2"
+    local matches=()
+    mapfile -t matches < <(find "$root" -maxdepth 4 -type f -name "$name" -print | sort)
+    ((${#matches[@]} == 1)) || return 1
+    printf '%s\n' "${matches[0]}"
+}
+
+lu_setup_log_path() {
+    local repo="$1" kind="$2"
+    local dir="$repo/logs/linux-setup"
+    mkdir -p "$dir"
+    printf '%s/%s-%s.log\n' "$dir" "$kind" "$(date -u +%Y%m%dT%H%M%SZ)"
+}
+
+run_and_tee_preserve_rc() {
+    local log="$1"; shift
+    local rc
+    set +e
+    "$@" 2>&1 | tee -a "$log"
+    rc=${PIPESTATUS[0]}
+    set -e
+    return "$rc"
+}
+
+run_loader_lu_own_installer() {
+    local repo="$1"
+    [[ ! -f "$repo/_local/x-eve-patch/install.json" ]] || die \
+        "X-Patch Living Universe is already installed. Mod Living Universe and X-Patch Living Universe are mutually exclusive. Nothing was changed."
+    [[ ! -e "$repo/mods/x-eve-living-universe" ]] || die \
+        "A Mod Living Universe tree already exists at:\n$repo/mods/x-eve-living-universe\n\nUse that mod release's own upgrade/uninstall instructions rather than installing a second copy."
+
+    local zip tmp script pkgroot log before_core after_core
+    zip="$(ui_file "Select the Mod Living Universe release ZIP" "$SCRIPT_DIR")" || return 1
+    [[ -f "$zip" ]] || die "Mod Living Universe ZIP not found:\n$zip"
+    zip="$(readlink -f "$zip")"
+    tmp="$(mktemp -d -t evejs-loader-lu-package.XXXXXX)"
+    extract_lu_package_zip "$zip" "$tmp"
+    script="$(find_unique_package_file "$tmp" install-linux.sh 2>/dev/null || true)"
+    [[ -n "$script" ]] || { rm -rf "$tmp"; die "The selected package does not contain exactly one install-linux.sh. No mod was installed."; }
+    [[ -x "$script" ]] || { rm -rf "$tmp"; die "The selected Mod Living Universe package's own install-linux.sh is not executable.\n\nThe setup will not chmod or rewrite the mod package. Use a correctly packaged release."; }
+    pkgroot="$(dirname "$script")"
+
+    # The current X-EVE mod releases declare their Linux authority as:
+    #   ./install-linux.sh [EVEJS_ROOT]
+    # We invoke that supplied script directly and do not copy/patch mod files ourselves.
+    "$script" --help >/dev/null 2>&1 || { rm -rf "$tmp"; die "The selected Mod Living Universe install-linux.sh did not accept its own --help preflight. Nothing was installed."; }
+
+    log="$(lu_setup_log_path "$repo" mod-living-universe-install)"
+    ui_yesno "Install Mod Living Universe?" \
+"The selected package supplies its own Linux installer:\n\n$script\n\nEveJS target:\n$repo\n\nThe Universal Setup will execute the package's own:\n\n  ./install-linux.sh \"$repo\"\n\nIt will not manually copy or rewrite Mod Living Universe files. Continue?" || { rm -rf "$tmp"; return 1; }
+
+    stage "Running Mod Living Universe's own install-linux.sh"
+    set +e
+    ( cd "$pkgroot" && PATH="$(dirname "$NODE_BIN"):$PATH" "$script" "$repo" ) 2>&1 | tee -a "$log"
+    local rc=${PIPESTATUS[0]}
+    set -e
+    if (( rc != 0 )); then
+        warn "Mod Living Universe's own installer returned error code $rc."
+        warn "Wrapper log retained at: $log"
+        rm -rf "$tmp"
+        return "$rc"
+    fi
+    rm -rf "$tmp"
+
+    [[ -f "$repo/mods/x-eve-living-universe/loader.js" ]] || die \
+        "Mod Living Universe's own installer returned success, but its expected loader.js was not installed.\n\nLog: $log"
+    [[ ! -f "$repo/_local/x-eve-patch/install.json" ]] || die \
+        "Both Living Universe variants are now present, which is unsupported. Stop and use the respective package's own uninstall method before launch."
+    ok "Mod Living Universe installed by its own install-linux.sh."
+    ok "Installation log: $log"
+}
+
+make_readonly_xpatch_exec_copy() {
+    local cli="$1" out="$2"
+    cp -- "$cli" "$out" || return 1
+    chmod 700 "$out" || return 1
+    [[ "$(sha256sum "$cli" | awk '{print $1}')" == "$(sha256sum "$out" | awk '{print $1}')" ]] || return 1
+}
+
+run_xpatch_lu_own_installer() {
+    local repo="$1"
+    [[ ! -f "$repo/mods/x-eve-living-universe/loader.js" ]] || die \
+        "Mod Living Universe is already installed. Mod Living Universe and X-Patch Living Universe are mutually exclusive. Nothing was changed."
+    [[ ! -f "$repo/_local/x-eve-patch/install.json" ]] || die \
+        "X-Patch Living Universe already has install state in this EveJS tree. Use xeve-patch verify/repair/uninstall from that release instead of installing it again."
+
+    local zip tmp cli pkgroot data_root exec_copy log version_out rc
+    zip="$(ui_file "Select the X-Patch Living Universe release ZIP" "$SCRIPT_DIR")" || return 1
+    [[ -f "$zip" ]] || die "X-Patch Living Universe ZIP not found:\n$zip"
+    zip="$(readlink -f "$zip")"
+    tmp="$(mktemp -d -t evejs-xpatch-lu-package.XXXXXX)"
+    extract_lu_package_zip "$zip" "$tmp"
+    cli="$(find_unique_package_file "$tmp" xeve-patch 2>/dev/null || true)"
+    [[ -n "$cli" ]] || { rm -rf "$tmp"; die "The selected X-Patch package does not contain exactly one xeve-patch CLI. Nothing was installed."; }
+    pkgroot="$(dirname "$cli")"
+    data_root="$pkgroot/patches"
+    [[ -f "$data_root/manifest.json" ]] || { rm -rf "$tmp"; die "The selected X-Patch package is missing patches/manifest.json beside xeve-patch. Nothing was installed."; }
+
+    # The supplied Linux ZIP currently stores the Go executable without a Unix
+    # execute bit. Do not chmod/rewrite that package file. Execute an exact-byte
+    # temporary copy outside the package tree and point the CLI back at its own
+    # patches/ data with the CLI's documented --data-root option.
+    exec_copy="$(mktemp -t xeve-patch-exec.XXXXXX)"
+    make_readonly_xpatch_exec_copy "$cli" "$exec_copy" || { rm -f "$exec_copy"; rm -rf "$tmp"; die "Could not create an exact executable working copy of xeve-patch. The selected package itself was not modified."; }
+
+    version_out="$("$exec_copy" version --data-root "$data_root" 2>&1 || true)"
+    [[ "$version_out" == *"0.3.2"* ]] || { rm -f "$exec_copy"; rm -rf "$tmp"; die "This setup build is audited for X-Patch Living Universe 0.3.2.\n\nSelected CLI reported:\n$version_out"; }
+
+    log="$(lu_setup_log_path "$repo" xpatch-living-universe-install)"
+    stage "Validating X-Patch release with its own xeve-patch CLI"
+    run_and_tee_preserve_rc "$log" "$exec_copy" verify --integrity --data-root "$data_root" || {
+        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch's own release-integrity verification failed (code $rc).\n\nLog: $log";
+    }
+    run_and_tee_preserve_rc "$log" "$exec_copy" verify "$repo" --data-root "$data_root" || {
+        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch's own baseline verification rejected this EveJS tree (code $rc).\n\nNo X-Patch files were installed.\nLog: $log";
+    }
+
+    ui_yesno "Install X-Patch Living Universe 0.3.2?" \
+"X-Patch's own release integrity and EveJS baseline verification passed.\n\nThe Universal Setup will now invoke the package's own install operation through the exact supplied xeve-patch binary:\n\n  xeve-patch install \"$repo\" --yes\n\nBecause the supplied Linux ZIP stores xeve-patch without an executable bit, the Setup runs an exact-byte temporary executable copy and uses xeve-patch's documented --data-root option so it reads this selected package's own patches directory. The selected package file is not chmodded or rewritten.\n\nThe X-Patch CLI itself owns baseline validation, backup, overlay application, verification and rollback. The Universal Setup does not manually apply X-Patch files. Continue?" || { rm -f "$exec_copy"; rm -rf "$tmp"; return 1; }
+
+    stage "Running X-Patch Living Universe's own xeve-patch install"
+    run_and_tee_preserve_rc "$log" "$exec_copy" install "$repo" --yes --data-root "$data_root" || {
+        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch's own installer failed (code $rc). Its own rollback rules apply.\n\nLog: $log";
+    }
+    run_and_tee_preserve_rc "$log" "$exec_copy" verify "$repo" --data-root "$data_root" || {
+        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch install completed but its own post-install verify failed (code $rc).\n\nUse this exact X-Patch release's own repair/uninstall commands.\nLog: $log";
+    }
+    rm -f "$exec_copy"
+    rm -rf "$tmp"
+
+    [[ -f "$repo/_local/x-eve-patch/install.json" ]] || die \
+        "X-Patch's own installer returned success, but _local/x-eve-patch/install.json is missing.\n\nLog: $log"
+    [[ ! -f "$repo/mods/x-eve-living-universe/loader.js" ]] || die \
+        "Both Living Universe variants are now present, which is unsupported. Stop and use the respective package's own uninstall method before launch."
+    ok "X-Patch Living Universe installed by its own xeve-patch CLI."
+    ok "Installation log: $log"
+}
+
+prepare_installed_lu_runtime() {
+    local repo="$1" detection
+    stage "Preparing verified source-matched Market runtime"
+    python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare --repo "$repo" --cargo "$CARGO_BIN" \
+        || die "Living Universe installation succeeded, but source-matched Market runtime preparation failed.\n\nThe selected Living Universe package was not rewritten. Do not launch until this compatibility step passes."
+    detection="$(python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$repo" 2>&1)" || die "$detection"
+    python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
+        || die "Living Universe runtime compatibility verification failed."
+    ok "Runtime compatibility verified: ${detection%%$'\n'*}"
+}
+
+offer_optional_lu_install() {
+    local repo="$1" action
+    action="$(ui_choose_lu_install_action)" || return 1
+    case "$action" in
+        none|"")
+            ok "Keeping clean EveJS v0.12.6 with no Living Universe package installed."
+            ;;
+        loader-lu)
+            run_loader_lu_own_installer "$repo" || die "Mod Living Universe installation did not complete."
+            install_runtime_compatibility_files "$repo"
+            prepare_installed_lu_runtime "$repo"
+            ;;
+        xpatch-lu)
+            run_xpatch_lu_own_installer "$repo" || die "X-Patch Living Universe installation did not complete."
+            install_runtime_compatibility_files "$repo"
+            prepare_installed_lu_runtime "$repo"
+            ;;
+        *) die "Unknown Living Universe selection: $action" ;;
+    esac
+}
+
+choose_existing_v0126_repo() {
+    local chosen version configured
+    while true; do
+        if [[ -n "$ARG_EXISTING" ]]; then
+            chosen="$(readlink -f "$ARG_EXISTING" 2>/dev/null || true)"
+            ARG_EXISTING=""
+        else
+            chosen="$(ui_dir "Select existing EveJS v0.12.6 installation" "$HOME")" || return 1
+        fi
+        [[ -d "$chosen" && -f "$chosen/config/version.json" && -f "$chosen/server/index.js" ]] || {
+            ui_warn "Not an EveJS installation" "The selected folder is not a recognizable EveJS installation.\n\n$chosen"
+            continue
+        }
+        version="$(python3 - "$chosen/config/version.json" <<'PY2'
+import json,sys
+try:
+    d=json.load(open(sys.argv[1])); print(d.get('evejsVersion') or d.get('version') or '')
+except Exception: print('')
+PY2
+)"
+        [[ "$version" == "0.12.6" ]] || {
+            ui_warn "Wrong EveJS version" "Runtime compatibility v1.9.1 is audited for EveJS v0.12.6.\n\nSelected version: ${version:-unknown}"
+            continue
+        }
+        [[ -f "$chosen/.evejs-linux.conf" ]] || {
+            ui_warn "Universal Linux setup not detected" "Missing $chosen/.evejs-linux.conf\n\nUse this Installer for the initial Linux setup first."
+            continue
+        }
+        configured="$(bash -c 'source "$1" >/dev/null 2>&1 || exit 1; printf "%s" "${EVEJS_REPO:-}"' _ "$chosen/.evejs-linux.conf" 2>/dev/null || true)"
+        [[ -n "$configured" && "$(readlink -f "$configured" 2>/dev/null || true)" == "$chosen" ]] || {
+            ui_warn "Launcher configuration mismatch" "The selected folder's .evejs-linux.conf points at a different EveJS path.\n\nNothing was changed."
+            continue
+        }
+        printf '%s\n' "$chosen"
+        return 0
+    done
+}
+
+prepare_existing_runtime_compatibility() {
+    [[ -f "$COMPAT_SOURCE" ]] || die "Compatibility helper is missing beside the Installer: $COMPAT_SOURCE"
+    [[ -d "$COMPAT_DATA_SOURCE" ]] || die "Compatibility manifests are missing beside the Installer: $COMPAT_DATA_SOURCE"
+    [[ -f "$LAUNCHER_SOURCE" ]] || die "Launcher template is missing beside the Installer: $LAUNCHER_SOURCE"
+    [[ -f "$STALE_CLEANUP_SOURCE" ]] || die "Cleanup template is missing beside the Installer: $STALE_CLEANUP_SOURCE"
+
+    local repo detection
+    repo="$(choose_existing_v0126_repo)" || exit 0
+
+    if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':(443|5222|26000|26001|26002|26003|26400|40110|40111)$'; then
+        die "EveJS/Market listeners are active. Stop the EVE client, Game server and Market server before preparing compatibility.\n\nNo files were changed."
+    fi
+
+    detection="$(python3 "$COMPAT_SOURCE" detect --repo "$repo" 2>&1)" || die "$detection"
+
+    if [[ "$detection" == Mode:*Stock\ EveJS* ]]; then
+        if ui_yesno "Install Living Universe first?" \
+"This existing EveJS v0.12.6 tree is currently stock.\n\nWould you like to select and run ONE Living Universe package's own installer before runtime compatibility is prepared?\n\nChoose No to keep stock EveJS and prepare it as-is."; then
+            install_runtime_compatibility_files "$repo"
+            offer_optional_lu_install "$repo"
+            detection="$(python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$repo" 2>&1)" || die "$detection"
+        fi
+    fi
+
+    ui_yesno "Prepare EveJS runtime compatibility?" \
+"Detected installation:\n\n$detection\n\nThe compatibility operation does not manually patch Living Universe source. If you selected a Living Universe package, that package's own installer performed its installation.\n\nThe setup now builds/verifies the required Market daemon from an external copy of the installed Rust inputs and stores that binary outside the EveJS tree.\n\nIf both Living Universe variants are active, it refuses to continue.\n\nProceed?" || exit 0
+
+    stage "Preparing verified external Market runtime"
+    python3 "$COMPAT_SOURCE" prepare --repo "$repo" --cargo "$CARGO_BIN" || die "Runtime compatibility preparation failed. The protected source trees were not rewritten."
+
+    stage "Installing v1.9.1 runtime-only launcher compatibility files"
+    install_runtime_compatibility_files "$repo"
+    python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" || die "Installed compatibility verification failed."
+
+    ui_info "Runtime compatibility ready" \
+"The existing installation is ready for the v1.9.1 package Launcher.\n\n$repo\n\n$detection\n\nNo EveJS/Living Universe source files were patched by this operation.\n\nFor X-Patch LU, this build requires the exact verified 0.3.2 installed state. Installation/removal authority remains the X-Patch xeve-patch CLI; this Installer may invoke that supplied CLI but does not manually apply its overlay."
+    exit 0
+}
+
 # ── Main wizard ───────────────────────────────────────────────────────────────
 trap '[[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"; [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "${HOST_TOOLCHAIN_REPORT:-}" ]] && rm -f "$HOST_TOOLCHAIN_REPORT"' EXIT
 
@@ -1744,6 +2080,13 @@ fi
 
 case "$SETUP_ACTION" in
     exit) exit 0 ;;
+    compat)
+        check_system_tools
+        ensure_native_build_environment
+        ensure_node
+        ensure_rust
+        prepare_existing_runtime_compatibility
+        ;;
     update)
         [[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater engine is missing beside the Installer: $MAINTENANCE_SOURCE"
         check_system_tools
@@ -1777,7 +2120,7 @@ case "$SETUP_ACTION" in
         ;;
     install) ;;
     *)
-        die "Unknown setup mode '$SETUP_ACTION'. Choose install, update, restore, or backups."
+        die "Unknown setup mode '$SETUP_ACTION'. Choose install, update, compat, restore, or backups."
         ;;
 esac
 
@@ -1790,6 +2133,8 @@ ensure_rust
 [[ -f "$LAUNCHER_SOURCE" ]] || die "Launcher template is missing beside the installer: $LAUNCHER_SOURCE"
 [[ -f "$STALE_CLEANUP_SOURCE" ]] || die "Stale-process cleanup tool is missing beside the installer: $STALE_CLEANUP_SOURCE"
 [[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater/backup engine is missing beside the installer: $MAINTENANCE_SOURCE"
+[[ -f "$COMPAT_SOURCE" ]] || die "LU compatibility helper is missing beside the installer: $COMPAT_SOURCE"
+[[ -d "$COMPAT_DATA_SOURCE" ]] || die "LU compatibility data is missing beside the installer: $COMPAT_DATA_SOURCE"
 
 preflight_existing_evejs_processes
 
@@ -2143,9 +2488,7 @@ PREFIX_HASH="$(printf '%s' "$EVEJS_REPO" | sha256sum | awk '{print substr($1,1,1
 PROTON_PREFIX="$HOME/.local/share/evejs-linux/prefixes/${EVEJS_VERSION}-${PREFIX_HASH}"
 mkdir -p "$PROTON_PREFIX"
 
-cp -a "$LAUNCHER_SOURCE" "$EVEJS_REPO/evejs-linux-launcher.sh"
-cp -a "$STALE_CLEANUP_SOURCE" "$EVEJS_REPO/evejs-stale-process-cleanup.sh"
-chmod +x "$EVEJS_REPO/evejs-linux-launcher.sh" "$EVEJS_REPO/evejs-stale-process-cleanup.sh"
+install_runtime_compatibility_files "$EVEJS_REPO"
 
 CONFIG="$EVEJS_REPO/.evejs-linux.conf"
 {
@@ -2168,6 +2511,17 @@ CONFIG="$EVEJS_REPO/.evejs-linux.conf"
 } > "$CONFIG"
 chmod 600 "$CONFIG"
 
+stage "Preparing source-matched external Market runtime"
+python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare \
+    --repo "$EVEJS_REPO" --cargo "$CARGO_BIN" --candidate-binary "$MARKET_BIN" \
+    || die "Could not prepare the verified external Market runtime."
+ok "Stock EveJS external Market runtime prepared; future loader-LU use shares the same audited Market source."
+
+stage "Optional Living Universe installation"
+offer_optional_lu_install "$EVEJS_REPO"
+
+FINAL_LU_DETECTION="$(python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$EVEJS_REPO" 2>&1)" || die "$FINAL_LU_DETECTION"
+
 cat > "$EVEJS_REPO/INSTALL-LINUX-SUMMARY.txt" <<EOF
 EveJS Linux installation
 ========================
@@ -2182,6 +2536,8 @@ Proton prefix:     $PROTON_PREFIX
 Market:            $MARKET_LABEL
 Launcher:          $EVEJS_REPO/evejs-linux-launcher.sh
 Stale cleanup:     $EVEJS_REPO/evejs-stale-process-cleanup.sh
+Runtime helper:    $EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py
+Runtime mode:      $FINAL_LU_DETECTION
 Host toolchain:    $EVEJS_REPO/LINUX-HOST-TOOLCHAIN.txt
 SteamOS repair:    $EVEJS_REPO/STEAMOS-MINIMAL-REPAIR.txt (only if a repair was needed)
 Mods directory:    $EVEJS_REPO/mods
@@ -2232,6 +2588,9 @@ $(basename "$PROTON_DIR")
 
 Market:
 $MARKET_LABEL
+
+Runtime mode:
+$FINAL_LU_DETECTION
 
 Mods:
 $EVEJS_REPO/mods/<mod-name>/loader.js

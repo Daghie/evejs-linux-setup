@@ -3,7 +3,7 @@
     "devAutoCreateAccounts": true,
     "devSkipPasswordValidation": true,
     "devBootstrapPublishedSkills": false,
-    "playerConnectToken": "test"
+    "playerConnectToken": ""
   },
   "presence": {
     "localChatAuthorityEnabled": true,

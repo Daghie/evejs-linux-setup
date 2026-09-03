@@ -1,0 +1,76 @@
+EveJS v0.12.7 Universal Linux Setup v1.10 — Final Static Test Results
+Date: 2026-09-03
+
+[1] Syntax / compile
+PASS bash-n installer
+PASS bash-n launcher
+PASS bash-n stale cleanup
+PASS Python compile helpers
+
+[2] Built-in self-tests
+{
+  "status": "PASS",
+  "targetVersion": "0.12.7",
+  "stockDigest": "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A",
+  "livingUniversePolicy": "unverified v0.12.6 LU is preserved-but-disabled; X-Patch source overlays are blocked"
+}
+{
+  "status": "PASS",
+  "tests": [
+    "new target setting added",
+    "user setting wins true three-way conflict",
+    "unchanged user setting adopts target default",
+    "backup path stays sibling to installation"
+  ]
+}
+
+[3] Exact stock source classification
+{
+  "repo": "/mnt/data/_evejs127_audit/v0.12.7",
+  "mode": "stock",
+  "marketProfile": "stock-v0.12.7-market",
+  "label": "Stock EveJS 0.12.7",
+  "sourceDigest": "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A",
+  "marketInputCount": 8,
+  "modLivingUniverseActive": false,
+  "modLivingUniversePresent": false,
+  "loaderLivingUniverseEnabled": false,
+  "loaderLivingUniverseDigest": "",
+  "xpatchLivingUniverseActive": false,
+  "xpatchVersion": "",
+  "xpatchTrackedDigest": ""
+}
+
+[4] Missing external prepared Market runtime must fail closed
+PASS verify-runtime fail-closed rc=2
+
+[5] Actual launcher loader-mod selection logic
+PASS ordinary loader enabled / old LU loader disabled
+
+[6] X-Patch state must fail closed
+PASS X-Patch install-state blocked rc=2
+
+[7] Unknown Market/source state must fail closed
+PASS unknown Market source blocked rc=2
+
+[8] Cargo rustup-proxy preservation regression
+PASS Cargo path preserved without resolving symlink -> rustup
+
+[9] v1.9.1 set -u repo regression remains fixed
+PASS repo/tools local assignments separated
+
+[10] Update contract / old-default authorities
+PASS direct update only 0.12.6 -> 0.12.7
+PASS old-default config authority exactly matches clean v0.12.6
+PASS both new v0.12.7 defaults confirmed
+
+[11] Prior transactional rollback fixture evidence revalidated
+PASS forced post-commit failure record is rolled-back
+PASS complete old fixture restored at original path
+PASS failed target retained under backup record
+
+[12] Full source-diff evidence consistency
+PASS diff totals 20/0/107/1584
+PASS critical unchanged/changed subtree assertions
+
+FINAL STATIC TEST BATCH: PASS

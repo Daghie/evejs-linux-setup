@@ -1,0 +1,160 @@
+EveJS v0.12.7 Universal Linux Setup v1.10
+Source-Audited Port — Final Static Verification
+================================================
+Date: 2026-09-03
+
+RELEASE CLASSIFICATION
+----------------------
+SOURCE AUDITED
+STATIC VALIDATED
+PACKAGE GENERATED
+LIVE v0.12.7 ACCEPTANCE PENDING
+
+This classification is deliberate. The package has been validated against the actual
+uploaded EveJS-v0.12.7.zip and the recovered exact v0.12.6/v1.9.1 authorities, but this
+execution environment does not contain the user's Bazzite + Steam + Proton + complete
+live SDE/client environment. No live Bazzite launch is claimed here.
+
+INPUT AUTHORITIES
+-----------------
+EveJS-v0.12.6.zip
+  SHA-256  b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182
+  ZIP CRC  PASS
+
+EveJS-v0.12.7.zip
+  SHA-256  7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b
+  ZIP CRC  PASS
+
+Accepted v1.9.1 setup baseline ZIP
+  SHA-256  511fd5b3c83f4f51d7a344361217eef641cbd8f45ad0f4ef3cb21366c4c0d027
+  ZIP CRC  PASS
+  internal v1.9.1 checksum ledger PASS
+
+COMPLETE SOURCE AUDIT
+---------------------
+v0.12.6 -> v0.12.7 complete tree classification:
+  ADDED       20
+  REMOVED      0
+  MODIFIED   107
+  UNCHANGED 1584
+
+Regular source files:
+  v0.12.6  1465
+  v0.12.7  1481
+
+Safe extraction checks on both EveJS archives:
+  absolute paths                 PASS / none
+  ../ traversal                  PASS / none
+  drive-qualified paths          PASS / none
+  duplicate destination paths    PASS / none
+  symlink members                PASS / none
+
+CRITICAL UPSTREAM CONTRACTS
+---------------------------
+EVE target client                    24.01 build 3396210 CONFIRMED
+Complete tools/ClientSETUP tree      BYTE-IDENTICAL
+blue_patch_recipe.json               BYTE-IDENTICAL
+blue patch recipe SHA-256            970e9202e87e39e8529bec7071b482fb1fffa105e589472cf4b699c7723925e6
+Complete Rust Market tree            BYTE-IDENTICAL
+market-seed                          BYTE-IDENTICAL
+market-seederv2                      BYTE-IDENTICAL
+market-seederv3                      BYTE-IDENTICAL
+tools/Setup                          BYTE-IDENTICAL
+Play.bat                             BYTE-IDENTICAL
+PlayDebug.bat                        BYTE-IDENTICAL
+StartServer.bat                      BYTE-IDENTICAL
+StartMarketServer.bat                BYTE-IDENTICAL
+config/server.json                   BYTE-IDENTICAL
+root Node lock resolution*           EQUIVALENT
+server Node lock resolution*         EQUIVALENT
+
+*after normalizing only upstream EveJS release-version metadata.
+
+Stock Market source identity:
+  E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A
+
+V0.12.7 UPDATE-RELEVANT CHANGES
+-------------------------------
+DatabaseCreator/static-data changes                         CONFIRMED
+new dungeonClientContent static authority                  CONFIRMED
+config/mining industryJobSpeedMultiplier=1                 CONFIRMED
+config/npc npcPlayerDronesTargetable=true                  CONFIRMED
+persistent _local/gameStore/content-packs authority        CONFIRMED
+industry installed-location first-runtime migration        CONFIRMED
+
+The updater refreshes target-version generated static data but preserves the existing
+player/world database and Content Packs. Existing industry jobs remain byte-identical
+through staging and may be migrated only by the first actual v0.12.7 server runtime.
+
+INSTALLER / LAUNCHER REGRESSION TESTS
+-------------------------------------
+bash -n install-evejs-linux.sh                             PASS
+bash -n evejs-linux-launcher.sh                            PASS
+bash -n evejs-v0.12.7-stale-processes.sh                   PASS
+python compile evejs-linux-lu-compat.py                    PASS
+python compile evejs-linux-maintenance.py                  PASS
+compatibility helper self-test                             PASS
+maintenance/config merge self-test                         PASS
+installer --help                                           PASS
+stock v0.12.7 source classification                        PASS
+stock Market digest re-derived from actual source          PASS
+missing prepared Market runtime fails closed               PASS
+ordinary loader mod remains enabled                        PASS
+preserved x-eve-living-universe loader remains disabled    PASS
+unverified X-Patch install/source-overlay state blocked    PASS
+unknown Market/source state rejected                       PASS
+Cargo rustup-proxy path protection retained                PASS
+v1.9 repo/set-u unbound-variable correction retained       PASS
+
+TRANSACTIONAL UPDATE FIXTURES
+-----------------------------
+audited direct path: v0.12.6 -> v0.12.7 only               PASS
+v0.12.5 -> v0.12.7 direct path unsupported/fail-closed     PASS
+config three-way merge                                     PASS
+new target settings added                                  PASS
+user config value wins a true three-way conflict           PASS
+unchanged old default adopts new official default          PASS
+gamestore.sqlite staged conservation                       PASS
+market.sqlite staged conservation                          PASS
+market reseed during update                                BLOCKED BY DESIGN
+mods exact tree conservation                               PASS
+loader-LU file conservation                                PASS
+loader-LU activation after update                          BLOCKED BY DESIGN
+Content Pack exact manifest conservation                   PASS
+X-Patch source merge across versions                       BLOCKED BY DESIGN
+forced post-commit validation failure rollback             PASS
+complete old installation restored after forced failure    PASS
+failed target retained as evidence                         PASS
+
+PACKAGE FILE BOUNDARY
+---------------------
+The package contains only v1.10 setup/runtime authority and source-audit evidence.
+It does NOT bundle EveJS itself, the EVE client, an SDE archive, Living Universe, or
+X-Patch. The user supplies the exact EveJS-v0.12.7.zip during installation.
+
+LIVING UNIVERSE V0.12.7 STATUS
+------------------------------
+No supplied Living Universe package has been proven compatible with EveJS v0.12.7.
+Therefore:
+  - clean stock v0.12.7 is supported;
+  - old loader-LU files may be conserved, but are not activated;
+  - ordinary unrelated loader mods continue to load;
+  - X-Patch 0.3.2 / v0.12.6 state blocks update before staging;
+  - old v0.12.6 LU packages are not offered as v0.12.7 installs.
+
+LIVE ACCEPTANCE STILL REQUIRED
+------------------------------
+The following require the user's actual Bazzite environment and are not falsely marked
+PASS here:
+  - Node 24 dependency installation/native-module smoke on the target machine;
+  - real v0.12.7 DatabaseCreator run using the complete build-3396210 SDE;
+  - real Cargo Market compile and Market doctor on Bazzite;
+  - real fresh installation into the user's selected SSD path;
+  - real Market -> Game -> Proton client startup;
+  - restart/persistence check;
+  - real transactional update of a disposable/copy-tested v0.12.6 installation.
+
+FINAL STATIC RESULT
+-------------------
+PASS — package is suitable for the first clean v0.12.7 Bazzite acceptance test.
+It must not be promoted to a protected/live-accepted baseline until that test passes.

@@ -1,0 +1,10 @@
+{
+  "package-lock.json": {
+    "normalizedEqual": true,
+    "normalizedSha256": "c42414c52bdc52b7b63ad2679aaaa7cde1fb949b23fd4af279fc068a8983060d"
+  },
+  "server/package-lock.json": {
+    "normalizedEqual": true,
+    "normalizedSha256": "b242ba33d6555e2821d1b35e6564dd0b19c8ff49b868fc83144f0e90e25c6935"
+  }
+}

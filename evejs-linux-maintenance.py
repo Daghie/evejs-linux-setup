@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-EveJS Linux Installer Maintenance Engine v1.9
-Target release: EveJS v0.12.6 / EVE client build 3396210
+EveJS Linux Installer Maintenance Engine v1.10
+Target release: EveJS v0.12.7 / EVE client build 3396210
 
 This file is an internal companion to install-evejs-linux.sh.
 The Installer is the user-facing entry point for:
@@ -29,15 +29,15 @@ import sys
 import tempfile
 import uuid
 
-TARGET_VERSION = "0.12.6"
+TARGET_VERSION = "0.12.7"
 TARGET_BUILD = 3396210
-SUPPORTED_UPDATE_SOURCES = {"0.12.5"}
+SUPPORTED_UPDATE_SOURCES = {"0.12.6"}
 REQUIRED_PORTS = (443, 5222, 26000, 26001, 26002, 26003, 26400, 40110, 40111)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.5-to-0.12.6"
+CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.6-to-0.12.7"
 LAUNCHER_SOURCE = SCRIPT_DIR / "evejs-linux-launcher.sh"
-CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.6-stale-processes.sh"
+CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.7-stale-processes.sh"
 COMPAT_SOURCE = SCRIPT_DIR / "evejs-linux-lu-compat.py"
 COMPAT_DATA_SOURCE = SCRIPT_DIR / "compatibility"
 
@@ -407,6 +407,42 @@ def ensure_services_stopped(ui: UI, root: Path):
     )
 
 
+
+def ensure_no_xpatch_overlay_for_update(ui: UI, root: Path):
+    """Fail closed on X-Patch source overlays before staging a new EveJS base."""
+    state = root / "_local" / "x-eve-patch" / "install.json"
+    signatures = [
+        root / "config" / "xeve.json",
+        root / "evejs.config.x-eve.json",
+        root / "server" / "src" / "services" / "xEve" / "xEveRuntime.js",
+    ]
+    present = [str(p.relative_to(root)) for p in signatures if p.exists()]
+    market_rpc = root / "externalservices" / "market-server" / "src" / "rpc.rs"
+    if market_rpc.is_file() and sha256(market_rpc).upper() == "F4892EC8D94D40B3BA07B52A55B663B700ADFE4FBBF856B093A35F5CF6D8A096":
+        present.append("externalservices/market-server/src/rpc.rs (X-Patch 0.3.2 hash)")
+    if state.is_file():
+        try:
+            payload = json.loads(state.read_text())
+        except Exception:
+            payload = {}
+        die(
+            ui,
+            "X-Patch Living Universe is installed in the v0.12.6 source tree.\n\n"
+            f"Install state: {state}\n"
+            f"X-Patch version: {payload.get('pluginVersion', 'unknown')}\n"
+            f"Recorded EveJS baseline: {payload.get('evejsVersion', 'unknown')}\n\n"
+            "Setup v1.10 will not merge or reinterpret that source overlay as EveJS v0.12.7. "
+            "Use the installed X-Patch release's own supported uninstall/rollback method first, "
+            "then run the 0.12.6 → 0.12.7 update again."
+        )
+    if present:
+        die(
+            ui,
+            "X-Patch-like source files were detected without a supported install authority.\n\n"
+            + "\n".join(f"  - {x}" for x in present)
+            + "\n\nThe update was stopped before staging. Setup v1.10 will not guess or merge a partial source overlay."
+        )
+
 def sqlite_checkpoint_integrity(ui: UI, path: Path, label: str) -> str | None:
     if not path.is_file():
         return None
@@ -721,7 +757,7 @@ def validate_stage_runtime(ui: UI, stage: Path, node: Path, cargo: Path,
     market_dir = stage / "externalservices" / "market-server"
     market_bin = market_dir / "target" / "release" / "market-server"
     if not market_bin.is_file():
-        die(ui, "The v0.12.6 Market server binary was not built.")
+        die(ui, "The v0.12.7 Market server binary was not built.")
     run([str(market_bin), "--config", "config/market-server.local.toml", "doctor"], cwd=market_dir)
 
 
@@ -859,13 +895,30 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
     env = os.environ.copy()
     env["PATH"] = f"{node.parent}:{cargo.parent}:{env.get('PATH','')}"
 
-    print("\n==> Installing v0.12.6 root dependencies in the staging tree")
+    print("\n==> Installing v0.12.7 root dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage, env=env)
 
-    print("\n==> Rebuilding only v0.12.6 generated static game data")
+    # v0.12.7 introduces persistent optional content under _local/gameStore/content-packs.
+    # It is player-owned state and must survive the target static-data refresh exactly.
+    existing_content_pack_manifest = tree_manifest(existing / "_local" / "gameStore" / "content-packs")
+
+    print("\n==> Rebuilding only v0.12.7 generated static game data")
     rebuild_static_database(ui, stage, node, TARGET_BUILD)
 
-    print("\n==> Installing v0.12.6 server dependencies in the staging tree")
+    staged_content_pack_manifest = tree_manifest(stage / "_local" / "gameStore" / "content-packs")
+    if staged_content_pack_manifest != existing_content_pack_manifest:
+        die(
+            ui,
+            "Content Pack conservation check failed while refreshing v0.12.7 static game data.\n\n"
+            "The existing installation has NOT been replaced."
+        )
+    if existing_content_pack_manifest:
+        print(
+            "    ✓ Preserved Content Packs exactly "
+            f"(manifest {manifest_digest(existing_content_pack_manifest)[:16]}…)"
+        )
+
+    print("\n==> Installing v0.12.7 server dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage / "server", env=env)
 
     # npm may warn about native install scripts depending on the user's npm
@@ -896,7 +949,7 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
     if any(p.exists() for p in legacy_image_roots):
         run([str(npm), "run", "images:migrate", "--", "--quiet"], cwd=stage / "server", env=env)
 
-    print("\n==> Building the v0.12.6 Market daemon without reseeding")
+    print("\n==> Building the v0.12.7 Market daemon without reseeding")
     market_dir = stage / "externalservices" / "market-server"
     run([str(cargo), "build", "--release"], cwd=market_dir, env=env)
 
@@ -936,6 +989,9 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
         "Player/world database preserved: YES\n"
         "Mods preserved: YES\n"
         "Unknown _local/mod-owned state preserved: YES\n"
+        "Content Packs preserved exactly: YES\n"
+        "Loader Living Universe files preserved: YES (activation disabled until an audited v0.12.7-compatible release is supplied)\n"
+        "X-Patch source overlay merged: NO (unsupported v0.12.6 overlays are blocked before staging)\n"
         "Certificates preserved: YES\n"
         "Generated static game data rebuilt for target release: YES\n"
         "Configuration: three-way merged\n"
@@ -961,8 +1017,8 @@ def do_update(ui: UI, args):
             "This update path has not been audited.\n\n"
             f"Existing installation: EveJS v{old_version or 'unknown'}\n"
             f"Target installer:      EveJS v{TARGET_VERSION}\n\n"
-            "v1.8 currently supports only:\n"
-            "  v0.12.5 → v0.12.6\n\n"
+            "v1.10 currently supports only:\n"
+            "  v0.12.6 → v0.12.7\n\n"
             "The updater will not guess across unaudited versions.",
         )
 
@@ -983,7 +1039,7 @@ def do_update(ui: UI, args):
         die(
             ui,
             f"The existing copied EVE client is missing or no longer build {TARGET_BUILD}:\n{tq}\n\n"
-            "This audited update does not replace the client because v0.12.5 and v0.12.6 use the same build.",
+            "This audited update does not replace the client because v0.12.6 and v0.12.7 use the same directly verified build 3396210 contract.",
         )
 
     zip_path = Path(args.zip).expanduser().resolve() if args.zip else None
@@ -994,6 +1050,7 @@ def do_update(ui: UI, args):
 
     source_root, source_temp = extract_target_zip(ui, zip_path)
     try:
+        ensure_no_xpatch_overlay_for_update(ui, existing)
         ensure_services_stopped(ui, existing)
 
         game_db = existing / "_local" / "gameStore" / "gamestore.sqlite"
@@ -1047,7 +1104,8 @@ def do_update(ui: UI, args):
                 f"  Player/world DB: {'present' if game_hash else 'not yet created'}\n"
                 f"  Market DB:       preserved exactly ({market_hash[:16]}…)\n"
                 f"  Mod files:       {mods_count} (exact manifest {mods_manifest_sha256[:16]}…)\n"
-                "  _local runtime/mod state: preserved\n"
+                "  _local runtime/mod state: preserved (including v0.12.7 Content Packs)\n"
+                "  Loader Living Universe files: preserved but disabled until v0.12.7 compatibility is audited\n"
                 "  Certificates: preserved\n"
                 "  EVE client + Proton prefix: retained\n"
                 "  Market reseed: NO\n\n"
@@ -1161,7 +1219,7 @@ def do_update(ui: UI, args):
                 "Preserved:\n"
                 "• player/world database\n"
                 "• Market database and player orders/history\n"
-                "• mods and mod-owned _local state\n"
+                "• mods and mod-owned _local state (including Content Packs)\n"
                 "• certificates\n"
                 "• EVE client and Proton prefix\n• source-matched external Market runtime\n\n"
                 f"Rollback backup:\n{record_dir}\n\n"

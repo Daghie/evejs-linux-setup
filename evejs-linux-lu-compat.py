@@ -10,19 +10,17 @@ from pathlib import Path
 import re
 import shlex
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
 
-TARGET_VERSION = "0.12.6"
+TARGET_VERSION = "0.12.7"
 TARGET_BUILD = 3396210
 XPATCH_VERSION = "0.3.2"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
-STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.6.json"
-XPATCH_MANIFEST = COMPAT_DIR / "market-xpatch-lu-0.3.2-v0.12.6.json"
+STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.7.json"
 XPATCH_INSTALL = Path("_local/x-eve-patch/install.json")
 LOADER_LU_ROOT = Path("mods/x-eve-living-universe")
 XPATCH_SIGNATURES = (
@@ -153,63 +151,6 @@ def verify_build_manifest(actual: list[dict], manifest_path: Path, label: str) -
     return digest, expected
 
 
-def safe_repo_path(repo: Path, rel: str) -> Path:
-    relpath = Path(rel)
-    if relpath.is_absolute() or ".." in relpath.parts:
-        raise CompatError(f"Unsafe path in X-Patch install record: {rel}")
-    return repo / relpath
-
-
-def verify_xpatch_install(repo: Path) -> dict:
-    state_path = repo / XPATCH_INSTALL
-    state = load_json(state_path)
-    if str(state.get("pluginVersion") or "") != XPATCH_VERSION:
-        raise CompatError(
-            f"Unsupported X-Patch Living Universe version in {state_path}: "
-            f"{state.get('pluginVersion')!r}. This build is audited only for {XPATCH_VERSION}."
-        )
-    if str(state.get("evejsVersion") or "") != TARGET_VERSION:
-        raise CompatError(
-            f"X-Patch install state targets EveJS {state.get('evejsVersion')!r}, "
-            f"not {TARGET_VERSION}."
-        )
-    files = state.get("files")
-    if not isinstance(files, list) or len(files) != 210:
-        raise CompatError(
-            f"X-Patch install state does not contain the audited 210 tracked files "
-            f"(found {len(files) if isinstance(files, list) else 'invalid'})."
-        )
-    failures = []
-    for entry in files:
-        rel = str(entry.get("path") or "")
-        path = safe_repo_path(repo, rel)
-        if not path.is_file() or path.is_symlink():
-            failures.append(f"{rel}: missing/not a regular file")
-            continue
-        actual_size = path.stat().st_size
-        actual_hash = sha256_file(path)
-        expected_size = int(entry.get("size", -1))
-        expected_hash = str(entry.get("sha256") or "").upper()
-        if actual_size != expected_size or actual_hash != expected_hash:
-            failures.append(f"{rel}: expected {expected_hash}/{expected_size}, got {actual_hash}/{actual_size}")
-    if failures:
-        shown = "\n".join("  - " + x for x in failures[:20])
-        more = "" if len(failures) <= 20 else f"\n  ... and {len(failures)-20} more"
-        raise CompatError(
-            "X-Patch Living Universe installed-state verification failed.\n"
-            "The compatibility launcher will not repair or overwrite it.\n" + shown + more
-        )
-    installed_rows = [
-        [str(e.get("path") or ""), int(e.get("size", -1)), str(e.get("sha256") or "").upper()]
-        for e in files
-    ]
-    state = dict(state)
-    state["_verifiedTrackedDigest"] = hashlib.sha256(
-        json.dumps(installed_rows, separators=(",", ":")).encode()
-    ).hexdigest().upper()
-    return state
-
-
 def detect_partial_xpatch(repo: Path) -> list[str]:
     signatures = []
     for rel in XPATCH_SIGNATURES:
@@ -231,58 +172,59 @@ def classify(repo: Path) -> dict:
     if build != TARGET_BUILD:
         raise CompatError(f"Expected EVE client build contract {TARGET_BUILD}; found {build!r}.")
 
-    mod_lu_active = (repo / MOD_LU_PATH).is_file()
+    mod_lu_present = (repo / MOD_LU_PATH).is_file()
     xpatch_state_present = (repo / XPATCH_INSTALL).is_file()
-    if mod_lu_active and xpatch_state_present:
+    if mod_lu_present and xpatch_state_present:
         raise CompatError(
-            "Incompatible Living Universe variants are both active.\n"
+            "Incompatible Living Universe variants are both present.\n"
             f"Loader LU: {repo / MOD_LU_PATH}\n"
             f"X-Patch LU: {repo / XPATCH_INSTALL}\n\n"
-            "Nothing was changed. Disable/remove one variant using its own supported method before launching."
+            "Nothing was changed. EveJS v0.12.7 has no audited Living Universe runtime in Setup v1.10."
+        )
+    if xpatch_state_present:
+        state = load_json(repo / XPATCH_INSTALL)
+        raise CompatError(
+            "X-Patch Living Universe install state is present, but Setup v1.10 has no audited "
+            "X-Patch release for EveJS v0.12.7.\n"
+            f"Installed X-Patch version: {state.get('pluginVersion')!r}\n"
+            f"Recorded EveJS baseline: {state.get('evejsVersion')!r}\n\n"
+            "Do not carry a v0.12.6 source overlay into v0.12.7. Use that X-Patch release's own "
+            "supported uninstall/rollback method before updating, then prepare stock v0.12.7."
+        )
+
+    partial = detect_partial_xpatch(repo)
+    if partial:
+        raise CompatError(
+            "X-Patch-like source files were found without a supported v0.12.7 install authority.\n"
+            "The compatibility layer will not reinterpret or merge them.\nDetected:\n  - "
+            + "\n  - ".join(partial)
         )
 
     market_root = repo / "externalservices/market-server"
     actual_records = build_input_records(market_root)
-
-    xpatch_state = None
-    loader_digest = tree_digest(repo / LOADER_LU_ROOT) if mod_lu_active else ""
-    xpatch_tracked_digest = ""
-    if xpatch_state_present:
-        xpatch_state = verify_xpatch_install(repo)
-        xpatch_tracked_digest = str(xpatch_state.get("_verifiedTrackedDigest") or "")
-        digest, expected = verify_build_manifest(actual_records, XPATCH_MANIFEST, "X-Patch LU 0.3.2")
-        mode = "xpatch-lu"
-        market_profile = "xpatch-lu-0.3.2-market"
-        label = "X-Patch Living Universe 0.3.2"
+    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.7")
+    loader_digest = tree_digest(repo / LOADER_LU_ROOT) if mod_lu_present else ""
+    if mod_lu_present:
+        mode = "stock-loader-lu-disabled"
+        label = "Stock EveJS 0.12.7 (Living Universe loader present but disabled: compatibility unverified)"
     else:
-        partial = detect_partial_xpatch(repo)
-        if partial:
-            raise CompatError(
-                "X-Patch-like files were found but no valid _local/x-eve-patch/install.json is present.\n"
-                "The launcher cannot factually classify this tree and will not guess.\n"
-                "Detected:\n  - " + "\n  - ".join(partial)
-            )
-        digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.6")
-        market_profile = "stock-v0.12.6-market"
-        if mod_lu_active:
-            mode = "loader-lu"
-            label = "Loader Living Universe (mods/x-eve-living-universe)"
-        else:
-            mode = "stock"
-            label = "Stock EveJS 0.12.6"
+        mode = "stock"
+        label = "Stock EveJS 0.12.7"
 
     return {
         "repo": str(repo),
         "mode": mode,
-        "marketProfile": market_profile,
+        "marketProfile": "stock-v0.12.7-market",
         "label": label,
         "sourceDigest": digest,
         "marketInputCount": len(actual_records),
-        "modLivingUniverseActive": mod_lu_active,
+        "modLivingUniverseActive": False,
+        "modLivingUniversePresent": mod_lu_present,
+        "loaderLivingUniverseEnabled": False,
         "loaderLivingUniverseDigest": loader_digest,
-        "xpatchLivingUniverseActive": xpatch_state_present,
-        "xpatchVersion": str(xpatch_state.get("pluginVersion")) if xpatch_state else "",
-        "xpatchTrackedDigest": xpatch_tracked_digest,
+        "xpatchLivingUniverseActive": False,
+        "xpatchVersion": "",
+        "xpatchTrackedDigest": "",
     }
 
 
@@ -471,42 +413,6 @@ def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> 
         shutil.rmtree(stage, ignore_errors=True)
 
 
-def rpc_call(port: int, method: str, params: dict, timeout: float = 4.0) -> dict:
-    payload = json.dumps({"id": "evejs-linux-lu-compat", "method": method, "params": params}, separators=(",", ":")) + "\n"
-    with socket.create_connection(("127.0.0.1", port), timeout=timeout) as sock:
-        sock.settimeout(timeout)
-        sock.sendall(payload.encode())
-        buf = b""
-        while b"\n" not in buf:
-            chunk = sock.recv(65536)
-            if not chunk:
-                break
-            buf += chunk
-    line = buf.split(b"\n", 1)[0]
-    if not line:
-        raise CompatError(f"No RPC response for {method}")
-    try:
-        return json.loads(line.decode())
-    except Exception as exc:
-        raise CompatError(f"Invalid RPC response for {method}: {line[:500]!r}") from exc
-
-
-def probe_xpatch_rpc(port: int = 40111) -> dict:
-    results = {}
-    for method, params in (
-        ("GetSeedStocks", {"keys": []}),
-        ("AdjustSeedStocks", {"adjustments": []}),
-    ):
-        response = rpc_call(port, method, params)
-        if response.get("ok") is not True:
-            raise CompatError(
-                f"X-Patch Living Universe Market RPC probe failed for {method}:\n"
-                f"{json.dumps(response, indent=2)}"
-            )
-        results[method] = response
-    return results
-
-
 def shell_quote(value: str) -> str:
     return shlex.quote(value)
 
@@ -536,13 +442,19 @@ def emit(result: dict, as_shell: bool, as_json: bool):
 
 
 def self_test():
-    assert load_json(STOCK_MANIFEST)["sourceDigest"] == "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A"
-    assert load_json(XPATCH_MANIFEST)["sourceDigest"] == "CA8F89FB0175B9207014E9EEC1461376C195DE0A9F34E7E4490B92C230435A8C"
-    print(json.dumps({"status": "PASS", "stockDigest": load_json(STOCK_MANIFEST)["sourceDigest"], "xpatchDigest": load_json(XPATCH_MANIFEST)["sourceDigest"]}, indent=2))
+    manifest = load_json(STOCK_MANIFEST)
+    assert manifest["evejsVersion"] == "0.12.7"
+    assert manifest["sourceDigest"] == "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A"
+    print(json.dumps({
+        "status": "PASS",
+        "targetVersion": TARGET_VERSION,
+        "stockDigest": manifest["sourceDigest"],
+        "livingUniversePolicy": "unverified v0.12.6 LU is preserved-but-disabled; X-Patch source overlays are blocked",
+    }, indent=2))
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Read-only EveJS/Living Universe runtime compatibility authority")
+    ap = argparse.ArgumentParser(description="Read-only EveJS v0.12.7 runtime compatibility authority")
     sub = ap.add_subparsers(dest="command", required=True)
 
     for name in ("detect", "verify-runtime"):
@@ -558,9 +470,6 @@ def main():
     p.add_argument("--json", action="store_true")
     p.add_argument("--shell", action="store_true")
 
-    p = sub.add_parser("probe-xpatch-rpc")
-    p.add_argument("--port", type=int, default=40111)
-    p.add_argument("--json", action="store_true")
 
     sub.add_parser("self-test")
     args = ap.parse_args()
@@ -568,14 +477,6 @@ def main():
     try:
         if args.command == "self-test":
             self_test()
-            return
-        if args.command == "probe-xpatch-rpc":
-            result = probe_xpatch_rpc(args.port)
-            if args.json:
-                print(json.dumps(result, indent=2))
-            else:
-                print("GetSeedStocks: PASS")
-                print("AdjustSeedStocks: PASS")
             return
 
         repo = Path(args.repo)

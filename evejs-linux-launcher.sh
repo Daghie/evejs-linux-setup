@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.9 — stock + loader-LU + X-Patch-LU compatibility
+# EveJS Portable Linux Launcher v1.10 — v0.12.7 source-audited stock runtime
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -14,12 +14,13 @@
 #   5. Initialize the selected Steam Proton prefix if needed.
 #   6. Launch EVE only after all backend/TLS checks pass.
 #
-# Supported mutually-exclusive Living Universe modes:
-#   * Stock EveJS v0.12.6
-#   * Loader LU: <repo>/mods/x-eve-living-universe/loader.js
-#   * X-Patch LU 0.3.2: verified _local/x-eve-patch/install.json state
+# Audited runtime policy:
+#   * Stock EveJS v0.12.7 is supported.
+#   * mods/x-eve-living-universe/loader.js may be preserved but is deliberately not
+#     passed to Node until a v0.12.7-compatible Living Universe release is audited.
+#   * X-Patch source overlays are rejected by the compatibility authority.
 #
-# The launcher never installs/repairs/rewrites either LU variant or EveJS source.
+# The launcher is runtime-only and never installs/updates/repairs EveJS or Living Universe.
 # Market binaries are verified external runtime builds matched to installed source.
 # ==============================================================================
 
@@ -531,12 +532,19 @@ detect_mods() {
     MOD_REQUIRE_ARGS=()
     MOD_NAMES=()
     MOD_COUNT=0
+    DISABLED_LU_LOADER=0
     local mod_dir loader name
     shopt -s nullglob
     for mod_dir in "$MODS_DIR"/*/; do
         loader="${mod_dir}loader.js"
         [[ -f "$loader" ]] || continue
         name="$(basename "${mod_dir%/}")"
+        if [[ "$name" == "x-eve-living-universe" ]]; then
+            # v1.10 intentionally preserves this mod tree across an update but never
+            # activates it on v0.12.7 without a separately audited compatible release.
+            DISABLED_LU_LOADER=1
+            continue
+        fi
         MOD_REQUIRE_ARGS+=( --require "$loader" )
         MOD_NAMES+=( "$name" )
         MOD_COUNT=$((MOD_COUNT+1))
@@ -545,18 +553,19 @@ detect_mods() {
 }
 
 show_mods() {
+    if (( DISABLED_LU_LOADER )); then
+        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.7"
+        echo "       (no audited v0.12.7 Living Universe compatibility authority in Setup v1.10)"
+    fi
     if (( MOD_COUNT == 0 )); then
-        if [[ "$EVEJS_RUNTIME_MODE" == "xpatch-lu" ]]; then
-            echo "  [MODS] no loader mods; X-Patch Living Universe active"
-        else
-            echo "  [MODS] none detected"
-        fi
+        echo "  [MODS] no enabled loader mods detected"
     else
-        echo "  [MODS] $MOD_COUNT loader(s):"
+        echo "  [MODS] $MOD_COUNT enabled loader(s):"
         local n
         for n in "${MOD_NAMES[@]}"; do echo "         • $n"; done
     fi
 }
+
 
 refresh_runtime_compatibility() {
     [[ -f "$COMPAT_HELPER" ]] || {
@@ -585,27 +594,6 @@ market_process_binary_matches() {
     expected="$(readlink -f "$MARKET_BIN" 2>/dev/null || true)"
     actual="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
     [[ -n "$expected" && "$actual" == "$expected" ]]
-}
-
-prepare_xpatch_market_topology() {
-    [[ "$EVEJS_RUNTIME_MODE" == "xpatch-lu" ]] || return 0
-    local sync_script="$EVEJS_REPO/server/scripts/syncLivingEconomyMarketTopology.js"
-    [[ -f "$sync_script" ]] || { echo "[ERROR] Verified X-Patch state is missing topology sync script: $sync_script" >&2; return 1; }
-    echo "  [X-PATCH] Running its installed Living Economy market-topology synchronization..."
-    "$NODE_BIN" "$sync_script" --database "$MARKET_DB" --static-data "$EVEJS_REPO/_local/gameStore/data" || {
-        echo "[ERROR] X-Patch Living Economy topology synchronization failed." >&2
-        return 1
-    }
-}
-
-probe_xpatch_market_rpc() {
-    [[ "$EVEJS_RUNTIME_MODE" == "xpatch-lu" ]] || return 0
-    echo "  [X-PATCH] Probing required Market RPC surface..."
-    python3 "$COMPAT_HELPER" probe-xpatch-rpc --port "$MARKET_RPC_PORT" || {
-        echo "[ERROR] X-Patch Market binary does not expose the required LU RPC interface." >&2
-        return 1
-    }
-    echo "  ✓ X-Patch RPC: GetSeedStocks + AdjustSeedStocks"
 }
 
 ensure_loopback_443_permission() {
@@ -803,14 +791,12 @@ launch_market_server() {
     refresh_runtime_compatibility || return 1
     if is_pid_running "$MARKET_PID"; then
         if market_process_binary_matches "$MARKET_PID"; then
-            probe_xpatch_market_rpc || return 1
             return 0
         fi
         echo "[ERROR] Running Market process is not the binary verified for the current installed source." >&2
         echo "Perform a Full ordered reload after preparing compatibility." >&2
         return 1
     fi
-    prepare_xpatch_market_topology || return 1
     rotate_one_log "$MARKET_LOG" market
     rm -f "$PID_DIR/market.pid"
     local runner
@@ -842,10 +828,6 @@ launch_market_server() {
 
     if ! market_process_binary_matches "$MARKET_PID"; then
         echo "  ✗ Market PID does not execute the exact verified runtime binary."
-        stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
-        return 1
-    fi
-    if ! probe_xpatch_market_rpc; then
         stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
         return 1
     fi
@@ -919,7 +901,6 @@ launch_game_server() {
         echo "  Market process binary does not match the current verified source; game start blocked."
         return 1
     }
-    probe_xpatch_market_rpc || return 1
     curl -sf --max-time 2 "$MARKET_HTTP/health" >/dev/null 2>&1 \
         && port_exclusively_owned_by_tree 40110 "$MARKET_PID" \
         && port_exclusively_owned_by_tree "$MARKET_RPC_PORT" "$MARKET_PID" || {
@@ -1131,7 +1112,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.6 Linux Launcher — v1.9 LU Compatible  ║"
+echo "║  EveJS v0.12.7 Linux Launcher — v1.10 Source Audited ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

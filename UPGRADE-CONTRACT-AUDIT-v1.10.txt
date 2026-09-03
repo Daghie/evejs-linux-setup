@@ -1,0 +1,66 @@
+EveJS v0.12.7 Universal Linux Setup v1.10
+Transactional Upgrade Contract Audit
+=====================================
+
+Supported direct path:
+  EveJS v0.12.6 -> v0.12.7
+
+Unsupported direct paths include v0.12.5 -> v0.12.7. No guessed multi-version merge is performed.
+
+Before staging:
+  - confirm exact source version;
+  - confirm EveJS/Market/client processes are stopped;
+  - checkpoint SQLite WALs and run integrity checks;
+  - hash authoritative gameplay and Market databases;
+  - reject installed/partial X-Patch v0.12.6 overlays.
+
+Stage:
+  - safely extract exact v0.12.7 release to a sibling staging directory;
+  - preserve audited runtime/player state;
+  - preserve all ordinary mods byte-for-byte;
+  - preserve loader-LU files but mark/operate them fail-closed at runtime;
+  - three-way merge configuration;
+  - install target dependencies;
+  - rebuild v0.12.7 generated static game data;
+  - verify Content Pack tree conservation;
+  - build target Market daemon without reseeding Market data;
+  - install v1.10 runtime-only Launcher/helpers;
+  - validate target version, DB integrity, preserved hashes and runtime classification.
+
+Commit:
+  - atomically rename the complete old installation into the rollback record;
+  - atomically publish the validated stage at the original installation path;
+  - post-commit validate;
+  - automatically restore the complete old installation if validation fails;
+  - retain failed target evidence separately when rollback is triggered.
+
+Protected persistence:
+  gamestore.sqlite: preserved byte-for-byte through update
+  market.sqlite:    preserved byte-for-byte; no reseed
+  Content Packs:    exact manifest conserved
+  mods:             exact tree conserved
+  certificates:     conserved
+  logs:             conserved
+  EVE client:       retained (audited same 24.01 build 3396210)
+  Proton prefix:    retained
+
+Expected first-runtime change:
+  v0.12.7 may durably migrate existing industry jobs to installed-location schema v1.
+  This happens only when the target game server starts, not during update staging.
+
+Living Universe:
+  existing loader-LU tree: files preserved, activation disabled
+  X-Patch v0.12.6 overlay: update blocked
+  old v0.12.6 LU package installation on v0.12.7: unavailable
+
+Fixture validation completed:
+  config three-way merge                         PASS
+  staged gamestore.sqlite conservation           PASS
+  staged market.sqlite conservation              PASS
+  mods / loader-LU file conservation             PASS
+  Content Pack conservation                      PASS
+  generated-static refresh boundary              PASS
+  X-Patch preflight rejection                    PASS
+  forced post-commit failure automatic rollback  PASS
+
+Live Bazzite update acceptance remains pending.

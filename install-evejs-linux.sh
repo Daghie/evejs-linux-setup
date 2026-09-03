@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.9.1 — LU Install-Flow + Launcher Setup Hotfix
-# Target: EveJS v0.12.6 / EVE build 3396210
+# EveJS Universal Linux Setup v1.10 — v0.12.7 Source-Audited Port
+# Target: EveJS v0.12.7 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
 # Goals:
@@ -27,13 +27,13 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-INSTALLER_TARGET_VERSION="0.12.6"
+INSTALLER_TARGET_VERSION="0.12.7"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.9.1 LU Install-Flow + Launcher Setup Hotfix"
+INSTALLER_CANDIDATE_NAME="v1.10 v0.12.7 Source-Audited Port"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
-STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.6-stale-processes.sh"
+STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.7-stale-processes.sh"
 MAINTENANCE_SOURCE="$SCRIPT_DIR/evejs-linux-maintenance.py"
 COMPAT_SOURCE="$SCRIPT_DIR/evejs-linux-lu-compat.py"
 COMPAT_DATA_SOURCE="$SCRIPT_DIR/compatibility"
@@ -74,7 +74,7 @@ Options:
   --client PATH       EVE tq directory or copied shared-cache root.
   --dest PATH         Destination for clean EveJS installation.
   --proton PATH       Proton directory or proton executable.
-  --market PROFILE    v0.12.6 market profile: v1, v2, or v3.
+  --market PROFILE    v0.12.7 market profile: v1, v2, or v3.
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
   --mode MODE         install, update, compat, restore, or backups.
@@ -231,8 +231,8 @@ ui_choose_market() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="Choose EveJS v0.12.6 market" --width=960 --height=390 \
-                --text="Choose one v0.12.6 market seed strategy. v1 is recommended for the first Linux acceptance run because it is deterministic, offline, and removes live market downloads as an extra variable." \
+                --title="Choose EveJS v0.12.7 market" --width=960 --height=390 \
+                --text="Choose one v0.12.7 market seed strategy. v1 is recommended for the first Linux acceptance run because it is deterministic, offline, and removes live market downloads as an extra variable." \
                 --column="Use" --column="Profile" --column="Description" \
                 TRUE  "v1" "Synthetic Jita + New Caldari — deterministic, offline, recommended first test" \
                 FALSE "v2" "Live Tranquility snapshot — Jita live market + NPC catalog; downloads current snapshot" \
@@ -241,7 +241,7 @@ ui_choose_market() {
             ;;
         kdialog)
             local pick
-            pick="$(kdialog --title "Choose EveJS v0.12.6 market" --menu \
+            pick="$(kdialog --title "Choose EveJS v0.12.7 market" --menu \
                 "Choose one market seed strategy. v1 is recommended for the first Linux acceptance run." \
                 v1 "Synthetic Jita + New Caldari — deterministic/offline" \
                 v2 "Live TQ snapshot — Jita + NPC catalog" \
@@ -250,7 +250,7 @@ ui_choose_market() {
             ;;
         *)
             local pick
-            printf '\nChoose EveJS v0.12.6 market profile:\n' >&2
+            printf '\nChoose EveJS v0.12.7 market profile:\n' >&2
             printf '  [1] v1 — Synthetic Jita + New Caldari (recommended first test)\n' >&2
             printf '  [2] v2 — Live TQ snapshot, Jita + NPC catalog\n' >&2
             printf '  [3] v3 — Cost-priced Jita 4-4 + authentic NPC catalog\n' >&2
@@ -271,11 +271,11 @@ ui_choose_setup_action() {
         zenity)
             zenity --list --radiolist \
                 --title="EveJS Universal Linux Setup" --width=940 --height=470 \
-                --text="Install/update EveJS, or install/prepare one Living Universe variant using that package's own installer before runtime compatibility." \
+                --text="Install/update EveJS v0.12.7. Living Universe releases built only for v0.12.6 are preserved/blocked rather than guessed compatible." \
                 --column="Use" --column="Action" --column="Description" \
-                TRUE  "install"  "Install EveJS v0.12.6 into an existing empty folder" \
-                FALSE "update"   "Update an existing Universal Linux v0.12.5 installation to v0.12.6" \
-                FALSE "compat"   "Install/prepare Living Universe for an existing v0.12.6 tree, or verify stock/LU runtime compatibility" \
+                TRUE  "install"  "Install EveJS v0.12.7 into an existing empty folder" \
+                FALSE "update"   "Update an existing Universal Linux v0.12.6 installation to v0.12.7" \
+                FALSE "compat"   "Prepare/verify v0.12.7 runtime compatibility; unverified Living Universe is disabled and X-Patch is blocked" \
                 FALSE "restore"  "Restore a previous transactional EveJS upgrade backup" \
                 FALSE "backups"  "Inspect or delete EveJS upgrade backups" \
                 --print-column=2
@@ -283,18 +283,18 @@ ui_choose_setup_action() {
         kdialog)
             kdialog --title "EveJS Universal Linux Setup" --menu \
                 "Choose what you want to do:" \
-                install "Install EveJS v0.12.6 into an empty folder" \
+                install "Install EveJS v0.12.7 into an empty folder" \
                 update "Update an existing EveJS installation in place" \
-                compat "Install/prepare Living Universe or verify stock/LU runtime compatibility" \
+                compat "Prepare/verify v0.12.7 runtime compatibility (Living Universe fail-closed)" \
                 restore "Restore an upgrade backup" \
                 backups "Inspect or delete upgrade backups"
             ;;
         *)
             local pick
             printf '\nEveJS Universal Linux Setup\n' >&2
-            printf '  [1] Install EveJS v0.12.6\n' >&2
+            printf '  [1] Install EveJS v0.12.7\n' >&2
             printf '  [2] Update an existing EveJS installation\n' >&2
-            printf '  [3] Install/prepare Living Universe or verify runtime compatibility\n' >&2
+            printf '  [3] Prepare/verify runtime compatibility (Living Universe fail-closed)\n' >&2
             printf '  [4] Restore an upgrade backup\n' >&2
             printf '  [5] Manage upgrade backups\n' >&2
             printf '  [6] Exit\n' >&2
@@ -317,27 +317,27 @@ ui_choose_lu_install_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="Optional Living Universe installation" --width=980 --height=430 \
-                --text="Clean EveJS is ready. Optionally install ONE Living Universe variant now using that package's own supplied installer. The two Living Universe variants are mutually exclusive." \
+                --title="Optional Living Universe installation" --width=1040 --height=430 \
+                --text="No Living Universe package has yet been independently audited for EveJS v0.12.7. Old v0.12.6 packages must fail closed." \
                 --column="Use" --column="Choice" --column="Description" \
-                TRUE  "none"      "Keep clean EveJS v0.12.6 — install no Living Universe package" \
-                FALSE "loader-lu" "Mod Living Universe — select its release ZIP; run its own install-linux.sh against this EveJS root" \
-                FALSE "xpatch-lu" "X-Patch Living Universe — select its release ZIP; run its own xeve-patch verify/install commands" \
+                TRUE  "none"      "Keep clean EveJS v0.12.7 (SUPPORTED)" \
+                FALSE "loader-lu" "Mod Living Universe (UNAVAILABLE: no audited v0.12.7 package supplied)" \
+                FALSE "xpatch-lu" "X-Patch Living Universe (UNAVAILABLE: 0.3.2 targets EveJS 0.12.6)" \
                 --print-column=2
             ;;
         kdialog)
             kdialog --title "Optional Living Universe installation" --menu \
-                "Clean EveJS is ready. Choose at most one Living Universe variant:" \
-                none "Keep clean EveJS v0.12.6" \
-                loader-lu "Mod Living Universe — use the package's own install-linux.sh" \
-                xpatch-lu "X-Patch Living Universe — use the package's own xeve-patch CLI"
+                "No v0.12.7 Living Universe package is audited in Setup v1.10:" \
+                none "Keep clean EveJS v0.12.7 (SUPPORTED)" \
+                loader-lu "UNAVAILABLE — no audited v0.12.7 Mod Living Universe" \
+                xpatch-lu "UNAVAILABLE — X-Patch 0.3.2 targets v0.12.6"
             ;;
         *)
             local pick
             printf '\nOptional Living Universe installation\n' >&2
-            printf '  [1] Keep clean EveJS v0.12.6\n' >&2
-            printf '  [2] Install Mod Living Universe using its own install-linux.sh\n' >&2
-            printf '  [3] Install X-Patch Living Universe using its own xeve-patch CLI\n' >&2
+            printf '  [1] Keep clean EveJS v0.12.7 (SUPPORTED)\n' >&2
+            printf '  [2] Mod Living Universe — UNAVAILABLE until a v0.12.7 package is audited\n' >&2
+            printf '  [3] X-Patch Living Universe — UNAVAILABLE (0.3.2 targets v0.12.6)\n' >&2
             read -r -p "Choose [1-3, default 1]: " pick
             case "${pick:-1}" in
                 1) printf 'none\n' ;;
@@ -956,7 +956,7 @@ ensure_node() {
         version="$(node --version 2>/dev/null || true)"
     fi
 
-    # EveJS v0.12.6 README specifies Node.js 24 LTS.
+    # EveJS v0.12.7 README specifies Node.js 24 LTS.
     if [[ "$major" == "24" ]] && command -v npm >/dev/null 2>&1; then
         NODE_BIN="$(command -v node)"
         NPM_BIN="$(command -v npm)"
@@ -964,13 +964,13 @@ ensure_node() {
         return 0
     fi
 
-    # v0.12.6 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
+    # v0.12.7 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
     # compatible with Node 20 and 22-26, but not Node 21.
     if [[ "$major" =~ ^(20|22|23|25|26)$ ]] && command -v npm >/dev/null 2>&1; then
         if ui_yesno "Use compatible Node $version?" \
-"EveJS v0.12.6 recommends Node.js 24 LTS.
+"EveJS v0.12.7 recommends Node.js 24 LTS.
 
-The detected $version is within the compatibility range documented by the v0.12.6 non-Docker setup audit, but it is not the recommended Node 24 target.
+The detected $version is within the compatibility range documented by the v0.12.7 non-Docker setup audit, but it is not the recommended Node 24 target.
 
 Use this existing Node installation?
 
@@ -982,14 +982,14 @@ Choose No to install a private Node 24.x runtime for EveJS."; then
         fi
     elif [[ "$major" == "21" ]]; then
         ui_warn "Unsupported Node 21 detected" \
-"EveJS v0.12.6's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
+"EveJS v0.12.7's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
 
 The installer will offer Node 24 LTS instead."
     elif [[ "$major" =~ ^[0-9]+$ ]] && (( major > 0 )); then
         ui_warn "Unvalidated Node version" \
 "Detected $version.
 
-EveJS v0.12.6 recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
+EveJS v0.12.7 recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
     fi
 
     local arch
@@ -1000,7 +1000,7 @@ EveJS v0.12.6 recommends Node 24 LTS. The installer will offer a private Node 24
     esac
 
     if ! ui_yesno "Install Node.js 24 LTS?" \
-"EveJS v0.12.6 recommends Node.js 24 LTS.
+"EveJS v0.12.7 recommends Node.js 24 LTS.
 
 Install the newest Node 24.x binary in your user account under:
 
@@ -1045,7 +1045,7 @@ ensure_rust() {
         return 0
     fi
 
-    if ! ui_yesno "Install Rust?" "EveJS v0.12.6 includes a Rust standalone market daemon.
+    if ! ui_yesno "Install Rust?" "EveJS v0.12.7 includes a Rust standalone market daemon.
 
 Rust/Cargo was not found. Install the official rustup toolchain in your user account under ~/.cargo and ~/.rustup?"; then
         die "Rust/Cargo is required for the standalone market server."
@@ -1182,7 +1182,7 @@ resolve_archive_root() {
         return 0
     fi
 
-    # v0.12.6 is distributed with a top-level v0.12.6/ directory. Search a
+    # v0.12.7 is distributed with a top-level v0.12.7/ directory. Search a
     # shallow bounded depth so future packaging wrappers do not break selection.
     local config_file candidate
     mapfile -t version_files < <(
@@ -1556,7 +1556,7 @@ PY
 choose_valid_evejs_zip() {
     local selected=""
     while true; do
-        selected="$(ui_file "Select the EveJS v0.12.6 release ZIP" "$SCRIPT_DIR")" || return 1
+        selected="$(ui_file "Select the EveJS v0.12.7 release ZIP" "$SCRIPT_DIR")" || return 1
         [[ -n "$selected" ]] || continue
 
         if [[ ! -f "$selected" ]]; then
@@ -1565,7 +1565,7 @@ choose_valid_evejs_zip() {
 
 $selected
 
-Please select the EveJS v0.12.6 ZIP."
+Please select the EveJS v0.12.7 ZIP."
             continue
         fi
 
@@ -1581,7 +1581,7 @@ Please select the EveJS v0.12.6 ZIP."
 
 $selected
 
-Please select the EveJS v0.12.6 release ZIP."
+Please select the EveJS v0.12.7 release ZIP."
             continue
         fi
 
@@ -1591,7 +1591,7 @@ Please select the EveJS v0.12.6 release ZIP."
             ui_warn "Wrong ZIP selected" \
 "The selected ZIP does not contain a recognizable EveJS repository.
 
-Please select the EveJS v0.12.6 release ZIP."
+Please select the EveJS v0.12.7 release ZIP."
             continue
         fi
 
@@ -1699,7 +1699,7 @@ Please select a complete copied EVE shared-cache/client."
 choose_existing_empty_destination() {
     local selected
     while true; do
-        selected="$(ui_dir "Select an existing EMPTY folder for EveJS v0.12.6" "$HOME")" || return 1
+        selected="$(ui_dir "Select an existing EMPTY folder for EveJS v0.12.7" "$HOME")" || return 1
         [[ -n "$selected" ]] || continue
         selected="$(readlink -f "$selected" 2>/dev/null || true)"
 
@@ -1722,7 +1722,7 @@ _local/runtime-performance/
 
 This is not something the installer creates before installation. It strongly suggests an older EveJS process is/was still writing telemetry to this path and recreated the folder after it had been removed.
 
-Run evejs-v0.12.6-stale-processes.sh, remove the leftover folder after the process is stopped, then select the empty folder again.
+Run evejs-v0.12.7-stale-processes.sh, remove the leftover folder after the process is stopped, then select the empty folder again.
 
 The installer will not delete this data automatically."
             else
@@ -1791,216 +1791,37 @@ install_runtime_compatibility_files() {
 }
 
 
-validate_lu_archive_safety() {
-    local zip="$1"
-    python3 - "$zip" <<'PYLUZIP'
-import stat, sys, zipfile
-zpath=sys.argv[1]
-try:
-    with zipfile.ZipFile(zpath) as z:
-        infos=z.infolist()
-        if not infos:
-            raise SystemExit("archive is empty")
-        for info in infos:
-            name=info.filename.replace('\\','/')
-            parts=[p for p in name.split('/') if p not in ('', '.')]
-            if name.startswith('/') or '..' in parts:
-                raise SystemExit(f"unsafe archive path: {info.filename}")
-            mode=(info.external_attr >> 16) & 0xFFFF
-            if stat.S_ISLNK(mode):
-                raise SystemExit(f"symlink entry not accepted by setup wrapper: {info.filename}")
-except Exception as exc:
-    print(exc, file=sys.stderr)
-    raise SystemExit(1)
-PYLUZIP
-}
-
-extract_lu_package_zip() {
-    local zip="$1" out="$2"
-    validate_lu_archive_safety "$zip" || die "The selected Living Universe ZIP failed archive-safety validation. Nothing was installed."
-    mkdir -p "$out"
-    unzip -q "$zip" -d "$out" || die "Could not extract the selected Living Universe package."
-}
-
-find_unique_package_file() {
-    local root="$1" name="$2"
-    local matches=()
-    mapfile -t matches < <(find "$root" -maxdepth 4 -type f -name "$name" -print | sort)
-    ((${#matches[@]} == 1)) || return 1
-    printf '%s\n' "${matches[0]}"
-}
-
-lu_setup_log_path() {
-    local repo="$1" kind="$2"
-    local dir="$repo/logs/linux-setup"
-    mkdir -p "$dir"
-    printf '%s/%s-%s.log\n' "$dir" "$kind" "$(date -u +%Y%m%dT%H%M%SZ)"
-}
-
-run_and_tee_preserve_rc() {
-    local log="$1"; shift
-    local rc
-    set +e
-    "$@" 2>&1 | tee -a "$log"
-    rc=${PIPESTATUS[0]}
-    set -e
-    return "$rc"
-}
-
-run_loader_lu_own_installer() {
-    local repo="$1"
-    [[ ! -f "$repo/_local/x-eve-patch/install.json" ]] || die \
-        "X-Patch Living Universe is already installed. Mod Living Universe and X-Patch Living Universe are mutually exclusive. Nothing was changed."
-    [[ ! -e "$repo/mods/x-eve-living-universe" ]] || die \
-        "A Mod Living Universe tree already exists at:\n$repo/mods/x-eve-living-universe\n\nUse that mod release's own upgrade/uninstall instructions rather than installing a second copy."
-
-    local zip tmp script pkgroot log before_core after_core
-    zip="$(ui_file "Select the Mod Living Universe release ZIP" "$SCRIPT_DIR")" || return 1
-    [[ -f "$zip" ]] || die "Mod Living Universe ZIP not found:\n$zip"
-    zip="$(readlink -f "$zip")"
-    tmp="$(mktemp -d -t evejs-loader-lu-package.XXXXXX)"
-    extract_lu_package_zip "$zip" "$tmp"
-    script="$(find_unique_package_file "$tmp" install-linux.sh 2>/dev/null || true)"
-    [[ -n "$script" ]] || { rm -rf "$tmp"; die "The selected package does not contain exactly one install-linux.sh. No mod was installed."; }
-    [[ -x "$script" ]] || { rm -rf "$tmp"; die "The selected Mod Living Universe package's own install-linux.sh is not executable.\n\nThe setup will not chmod or rewrite the mod package. Use a correctly packaged release."; }
-    pkgroot="$(dirname "$script")"
-
-    # The current X-EVE mod releases declare their Linux authority as:
-    #   ./install-linux.sh [EVEJS_ROOT]
-    # We invoke that supplied script directly and do not copy/patch mod files ourselves.
-    "$script" --help >/dev/null 2>&1 || { rm -rf "$tmp"; die "The selected Mod Living Universe install-linux.sh did not accept its own --help preflight. Nothing was installed."; }
-
-    log="$(lu_setup_log_path "$repo" mod-living-universe-install)"
-    ui_yesno "Install Mod Living Universe?" \
-"The selected package supplies its own Linux installer:\n\n$script\n\nEveJS target:\n$repo\n\nThe Universal Setup will execute the package's own:\n\n  ./install-linux.sh \"$repo\"\n\nIt will not manually copy or rewrite Mod Living Universe files. Continue?" || { rm -rf "$tmp"; return 1; }
-
-    stage "Running Mod Living Universe's own install-linux.sh"
-    set +e
-    ( cd "$pkgroot" && PATH="$(dirname "$NODE_BIN"):$PATH" "$script" "$repo" ) 2>&1 | tee -a "$log"
-    local rc=${PIPESTATUS[0]}
-    set -e
-    if (( rc != 0 )); then
-        warn "Mod Living Universe's own installer returned error code $rc."
-        warn "Wrapper log retained at: $log"
-        rm -rf "$tmp"
-        return "$rc"
-    fi
-    rm -rf "$tmp"
-
-    [[ -f "$repo/mods/x-eve-living-universe/loader.js" ]] || die \
-        "Mod Living Universe's own installer returned success, but its expected loader.js was not installed.\n\nLog: $log"
-    [[ ! -f "$repo/_local/x-eve-patch/install.json" ]] || die \
-        "Both Living Universe variants are now present, which is unsupported. Stop and use the respective package's own uninstall method before launch."
-    ok "Mod Living Universe installed by its own install-linux.sh."
-    ok "Installation log: $log"
-}
-
-make_readonly_xpatch_exec_copy() {
-    local cli="$1" out="$2"
-    cp -- "$cli" "$out" || return 1
-    chmod 700 "$out" || return 1
-    [[ "$(sha256sum "$cli" | awk '{print $1}')" == "$(sha256sum "$out" | awk '{print $1}')" ]] || return 1
-}
-
-run_xpatch_lu_own_installer() {
-    local repo="$1"
-    [[ ! -f "$repo/mods/x-eve-living-universe/loader.js" ]] || die \
-        "Mod Living Universe is already installed. Mod Living Universe and X-Patch Living Universe are mutually exclusive. Nothing was changed."
-    [[ ! -f "$repo/_local/x-eve-patch/install.json" ]] || die \
-        "X-Patch Living Universe already has install state in this EveJS tree. Use xeve-patch verify/repair/uninstall from that release instead of installing it again."
-
-    local zip tmp cli pkgroot data_root exec_copy log version_out rc
-    zip="$(ui_file "Select the X-Patch Living Universe release ZIP" "$SCRIPT_DIR")" || return 1
-    [[ -f "$zip" ]] || die "X-Patch Living Universe ZIP not found:\n$zip"
-    zip="$(readlink -f "$zip")"
-    tmp="$(mktemp -d -t evejs-xpatch-lu-package.XXXXXX)"
-    extract_lu_package_zip "$zip" "$tmp"
-    cli="$(find_unique_package_file "$tmp" xeve-patch 2>/dev/null || true)"
-    [[ -n "$cli" ]] || { rm -rf "$tmp"; die "The selected X-Patch package does not contain exactly one xeve-patch CLI. Nothing was installed."; }
-    pkgroot="$(dirname "$cli")"
-    data_root="$pkgroot/patches"
-    [[ -f "$data_root/manifest.json" ]] || { rm -rf "$tmp"; die "The selected X-Patch package is missing patches/manifest.json beside xeve-patch. Nothing was installed."; }
-
-    # The supplied Linux ZIP currently stores the Go executable without a Unix
-    # execute bit. Do not chmod/rewrite that package file. Execute an exact-byte
-    # temporary copy outside the package tree and point the CLI back at its own
-    # patches/ data with the CLI's documented --data-root option.
-    exec_copy="$(mktemp -t xeve-patch-exec.XXXXXX)"
-    make_readonly_xpatch_exec_copy "$cli" "$exec_copy" || { rm -f "$exec_copy"; rm -rf "$tmp"; die "Could not create an exact executable working copy of xeve-patch. The selected package itself was not modified."; }
-
-    version_out="$("$exec_copy" version --data-root "$data_root" 2>&1 || true)"
-    [[ "$version_out" == *"0.3.2"* ]] || { rm -f "$exec_copy"; rm -rf "$tmp"; die "This setup build is audited for X-Patch Living Universe 0.3.2.\n\nSelected CLI reported:\n$version_out"; }
-
-    log="$(lu_setup_log_path "$repo" xpatch-living-universe-install)"
-    stage "Validating X-Patch release with its own xeve-patch CLI"
-    run_and_tee_preserve_rc "$log" "$exec_copy" verify --integrity --data-root "$data_root" || {
-        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch's own release-integrity verification failed (code $rc).\n\nLog: $log";
-    }
-    run_and_tee_preserve_rc "$log" "$exec_copy" verify "$repo" --data-root "$data_root" || {
-        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch's own baseline verification rejected this EveJS tree (code $rc).\n\nNo X-Patch files were installed.\nLog: $log";
-    }
-
-    ui_yesno "Install X-Patch Living Universe 0.3.2?" \
-"X-Patch's own release integrity and EveJS baseline verification passed.\n\nThe Universal Setup will now invoke the package's own install operation through the exact supplied xeve-patch binary:\n\n  xeve-patch install \"$repo\" --yes\n\nBecause the supplied Linux ZIP stores xeve-patch without an executable bit, the Setup runs an exact-byte temporary executable copy and uses xeve-patch's documented --data-root option so it reads this selected package's own patches directory. The selected package file is not chmodded or rewritten.\n\nThe X-Patch CLI itself owns baseline validation, backup, overlay application, verification and rollback. The Universal Setup does not manually apply X-Patch files. Continue?" || { rm -f "$exec_copy"; rm -rf "$tmp"; return 1; }
-
-    stage "Running X-Patch Living Universe's own xeve-patch install"
-    run_and_tee_preserve_rc "$log" "$exec_copy" install "$repo" --yes --data-root "$data_root" || {
-        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch's own installer failed (code $rc). Its own rollback rules apply.\n\nLog: $log";
-    }
-    run_and_tee_preserve_rc "$log" "$exec_copy" verify "$repo" --data-root "$data_root" || {
-        rc=$?; rm -f "$exec_copy"; rm -rf "$tmp"; die "X-Patch install completed but its own post-install verify failed (code $rc).\n\nUse this exact X-Patch release's own repair/uninstall commands.\nLog: $log";
-    }
-    rm -f "$exec_copy"
-    rm -rf "$tmp"
-
-    [[ -f "$repo/_local/x-eve-patch/install.json" ]] || die \
-        "X-Patch's own installer returned success, but _local/x-eve-patch/install.json is missing.\n\nLog: $log"
-    [[ ! -f "$repo/mods/x-eve-living-universe/loader.js" ]] || die \
-        "Both Living Universe variants are now present, which is unsupported. Stop and use the respective package's own uninstall method before launch."
-    ok "X-Patch Living Universe installed by its own xeve-patch CLI."
-    ok "Installation log: $log"
-}
-
-prepare_installed_lu_runtime() {
-    local repo="$1" detection
-    stage "Preparing verified source-matched Market runtime"
-    python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare --repo "$repo" --cargo "$CARGO_BIN" \
-        || die "Living Universe installation succeeded, but source-matched Market runtime preparation failed.\n\nThe selected Living Universe package was not rewritten. Do not launch until this compatibility step passes."
-    detection="$(python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$repo" 2>&1)" || die "$detection"
-    python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
-        || die "Living Universe runtime compatibility verification failed."
-    ok "Runtime compatibility verified: ${detection%%$'\n'*}"
-}
+# Living Universe installation is intentionally unavailable in v1.10.
+# No v0.12.6 LU package is executed, rewritten, or guessed compatible with v0.12.7.
 
 offer_optional_lu_install() {
     local repo="$1" action
     action="$(ui_choose_lu_install_action)" || return 1
     case "$action" in
         none|"")
-            ok "Keeping clean EveJS v0.12.6 with no Living Universe package installed."
+            ok "Keeping clean EveJS v0.12.7 with no Living Universe package installed."
             ;;
         loader-lu)
-            run_loader_lu_own_installer "$repo" || die "Mod Living Universe installation did not complete."
-            install_runtime_compatibility_files "$repo"
-            prepare_installed_lu_runtime "$repo"
+            ui_warn "Living Universe unavailable" \
+"Setup v1.10 has no independently audited Mod Living Universe package for EveJS v0.12.7.\n\nOld v0.12.6 packages are not executed or altered. Keep clean EveJS v0.12.7 until a compatible package is supplied and tested."
             ;;
         xpatch-lu)
-            run_xpatch_lu_own_installer "$repo" || die "X-Patch Living Universe installation did not complete."
-            install_runtime_compatibility_files "$repo"
-            prepare_installed_lu_runtime "$repo"
+            ui_warn "X-Patch unavailable" \
+"The supplied X-Patch 0.3.2 authority targets EveJS v0.12.6 and is a source overlay. Setup v1.10 will not install or merge it into EveJS v0.12.7."
             ;;
         *) die "Unknown Living Universe selection: $action" ;;
     esac
 }
 
-choose_existing_v0126_repo() {
+
+choose_existing_v0127_repo() {
     local chosen version configured
     while true; do
         if [[ -n "$ARG_EXISTING" ]]; then
             chosen="$(readlink -f "$ARG_EXISTING" 2>/dev/null || true)"
             ARG_EXISTING=""
         else
-            chosen="$(ui_dir "Select existing EveJS v0.12.6 installation" "$HOME")" || return 1
+            chosen="$(ui_dir "Select existing EveJS v0.12.7 installation" "$HOME")" || return 1
         fi
         [[ -d "$chosen" && -f "$chosen/config/version.json" && -f "$chosen/server/index.js" ]] || {
             ui_warn "Not an EveJS installation" "The selected folder is not a recognizable EveJS installation.\n\n$chosen"
@@ -2013,8 +1834,8 @@ try:
 except Exception: print('')
 PY2
 )"
-        [[ "$version" == "0.12.6" ]] || {
-            ui_warn "Wrong EveJS version" "Runtime compatibility v1.9.1 is audited for EveJS v0.12.6.\n\nSelected version: ${version:-unknown}"
+        [[ "$version" == "0.12.7" ]] || {
+            ui_warn "Wrong EveJS version" "Runtime compatibility v1.10 is audited for EveJS v0.12.7.\n\nSelected version: ${version:-unknown}"
             continue
         }
         [[ -f "$chosen/.evejs-linux.conf" ]] || {
@@ -2038,7 +1859,7 @@ prepare_existing_runtime_compatibility() {
     [[ -f "$STALE_CLEANUP_SOURCE" ]] || die "Cleanup template is missing beside the Installer: $STALE_CLEANUP_SOURCE"
 
     local repo detection
-    repo="$(choose_existing_v0126_repo)" || exit 0
+    repo="$(choose_existing_v0127_repo)" || exit 0
 
     if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':(443|5222|26000|26001|26002|26003|26400|40110|40111)$'; then
         die "EveJS/Market listeners are active. Stop the EVE client, Game server and Market server before preparing compatibility.\n\nNo files were changed."
@@ -2046,27 +1867,23 @@ prepare_existing_runtime_compatibility() {
 
     detection="$(python3 "$COMPAT_SOURCE" detect --repo "$repo" 2>&1)" || die "$detection"
 
-    if [[ "$detection" == Mode:*Stock\ EveJS* ]]; then
-        if ui_yesno "Install Living Universe first?" \
-"This existing EveJS v0.12.6 tree is currently stock.\n\nWould you like to select and run ONE Living Universe package's own installer before runtime compatibility is prepared?\n\nChoose No to keep stock EveJS and prepare it as-is."; then
-            install_runtime_compatibility_files "$repo"
-            offer_optional_lu_install "$repo"
-            detection="$(python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$repo" 2>&1)" || die "$detection"
-        fi
+    if [[ -f "$repo/mods/x-eve-living-universe/loader.js" ]]; then
+        ui_warn "Living Universe preserved but disabled" \
+"The x-eve-living-universe loader is present, but Setup v1.10 has no audited v0.12.7 Living Universe authority. Its files are left untouched and the v1.10 Launcher will not pass that loader to Node."
     fi
 
     ui_yesno "Prepare EveJS runtime compatibility?" \
-"Detected installation:\n\n$detection\n\nThe compatibility operation does not manually patch Living Universe source. If you selected a Living Universe package, that package's own installer performed its installation.\n\nThe setup now builds/verifies the required Market daemon from an external copy of the installed Rust inputs and stores that binary outside the EveJS tree.\n\nIf both Living Universe variants are active, it refuses to continue.\n\nProceed?" || exit 0
+"Detected installation:\n\n$detection\n\nThe compatibility operation does not install, patch, or activate Living Universe on v0.12.7. An existing loader-LU tree is conserved but disabled; X-Patch source overlays are refused.\n\nThe setup builds/verifies the required Market daemon from an external copy of the installed Rust inputs and stores that binary outside the EveJS tree.\n\nIf an X-Patch overlay is detected, it refuses to continue.\n\nProceed?" || exit 0
 
     stage "Preparing verified external Market runtime"
     python3 "$COMPAT_SOURCE" prepare --repo "$repo" --cargo "$CARGO_BIN" || die "Runtime compatibility preparation failed. The protected source trees were not rewritten."
 
-    stage "Installing v1.9.1 runtime-only launcher compatibility files"
+    stage "Installing v1.10 runtime-only launcher compatibility files"
     install_runtime_compatibility_files "$repo"
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" || die "Installed compatibility verification failed."
 
     ui_info "Runtime compatibility ready" \
-"The existing installation is ready for the v1.9.1 package Launcher.\n\n$repo\n\n$detection\n\nNo EveJS/Living Universe source files were patched by this operation.\n\nFor X-Patch LU, this build requires the exact verified 0.3.2 installed state. Installation/removal authority remains the X-Patch xeve-patch CLI; this Installer may invoke that supplied CLI but does not manually apply its overlay."
+"The existing installation is ready for the v1.10 package Launcher.\n\n$repo\n\n$detection\n\nNo EveJS/Living Universe source files were patched by this operation.\n\nNo Living Universe package is activated by Setup v1.10. Supply a separately compatible v0.12.7 package before enabling Living Universe."
     exit 0
 }
 
@@ -2139,7 +1956,7 @@ ensure_rust
 preflight_existing_evejs_processes
 
 ui_info "EveJS Universal Linux Setup" \
-"This mode installs a clean EveJS v0.12.6 baseline and prepares a copied EVE client for local play.
+"This mode installs a clean EveJS v0.12.7 baseline and prepares a copied EVE client for local play.
 
 It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS installations with minimized development files.
 
@@ -2192,8 +2009,8 @@ PY
         if (( probe_ok )); then
             SOURCE_ZIP="$candidate"
         else
-            ui_warn "Detected ZIP is not EveJS v0.12.6" \
-"The ZIP beside the installer is not the required EveJS v0.12.6 release.
+            ui_warn "Detected ZIP is not EveJS v0.12.7" \
+"The ZIP beside the installer is not the required EveJS v0.12.7 release.
 
 Please select the correct file."
             SOURCE_ZIP="$(choose_valid_evejs_zip)" || exit 1
@@ -2233,7 +2050,7 @@ fi
 resolve_proton "$SELECTED_PROTON" "$PROTON_RECORDS"
 ok "Selected Proton: $(basename "$PROTON_DIR")"
 
-# v0.12.6 market profile
+# v0.12.7 market profile
 if [[ -n "$ARG_MARKET" ]]; then
     MARKET_PROFILE="${ARG_MARKET,,}"
 else
@@ -2274,7 +2091,7 @@ ok "Resource cache: $CACHE_ROOT/ResFiles"
 # Destination
 # v1.2 deliberately NEVER creates the destination root. The researcher creates
 # and selects an existing empty folder. This avoids leaving behind an automatic
-# EveJS-v0.12.6-Clean directory that then interferes with their own naming.
+# EveJS-v0.12.7-Clean directory that then interferes with their own naming.
 if [[ -n "$ARG_DEST" ]]; then
     EVEJS_REPO="$(readlink -f "$ARG_DEST" 2>/dev/null || true)"
     [[ -d "$EVEJS_REPO" ]] || die "Destination must already exist as a directory: $ARG_DEST"
@@ -2424,7 +2241,7 @@ case "$MARKET_PROFILE" in
         ;;
     v2)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv2"
-        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.6 market-seederv2 is missing."
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.7 market-seederv2 is missing."
         (
             cd "$MARKET_SEED_DIR"
             cargo run --release -- \
@@ -2434,7 +2251,7 @@ case "$MARKET_PROFILE" in
         ;;
     v3)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv3"
-        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.6 market-seederv3 is missing."
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.7 market-seederv3 is missing."
         (
             cd "$MARKET_SEED_DIR"
 
@@ -2449,7 +2266,7 @@ case "$MARKET_PROFILE" in
                 --config config/market-seederv3.local.toml \
                 snapshot-info --download --reuse-download
 
-            # The v0.12.6 seeder contract keeps the pump audit as the meaningful build
+            # The v0.12.7 seeder contract keeps the pump audit as the meaningful build
             # gate and should be run before every direct seeder build.
             cargo run --release -- \
                 --config config/market-seederv3.local.toml \
@@ -2515,7 +2332,7 @@ stage "Preparing source-matched external Market runtime"
 python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare \
     --repo "$EVEJS_REPO" --cargo "$CARGO_BIN" --candidate-binary "$MARKET_BIN" \
     || die "Could not prepare the verified external Market runtime."
-ok "Stock EveJS external Market runtime prepared; future loader-LU use shares the same audited Market source."
+ok "Stock EveJS v0.12.7 external Market runtime prepared from the audited source identity."
 
 stage "Optional Living Universe installation"
 offer_optional_lu_install "$EVEJS_REPO"
@@ -2545,8 +2362,10 @@ Mods directory:    $EVEJS_REPO/mods
 Mod convention:
   mods/<mod-name>/loader.js
 
-The launcher discovers each immediate mods/*/loader.js and supplies it through
-Node --require before the normal EveJS server entry point.
+The launcher discovers ordinary immediate mods/*/loader.js and supplies them through
+Node --require before the normal EveJS server entry point. For Setup v1.10,
+mods/x-eve-living-universe/loader.js is a special fail-closed exception: its files may
+be present/preserved but it is not activated until a v0.12.7-compatible LU authority is audited.
 EOF
 
 ok "Launcher installed: $EVEJS_REPO/evejs-linux-launcher.sh"

@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "source_version": "0.12.6",
+  "target_version": "0.12.7",
+  "supported_build": 3396210,
+  "installation_family": "EveJS Universal Linux Setup",
+  "source_audit": {
+    "v0.12.6_zip_sha256": "b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182",
+    "v0.12.7_zip_sha256": "7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b",
+    "market_source_digest": "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A"
+  },
+  "preserve": {
+    "_local_except_generated_static_refresh": true,
+    "gamestore_sqlite": true,
+    "game_store_content_packs": true,
+    "market_sqlite": true,
+    "mods": true,
+    "loader_lu_files_but_disable_activation": true,
+    "certificates": true,
+    "launcher_configuration": true,
+    "proton_prefix": true,
+    "eve_client": true,
+    "logs": true
+  },
+  "refresh": {
+    "program_source": true,
+    "root_node_dependencies": true,
+    "server_node_dependencies": true,
+    "game_static_data_and_manifest": true,
+    "market_server_binary": true,
+    "launcher_script": true,
+    "stale_cleanup_script": true
+  },
+  "never_during_update": {
+    "market_reseed": true,
+    "fresh_player_database": true,
+    "fresh_proton_prefix": true,
+    "repatch_same_build_eve_client": true,
+    "xpatch_source_overlay_merge": true,
+    "activate_unverified_living_universe": true
+  },
+  "config_merge": "three-way-old-default-vs-user-vs-new-default",
+  "new_defaults": [
+    "config/mining.json: industry.industryJobSpeedMultiplier=1",
+    "config/npc.json: targeting.npcPlayerDronesTargetable=true"
+  ],
+  "runtime_migration_note": "v0.12.7 may durably add installedLocationID and installedLocationSchemaVersion to industry jobs on first runtime start; updater itself preserves gamestore.sqlite byte-for-byte and does not execute the game server during staging."
+}

@@ -1,8 +1,8 @@
 {
   "schema": "evejs-linux-market-build-inputs/1",
   "kind": "stock",
-  "evejsVersion": "0.12.6",
-  "generatedFrom": "uploaded EveJS-v0.12.6.zip SHA-256 b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182",
+  "evejsVersion": "0.12.7",
+  "generatedFrom": "uploaded EveJS-v0.12.7.zip SHA-256 7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b; build-input set directly compared with clean v0.12.6 and found byte-identical",
   "sourceDigest": "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A",
   "files": [
     {

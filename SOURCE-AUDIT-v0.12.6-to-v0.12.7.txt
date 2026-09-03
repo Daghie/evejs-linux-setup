@@ -1,0 +1,248 @@
+EveJS v0.12.6 -> v0.12.7 Complete Source Impact Audit
+======================================================
+Date: 2026-09-03
+Purpose: authority for EveJS Universal Linux Setup v1.10
+
+1. INPUT AUTHORITIES
+--------------------
+EveJS-v0.12.6.zip
+  bytes:   17,737,452
+  SHA-256: b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182
+  members: 1,692
+  ZIP CRC: PASS
+  safe extraction checks: PASS
+
+EveJS-v0.12.7.zip
+  bytes:   18,899,648
+  SHA-256: 7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b
+  members: 1,712
+  ZIP CRC: PASS
+  safe extraction checks: PASS
+
+Recovered v1.9.1 Universal Linux Setup ZIP
+  bytes:   96,646
+  SHA-256: 511fd5b3c83f4f51d7a344361217eef641cbd8f45ad0f4ef3cb21366c4c0d027
+  members: 30
+  ZIP CRC: PASS
+  internal checksum ledger: PASS
+
+No absolute archive paths, ../ traversal, drive-qualified paths, duplicate destination
+paths or symlink members were found in the audited EveJS release ZIPs.
+
+2. COMPLETE TREE INVENTORY / DIFF
+---------------------------------
+The extracted trees were inventoried by relative path, type, size, SHA-256, mode and
+symlink target where applicable.
+
+All entry totals:
+  ADDED:      20
+  REMOVED:     0
+  MODIFIED:  107
+  UNCHANGED: 1584
+
+Regular-file counts:
+  v0.12.6: 1465
+  v0.12.7: 1481
+
+Machine-readable inventories and the full path-by-path classification are included
+under audit/ in this package.
+
+Added entries:
+  ContentPacks.bat
+  doc/CONTENT_PACKS.md
+  server/src/_secondary/express/companionDiag.js
+  server/src/contentPacks/
+  server/src/contentPacks/contentPackManager.js
+  server/src/services/contracts/contractNotifications.js
+  server/src/services/dungeon/dungeonAuthorityPayload.js
+  server/src/services/exploration/probes/probeScanWarpAuthority.js
+  server/src/services/industry/industryInstalledLocationMigration.js
+  server/src/services/industry/industryJobSpeed.js
+  server/src/services/mining/oreAnomalySecurityAuthority.js
+  tools/ContentPacks/
+  tools/ContentPacks/README.md
+  tools/ContentPacks/index.js
+  tools/DatabaseCreator/staticTables/dungeonClientContent/
+  tools/DatabaseCreator/staticTables/dungeonClientContent/data.json
+  tools/Maintenance/
+  tools/Maintenance/Reset-AllPlayerMissions.ps1
+  tools/Maintenance/ResetMissions.bat
+  tools/Maintenance/reset-character-missions.js
+
+No source entries were removed.
+
+3. CLIENT / BLUE.DLL / STARTUP AUTHORITY
+----------------------------------------
+v0.12.7 README directly identifies the supported client as EVE 24.01 build 3396210.
+
+The complete tools/ClientSETUP tree is byte-identical between releases:
+  files: 16
+  subtree digest: F4D9B80F3252B6C1A06C45FE6A3776FFCA8876EF640939D9882C788AFF3EBB94
+
+blue_patch_recipe.json remains byte-identical:
+  SHA-256: 970e9202e87e39e8529bec7071b482fb1fffa105e589472cf4b699c7723925e6
+
+Upstream Windows behavior scripts are byte-identical:
+  Play.bat              1e8487367cfc759c9c79e21567cab786e9a03cfbf220e4f73aeafbeb42460143
+  PlayDebug.bat         50a9c7dfd53740cfbc480162b79ed78808ad351c4888fd51a296b63ff2952876
+  StartServer.bat       efc2291b11f54f95da1cae46d87d7aa6529824e2daaaaf9a4293cbe1f85895ea
+  StartMarketServer.bat ad7283a3ecc302f2be3890aaabacadd59df3059b22cebc733b868d3ad75f7e62
+
+Conclusion: v1.10 may retain the audited client build/patch/certificate preparation
+architecture from v1.9.1.
+
+4. NODE / NPM AUTHORITY
+-----------------------
+Root and server package.json dependency sets are unchanged except application version
+metadata. package-lock files differ only in corresponding EveJS version metadata after
+normalization.
+
+Normalized lock equality:
+  root package-lock SHA:   c42414c52bdc52b7b63ad2679aaaa7cde1fb949b23fd4af279fc068a8983060d
+  server package-lock SHA: b242ba33d6555e2821d1b35e6564dd0b19c8ff49b868fc83144f0e90e25c6935
+
+Notable existing native/runtime dependencies remain unchanged, including:
+  better-sqlite3 ^12.11.1
+  protobufjs    ^8.0.1
+
+No new Node engine field or new native-module dependency was introduced by v0.12.7.
+Upstream NON_DOCKER_SETUP_AUDIT remains semantically unchanged and recommends Node 24 LTS.
+
+5. RUST MARKET / MARKET DATA AUTHORITY
+--------------------------------------
+The complete externalservices/market-server tree is byte-identical:
+  files: 16
+  subtree digest: 90D0BF06EED30B0B5D32FB82D7892F363B5BC09BC41679C5AE62EE9ED9E2B53C
+
+The exact v1.9.1 Market build-input algorithm produces the same stock identity for
+v0.12.6 and v0.12.7:
+  E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A
+
+All three Market seeder trees are byte-identical:
+  market-seed:    2AD741B47D29828334BD9CA9755845DA5A1D7D66AB439F88739F3665FD45F0DE
+  market-seederv2:007C6E550388E1574D45C575DDF31E812AAFAAF8843455CB1154F07BB8C784C6
+  market-seederv3:59C5D00654218867E8AAC519DACBE14DEE3567FDC09AB12D65BC631555C1A9E0
+
+No new Market RPC usage was introduced by the changed/new v0.12.7 Node source that would
+require a changed stock Market RPC contract.
+
+Conclusion: existing v0.12.6 Market persistence is not reseeded by the updater. The
+same source-format Market server is rebuilt in the v0.12.7 stage and the external
+runtime cache remains keyed by the exact source digest rather than version text.
+
+6. GAMESTORE / STATIC DATA / CONTENT PACKS
+------------------------------------------
+tools/DatabaseCreator changed:
+  v0.12.6 digest: 2BDBC40F4F573BF757D63579F905926FA867A5A0143553989FDB7A8DB1E841C2
+  v0.12.7 digest: F2833CB3139ED6BD6DCED37035930E265BB9B4B47121D0DB2F15576EA7A8D5F4
+
+v0.12.7 adds generated static table dungeonClientContent and changes dungeonAuthority
+static data. Therefore generated static game data/manifest are target-version-owned and
+must be rebuilt in the update stage.
+
+v0.12.7 adds Content Packs. Source and documentation place the default persistent root at:
+  _local/gameStore/content-packs/
+
+The upstream ResetLocalDatabases tool now preserves content-packs by default. v1.10
+therefore treats Content Packs as player-owned persistent state and compares exact tree
+manifests before/after the static-data refresh.
+
+The authoritative gamestore.sqlite remains preserved through the update transaction.
+
+7. INDUSTRY RUNTIME MIGRATION
+-----------------------------
+v0.12.7 adds industryInstalledLocationMigration.js. It scans existing industry jobs,
+rejects corrupt/ambiguous states, assigns the installed-location field where necessary,
+records installedLocationSchemaVersion=1 and durably flushes the migrated state before
+the production scheduler proceeds.
+
+This is a first-runtime migration. v1.10 does not execute the EveJS game server during
+staging, so it preserves gamestore.sqlite byte-for-byte during the update. The first
+successful v0.12.7 runtime may then make the intended migration change.
+
+8. CONFIGURATION CHANGES
+------------------------
+config/server.json is byte-identical, including the primary service defaults used by the
+Linux Launcher.
+
+New official defaults:
+  config/mining.json -> industry.industryJobSpeedMultiplier = 1
+  config/npc.json    -> targeting.npcPlayerDronesTargetable = true
+
+config/version.json becomes v0.12.7; schema remains 1.
+
+v1.10 uses a three-way merge:
+  OLD official default / CURRENT user value / NEW official default
+
+If CURRENT still equals OLD, NEW is adopted. If CURRENT differs from OLD, the user's
+value wins. Version-authoritative target metadata comes from v0.12.7.
+
+A fixture using a genuine v0.12.6 config with a user-modified industrySystemCostIndex
+confirmed the user value remained intact while both new v0.12.7 defaults were added.
+
+9. CERTIFICATES / GATEWAY / PORTS / UPSTREAM SETUP
+--------------------------------------------------
+tools/Setup is byte-identical.
+ClientSETUP certificate tooling is byte-identical, including Install-EvEJSCerts.ps1 and
+build-gateway-cert.js.
+config/server.json is byte-identical.
+
+Conclusion: no source evidence requires changing the accepted Linux TLS/XMPP/gateway,
+port 443, Market-before-game startup or Proton CA-path architecture.
+
+10. LIVING UNIVERSE COMPATIBILITY CONSEQUENCES
+----------------------------------------------
+The previous loader-based Mod LU package and X-Patch 0.3.2 were audited against
+v0.12.6, not v0.12.7.
+
+v1.10 therefore:
+  - preserves ordinary loader mods;
+  - preserves an existing mods/x-eve-living-universe tree as bytes/state;
+  - does not activate that LU loader on v0.12.7 without new compatibility authority;
+  - blocks X-Patch 0.3.2 installed/source-overlay state before update staging;
+  - never source-merges X-Patch across versions;
+  - never offers the old v0.12.6 LU packages as v0.12.7-compatible installs.
+
+11. UPDATER CONTRACT
+--------------------
+Audited direct update path:
+  v0.12.6 -> v0.12.7 only
+
+Preserve:
+  _local runtime state
+  gamestore.sqlite
+  Content Packs
+  Market market.sqlite and generated persistence
+  mods
+  certificates
+  Linux launcher configuration
+  Proton prefix
+  copied EVE client
+  logs
+
+Refresh from v0.12.7:
+  program source
+  root/server Node dependencies
+  generated static game data + manifest
+  Market binary
+  v1.10 launcher/helper/cleanup runtime files
+
+Never during update:
+  Market reseed
+  fresh player database
+  fresh Proton prefix
+  unnecessary re-patch of the unchanged build-3396210 client
+  X-Patch overlay merge
+  activation of unverified Living Universe
+
+12. AUDIT CONCLUSION
+--------------------
+No large installer/launcher architecture rewrite is required by v0.12.7. A constrained
+v1.10 port is justified, but the new DatabaseCreator/static-data work, Content Pack
+persistence, industry runtime migration, two configuration defaults and Living Universe
+version boundary require explicit updater behavior.
+
+Status:
+  SOURCE AUDITED
+  STATIC VALIDATED
+  LIVE v0.12.7 ACCEPTANCE PENDING

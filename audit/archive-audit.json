@@ -1,0 +1,32 @@
+{
+  "126": {
+    "members": 1692,
+    "crc": "PASS",
+    "issues": 0,
+    "roots": [
+      "v0.12.6"
+    ],
+    "sha256": "b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182",
+    "size": 17737452
+  },
+  "127": {
+    "members": 1712,
+    "crc": "PASS",
+    "issues": 0,
+    "roots": [
+      "v0.12.7"
+    ],
+    "sha256": "7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b",
+    "size": 18899648
+  },
+  "setup191": {
+    "members": 30,
+    "crc": "PASS",
+    "issues": 0,
+    "roots": [
+      "EveJS-v0.12.6-Universal-Linux-Setup-v1.9.1-LU-Install-Flow-Hotfix"
+    ],
+    "sha256": "511fd5b3c83f4f51d7a344361217eef641cbd8f45ad0f4ef3cb21366c4c0d027",
+    "size": 96646
+  }
+}

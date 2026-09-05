@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.10 — v0.12.7 source-audited stock runtime
+# EveJS Portable Linux Launcher v1.12 — v0.12.7.1 Stock-Only Edition
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -15,10 +15,10 @@
 #   6. Launch EVE only after all backend/TLS checks pass.
 #
 # Audited runtime policy:
-#   * Stock EveJS v0.12.7 is supported.
-#   * mods/x-eve-living-universe/loader.js may be preserved but is deliberately not
-#     passed to Node until a v0.12.7-compatible Living Universe release is audited.
-#   * X-Patch source overlays are rejected by the compatibility authority.
+#   * Stock EveJS v0.12.7.1 is supported.
+#   * Living Universe is intentionally not supported by this Stock-only edition.
+#   * Any Living Universe/X-Patch/unknown integrated source state is fail-closed.
+#   * Older X-Patch source overlays remain rejected by the compatibility authority.
 #
 # The launcher is runtime-only and never installs/updates/repairs EveJS or Living Universe.
 # Market binaries are verified external runtime builds matched to installed source.
@@ -50,6 +50,8 @@ EVEJS_MARKET_SOURCE_DIGEST=""
 EVEJS_MARKET_RUNTIME_SHA256=""
 EVEJS_RUNTIME_ROOT=""
 EVEJS_XPATCH_VERSION=""
+EVEJS_INTEGRATED_LU_ACTIVE="0"
+EVEJS_INTEGRATED_LU_AUTHORITY=""
 MARKET_RPC_PORT="40111"
 
 XMPP_BIND_HOST="127.0.0.1"
@@ -540,8 +542,7 @@ detect_mods() {
         [[ -f "$loader" ]] || continue
         name="$(basename "${mod_dir%/}")"
         if [[ "$name" == "x-eve-living-universe" ]]; then
-            # v1.10 intentionally preserves this mod tree across an update but never
-            # activates it on v0.12.7 without a separately audited compatible release.
+            # This Stock-only Launcher never activates the Living Universe loader variant.
             DISABLED_LU_LOADER=1
             continue
         fi
@@ -554,8 +555,8 @@ detect_mods() {
 
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
-        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.7"
-        echo "       (no audited v0.12.7 Living Universe compatibility authority in Setup v1.10)"
+        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.7.1"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.12 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -569,7 +570,7 @@ show_mods() {
 
 refresh_runtime_compatibility() {
     [[ -f "$COMPAT_HELPER" ]] || {
-        echo "[ERROR] Missing LU compatibility helper: $COMPAT_HELPER" >&2
+        echo "[ERROR] Missing runtime compatibility helper: $COMPAT_HELPER" >&2
         echo "Run the EveJS Universal Linux Installer and choose Prepare/Verify Runtime Compatibility." >&2
         return 1
     }
@@ -595,6 +596,8 @@ market_process_binary_matches() {
     actual="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
     [[ -n "$expected" && "$actual" == "$expected" ]]
 }
+
+market_rpc_probe_integrated_lu() { return 0; }
 
 ensure_loopback_443_permission() {
     local current
@@ -828,6 +831,11 @@ launch_market_server() {
 
     if ! market_process_binary_matches "$MARKET_PID"; then
         echo "  ✗ Market PID does not execute the exact verified runtime binary."
+        stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
+        return 1
+    fi
+    if ! market_rpc_probe_integrated_lu; then
+        echo "  ✗ Integrated LU Market RPC contract probe failed."
         stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
         return 1
     fi
@@ -1112,7 +1120,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.7 Linux Launcher — v1.10 Source Audited ║"
+echo "║  EveJS v0.12.7.1 Linux Launcher — v1.12 Stock Only    ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"
@@ -1162,11 +1170,11 @@ while true; do
     fi
 
     if is_pid_running "$SERVER_PID" && port_exclusively_owned_by_tree "$REDSHIFT_EDGE_PORT" "$SERVER_PID"; then
-        echo -e "Monitor:\033[0;32m ● OWNED\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
+        echo -e "Redshift: \033[0;32m● OWNED\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
     elif port_listening "$REDSHIFT_EDGE_PORT"; then
-        echo -e "Monitor:\033[1;31m ● FOREIGN/STALE\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
+        echo -e "Redshift: \033[1;31m● FOREIGN/STALE\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
     else
-        echo -e "Monitor:\033[0;31m ○ NOT LISTENING\033[0m"
+        echo -e "Redshift: \033[0;31m○ NOT LISTENING\033[0m"
     fi
     echo "Client: $(status_line "$CLIENT_PID")"
     echo "Mods:   $MOD_COUNT"

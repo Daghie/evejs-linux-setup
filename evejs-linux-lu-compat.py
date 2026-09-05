@@ -14,17 +14,21 @@ import subprocess
 import sys
 import tempfile
 
-TARGET_VERSION = "0.12.7"
+TARGET_VERSION = "0.12.7.1"
 TARGET_BUILD = 3396210
 XPATCH_VERSION = "0.3.2"
+SETUP_VERSION = "v1.12"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
-STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.7.json"
+STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.7.1.json"
+INTEGRATED_MARKET_MANIFEST = COMPAT_DIR / "market-integrated-lu-v0.12.7.1.json"
+INTEGRATED_LU_DIR = SCRIPT_DIR / "integrated-lu"
+INTEGRATED_LU_MANIFEST = INTEGRATED_LU_DIR / "manifest.json"
+INTEGRATED_LU_INSTALL = Path("_local/evejs-linux-integrated-lu/install.json")
 XPATCH_INSTALL = Path("_local/x-eve-patch/install.json")
 LOADER_LU_ROOT = Path("mods/x-eve-living-universe")
 XPATCH_SIGNATURES = (
-    Path("config/xeve.json"),
     Path("evejs.config.x-eve.json"),
     Path("server/src/services/xEve/xEveRuntime.js"),
 )
@@ -151,6 +155,7 @@ def verify_build_manifest(actual: list[dict], manifest_path: Path, label: str) -
     return digest, expected
 
 
+
 def detect_partial_xpatch(repo: Path) -> list[str]:
     signatures = []
     for rel in XPATCH_SIGNATURES:
@@ -167,66 +172,53 @@ def classify(repo: Path) -> dict:
     if not repo.is_dir():
         raise CompatError(f"EveJS directory not found: {repo}")
     if read_evejs_version(repo) != TARGET_VERSION:
-        raise CompatError(f"This compatibility build requires EveJS {TARGET_VERSION}: {repo}")
+        raise CompatError(f"This Stock-only compatibility build requires EveJS {TARGET_VERSION}: {repo}")
     build = read_supported_build(repo)
     if build != TARGET_BUILD:
         raise CompatError(f"Expected EVE client build contract {TARGET_BUILD}; found {build!r}.")
 
     mod_lu_present = (repo / MOD_LU_PATH).is_file()
     xpatch_state_present = (repo / XPATCH_INSTALL).is_file()
-    if mod_lu_present and xpatch_state_present:
+    integrated_present = (repo / INTEGRATED_LU_INSTALL).is_file()
+    if integrated_present:
         raise CompatError(
-            "Incompatible Living Universe variants are both present.\n"
-            f"Loader LU: {repo / MOD_LU_PATH}\n"
-            f"X-Patch LU: {repo / XPATCH_INSTALL}\n\n"
-            "Nothing was changed. EveJS v0.12.7 has no audited Living Universe runtime in Setup v1.10."
+            "Installer-managed Integrated Living Universe state is present, but this is the Stock-only Setup.\n"
+            "Nothing was changed. Use the v1.12 Living-Universe edition to verify/migrate that installation, "
+            "or uninstall LU with the matching authority before using Stock-only."
         )
     if xpatch_state_present:
         state = load_json(repo / XPATCH_INSTALL)
         raise CompatError(
-            "X-Patch Living Universe install state is present, but Setup v1.10 has no audited "
-            "X-Patch release for EveJS v0.12.7.\n"
+            "Older X-Patch Living Universe state is present and is unsupported by the Stock-only Setup.\n"
             f"Installed X-Patch version: {state.get('pluginVersion')!r}\n"
-            f"Recorded EveJS baseline: {state.get('evejsVersion')!r}\n\n"
-            "Do not carry a v0.12.6 source overlay into v0.12.7. Use that X-Patch release's own "
-            "supported uninstall/rollback method before updating, then prepare stock v0.12.7."
+            f"Recorded EveJS baseline: {state.get('evejsVersion')!r}"
         )
-
     partial = detect_partial_xpatch(repo)
     if partial:
         raise CompatError(
-            "X-Patch-like source files were found without a supported v0.12.7 install authority.\n"
-            "The compatibility layer will not reinterpret or merge them.\nDetected:\n  - "
+            "Living-Universe/X-Patch-like source files are present in a Stock-only installation.\n"
+            "Launcher activation is blocked rather than guessing about source ownership.\nDetected:\n  - "
             + "\n  - ".join(partial)
         )
 
     market_root = repo / "externalservices/market-server"
     actual_records = build_input_records(market_root)
-    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.7")
+    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.7.1")
     loader_digest = tree_digest(repo / LOADER_LU_ROOT) if mod_lu_present else ""
     if mod_lu_present:
         mode = "stock-loader-lu-disabled"
-        label = "Stock EveJS 0.12.7 (Living Universe loader present but disabled: compatibility unverified)"
+        label = "Stock EveJS 0.12.7.1 (older loader Living Universe preserved but disabled)"
     else:
         mode = "stock"
-        label = "Stock EveJS 0.12.7"
-
+        label = "Stock EveJS 0.12.7.1"
     return {
-        "repo": str(repo),
-        "mode": mode,
-        "marketProfile": "stock-v0.12.7-market",
-        "label": label,
-        "sourceDigest": digest,
-        "marketInputCount": len(actual_records),
-        "modLivingUniverseActive": False,
-        "modLivingUniversePresent": mod_lu_present,
-        "loaderLivingUniverseEnabled": False,
-        "loaderLivingUniverseDigest": loader_digest,
-        "xpatchLivingUniverseActive": False,
-        "xpatchVersion": "",
-        "xpatchTrackedDigest": "",
+        "repo": str(repo), "mode": mode, "marketProfile": "stock-v0.12.7.1-market",
+        "label": label, "sourceDigest": digest, "marketInputCount": len(actual_records),
+        "modLivingUniverseActive": False, "modLivingUniversePresent": mod_lu_present,
+        "loaderLivingUniverseEnabled": False, "loaderLivingUniverseDigest": loader_digest,
+        "integratedLivingUniverseActive": False, "integratedAuthoritySha256": "",
+        "xpatchLivingUniverseActive": False, "xpatchVersion": "", "xpatchTrackedDigest": "",
     }
-
 
 def runtime_root_for(repo: Path) -> Path:
     repo_abs = repo.expanduser().absolute()
@@ -372,6 +364,7 @@ def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> 
             and after["sourceDigest"] == before["sourceDigest"]
             and after.get("loaderLivingUniverseDigest", "") == before.get("loaderLivingUniverseDigest", "")
             and after.get("xpatchTrackedDigest", "") == before.get("xpatchTrackedDigest", "")
+            and after.get("integratedAuthoritySha256", "") == before.get("integratedAuthoritySha256", "")
         )
         if not conserved:
             raise CompatError(
@@ -428,6 +421,8 @@ def emit(result: dict, as_shell: bool, as_json: bool):
             "EVEJS_MARKET_RUNTIME_SHA256": result.get("marketBinarySha256", ""),
             "EVEJS_RUNTIME_ROOT": result.get("runtimeRoot", ""),
             "EVEJS_XPATCH_VERSION": result.get("xpatchVersion", ""),
+            "EVEJS_INTEGRATED_LU_ACTIVE": "1" if result.get("integratedLivingUniverseActive") else "0",
+            "EVEJS_INTEGRATED_LU_AUTHORITY": result.get("integratedAuthoritySha256", ""),
         }
         for k, v in pairs.items():
             print(f"{k}={shell_quote(str(v))}")
@@ -442,19 +437,15 @@ def emit(result: dict, as_shell: bool, as_json: bool):
 
 
 def self_test():
-    manifest = load_json(STOCK_MANIFEST)
-    assert manifest["evejsVersion"] == "0.12.7"
-    assert manifest["sourceDigest"] == "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A"
-    print(json.dumps({
-        "status": "PASS",
-        "targetVersion": TARGET_VERSION,
-        "stockDigest": manifest["sourceDigest"],
-        "livingUniversePolicy": "unverified v0.12.6 LU is preserved-but-disabled; X-Patch source overlays are blocked",
-    }, indent=2))
-
+    stock = load_json(STOCK_MANIFEST)
+    assert stock["evejsVersion"] == TARGET_VERSION
+    assert stock["kind"] == "stock"
+    assert len(stock.get("files") or []) >= 8
+    preserve_executable_path("~/.cargo/bin/cargo")
+    print("PASS stock-only compatibility helper self-test")
 
 def main():
-    ap = argparse.ArgumentParser(description="Read-only EveJS v0.12.7 runtime compatibility authority")
+    ap = argparse.ArgumentParser(description="EveJS v0.12.7.1 stock + Integrated Living Universe runtime compatibility authority")
     sub = ap.add_subparsers(dest="command", required=True)
 
     for name in ("detect", "verify-runtime"):

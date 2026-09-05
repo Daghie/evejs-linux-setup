@@ -1,3 +1,3 @@
-b7dc63fd8ef9d482e27e73bbc1e8ec1c4d6bb2e8993807581bd3fa820dcb7182  EveJS-v0.12.6.zip
-511fd5b3c83f4f51d7a344361217eef641cbd8f45ad0f4ef3cb21366c4c0d027  EveJS-v0.12.6-Universal-Linux-Setup-v1.9.1-LU-Install-Flow-Hotfix.zip
 7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b  EveJS-v0.12.7.zip
+9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0  EveJS-v0.12.7.1.zip
+76d4e1738bc4bf909518bb36b4c0d0e70c9d2137c50fdc145044134f9f5e10c4  living-universe-dac-dev.zip

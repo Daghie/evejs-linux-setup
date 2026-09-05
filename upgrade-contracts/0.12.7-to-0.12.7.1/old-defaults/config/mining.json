@@ -56,7 +56,8 @@
   "industry": {
     "miningStructureReprocessingEfficiency": 0.5,
     "miningStructureGasDecompressionEfficiency": 0.79,
-    "industrySystemCostIndex": 0.04
+    "industrySystemCostIndex": 0.04,
+    "industryJobSpeedMultiplier": 1
   },
   "ledgers": {
     "miningCharacterLedgerDelayMs": 600000,

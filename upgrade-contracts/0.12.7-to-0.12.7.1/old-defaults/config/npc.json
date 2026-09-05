@@ -24,6 +24,9 @@
   "startup": {
     "npcAuthoredStartupEnabled": false
   },
+  "targeting": {
+    "npcPlayerDronesTargetable": true
+  },
   "concord": {
     "npcDefaultConcordStartupEnabled": true,
     "npcDefaultConcordGateAutoAggroNpcsEnabled": false,

@@ -1,0 +1,6 @@
+Integrated Living Universe authority for EveJS v0.12.7.1
+Source: living-universe-dac-dev.zip
+SHA-256: 76D4E1738BC4BF909518BB36B4C0D0E70C9D2137C50FDC145044134F9F5E10C4
+Managed entries: 673
+Market source digest: BA9BC7E44C7B78A215AF03C8ABF892622A080A634A9707C4CA9D6A29D268E6B5
+LU Monitor: tools/lu-monitor/LUMonitor.sh (127.0.0.1:26050)

@@ -1,0 +1,57 @@
+Living Universe Integration Audit — Setup v1.12
+=================================================
+Date: 2026-09-05
+
+Source authority
+----------------
+living-universe-dac-dev.zip
+SHA-256: 76d4e1738bc4bf909518bb36b4c0d0e70c9d2137c50fdc145044134f9f5e10c4
+ZIP members: 5014
+CRC: PASS
+Unsafe/duplicate/symlink destinations: 0
+Declared merged EveJS baseline: v0.12.7.1
+
+Installation model
+------------------
+The supplied archive is a complete source-integrated Living Universe development tree.
+Its stale historical packaging/X-Patch material is NOT executed.
+Setup v1.12 derives a transactionally managed runtime delta directly against clean EveJS v0.12.7.1.
+
+Managed LU payload: 673 entries
+  added:       486
+  modified:    184
+  merged-json: 2
+  seeded-json: 1
+LU Monitor payload entries: 53
+
+LU Market build-input digest:
+BA9BC7E44C7B78A215AF03C8ABF892622A080A634A9707C4CA9D6A29D268E6B5
+Required LU Market RPCs:
+- GetSeedStocks
+- AdjustSeedStocks
+
+Market startup additionally runs:
+server/scripts/syncLivingEconomyMarketTopology.js
+against the preserved Market database and _local/gameStore/data before Market starts.
+The synchronizer uses INSERT OR IGNORE for missing region/system/station topology and writes its revision manifest; it does not replace the Market database.
+
+LU Monitor
+----------
+Packaged authority: tools/lu-monitor/LUMonitor.sh
+Default loopback URL: http://127.0.0.1:26050/
+Launcher action: [L] Start/stop LU Monitor
+The Launcher validates that Integrated LU is installed before starting it, injects the selected validated Node runtime into PATH, tracks the Monitor PID/process tree, refuses a foreign owner of port 26050, writes a separate lu-monitor-latest.log, and stops only the Monitor process tree it owns.
+Port 26400 is shown separately as Redshift; it is not the LU Monitor.
+
+Direct transaction tests
+------------------------
+PASS clean v0.12.7.1 -> install 673 LU entries -> verify -> classify integrated-lu.
+PASS managed uninstall restored every LU-managed path to the clean v0.12.7.1 source state (0 managed-path differences).
+PASS deliberate post-install drift caused verify and uninstall to fail closed without overwriting the edited file.
+PASS prior v1.11/v0.12.7 installer-managed LU authority verification.
+PASS v1.11 -> v1.12 source/config migration fixture preserved a user-edited config/xeve.json value.
+PASS LU Monitor shell syntax and 45 JavaScript syntax checks; 53 Monitor payload entries independently hash-verified via the LU manifest.
+
+Not claimed in this environment
+-------------------------------
+The sandbox has Node v22.16.0 and no Cargo/rustc. The supplied LU node_modules native better-sqlite3 binary was built for a newer Node ABI. Therefore a real Rust Market build/doctor, topology sync against a fully generated live world, Monitor browser session, EveJS server run and Proton/EVE client launch are LIVE BAZZITE ACCEPTANCE PENDING rather than claimed as passed.

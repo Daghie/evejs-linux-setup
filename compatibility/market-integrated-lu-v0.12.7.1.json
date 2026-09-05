@@ -1,0 +1,60 @@
+{
+  "schema": "evejs-linux-market-source/1",
+  "evejsVersion": "0.12.7.1",
+  "profile": "integrated-lu-v0.12.7.1-market",
+  "label": "Integrated Living Universe EveJS v0.12.7.1 Market source",
+  "sourceDigest": "BA9BC7E44C7B78A215AF03C8ABF892622A080A634A9707C4CA9D6A29D268E6B5",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "size": 28581,
+      "sha256": "5E377597076C16D313CF5483D49D7625D7190E5793A99EFC9E8F762176B68507"
+    },
+    {
+      "path": "Cargo.toml",
+      "size": 612,
+      "sha256": "4A5ED461834535DC4D04DC59FDE3AD082AB3C7333DB6B33BB131F069B76414DE"
+    },
+    {
+      "path": "crates/market-common/Cargo.toml",
+      "size": 229,
+      "sha256": "80FAD73C83BF3764202391FA28BF815CDD64F149B096B36E00BF6D10C008D435"
+    },
+    {
+      "path": "crates/market-common/src/lib.rs",
+      "size": 20931,
+      "sha256": "3FA8857D0C9D7CA35C53E2B9CB4509A1566736BB01C9A37737EEB91A8FD6643D"
+    },
+    {
+      "path": "src/config.rs",
+      "size": 7282,
+      "sha256": "50A3E4864449057D8107E73D7237FBFDEDF624421C20D59781774DA378E93782"
+    },
+    {
+      "path": "src/main.rs",
+      "size": 24491,
+      "sha256": "352781A30FD57AB4967BA8CC136869E39F18AFAD3584431D44F1D5A680E4F01A"
+    },
+    {
+      "path": "src/rpc.rs",
+      "size": 11756,
+      "sha256": "F4892EC8D94D40B3BA07B52A55B663B700ADFE4FBBF856B093A35F5CF6D8A096"
+    },
+    {
+      "path": "src/state.rs",
+      "size": 163612,
+      "sha256": "7642F0C6A5C5956777C427A93792D21CA9DD2A09422827801DB0ABF66EC19CF9"
+    },
+    {
+      "path": "src/state/order_book_tests.rs",
+      "size": 3075,
+      "sha256": "E03A6716ED594098EB287BC6608619F02A4A684B57BD5E95B46B96380B2377DB"
+    },
+    {
+      "path": "src/state/transaction_tests.rs",
+      "size": 25149,
+      "sha256": "616B9C8C1E5D30CF1AC0B76044B9B8672998486EF4E3D4B456FEF1F8093DF032"
+    }
+  ],
+  "authoritySha256": "76D4E1738BC4BF909518BB36B4C0D0E70C9D2137C50FDC145044134F9F5E10C4"
+}

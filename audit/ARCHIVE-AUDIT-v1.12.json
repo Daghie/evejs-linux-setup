@@ -1,0 +1,27 @@
+{
+  "generated": "2026-09-05",
+  "inputs": [
+    {
+      "file": "EveJS-v0.12.7.1.zip",
+      "sizeBytes": 27190691,
+      "sha256": "9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0",
+      "members": 1503,
+      "crc": "PASS",
+      "unsafeOrDuplicateOrSymlinkIssues": 0,
+      "roots": [
+        "v0.12.7.1"
+      ]
+    },
+    {
+      "file": "living-universe-dac-dev.zip",
+      "sizeBytes": 41590277,
+      "sha256": "76d4e1738bc4bf909518bb36b4c0d0e70c9d2137c50fdc145044134f9f5e10c4",
+      "members": 5014,
+      "crc": "PASS",
+      "unsafeOrDuplicateOrSymlinkIssues": 0,
+      "roots": [
+        "living-universe-dac-dev"
+      ]
+    }
+  ]
+}

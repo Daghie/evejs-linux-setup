@@ -14,17 +14,21 @@ import subprocess
 import sys
 import tempfile
 
-TARGET_VERSION = "0.12.7"
+TARGET_VERSION = "0.12.7.1"
 TARGET_BUILD = 3396210
 XPATCH_VERSION = "0.3.2"
+SETUP_VERSION = "v1.12"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
-STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.7.json"
+STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.7.1.json"
+INTEGRATED_MARKET_MANIFEST = COMPAT_DIR / "market-integrated-lu-v0.12.7.1.json"
+INTEGRATED_LU_DIR = SCRIPT_DIR / "integrated-lu"
+INTEGRATED_LU_MANIFEST = INTEGRATED_LU_DIR / "manifest.json"
+INTEGRATED_LU_INSTALL = Path("_local/evejs-linux-integrated-lu/install.json")
 XPATCH_INSTALL = Path("_local/x-eve-patch/install.json")
 LOADER_LU_ROOT = Path("mods/x-eve-living-universe")
 XPATCH_SIGNATURES = (
-    Path("config/xeve.json"),
     Path("evejs.config.x-eve.json"),
     Path("server/src/services/xEve/xEveRuntime.js"),
 )
@@ -151,6 +155,48 @@ def verify_build_manifest(actual: list[dict], manifest_path: Path, label: str) -
     return digest, expected
 
 
+
+def verify_integrated_lu_source(repo: Path) -> tuple[str, dict]:
+    manifest = load_json(INTEGRATED_LU_MANIFEST)
+    record = load_json(repo / INTEGRATED_LU_INSTALL)
+    authority = str(manifest.get("authority", {}).get("sourceArchiveSha256", "")).upper()
+    recorded = str(record.get("authoritySha256", "")).upper()
+    if not authority or recorded != authority:
+        raise CompatError(
+            "Integrated Living Universe install authority does not match Setup v1.12.\n"
+            f"Recorded: {recorded or 'missing'}\nExpected: {authority or 'missing'}"
+        )
+    bad = []
+    for entry in manifest.get("files", []):
+        rel = str(entry.get("path") or "")
+        kind = str(entry.get("kind") or "")
+        p = repo / rel
+        if kind in {"modified", "added"}:
+            expected = str((entry.get("installed") or {}).get("sha256") or "").upper()
+            if not p.is_file() or sha256_file(p) != expected:
+                bad.append(rel)
+        elif kind in {"merged-json", "seeded-json"}:
+            if p.exists():
+                try:
+                    load_json(p)
+                except CompatError:
+                    bad.append(rel)
+        else:
+            bad.append(f"{rel} (unknown kind {kind})")
+    if bad:
+        raise CompatError(
+            "Integrated Living Universe managed source does not match the audited v0.12.7.1 authority.\n"
+            "Run the Installer's Living Universe verification/uninstall flow; Launcher activation is blocked.\n"
+            "Changed/missing:\n  - " + "\n  - ".join(bad[:80])
+        )
+    market_root = repo / "externalservices/market-server"
+    actual_records = build_input_records(market_root)
+    digest, expected = verify_build_manifest(
+        actual_records, INTEGRATED_MARKET_MANIFEST, "Integrated Living Universe EveJS 0.12.7.1"
+    )
+    return digest, {"manifest": manifest, "record": record, "market": expected}
+
+
 def detect_partial_xpatch(repo: Path) -> list[str]:
     signatures = []
     for rel in XPATCH_SIGNATURES:
@@ -174,47 +220,76 @@ def classify(repo: Path) -> dict:
 
     mod_lu_present = (repo / MOD_LU_PATH).is_file()
     xpatch_state_present = (repo / XPATCH_INSTALL).is_file()
+    integrated_present = (repo / INTEGRATED_LU_INSTALL).is_file()
+
+    if integrated_present:
+        if mod_lu_present or xpatch_state_present:
+            conflicts = []
+            if mod_lu_present: conflicts.append(str(repo / MOD_LU_PATH))
+            if xpatch_state_present: conflicts.append(str(repo / XPATCH_INSTALL))
+            raise CompatError(
+                "Integrated Living Universe cannot run beside an older loader-LU or X-Patch state.\n"
+                "Nothing was changed. Conflicts:\n  - " + "\n  - ".join(conflicts)
+            )
+        digest, integrated = verify_integrated_lu_source(repo)
+        authority = str(integrated["manifest"]["authority"]["sourceArchiveSha256"]).upper()
+        return {
+            "repo": str(repo),
+            "mode": "integrated-lu",
+            "marketProfile": "integrated-lu-v0.12.7.1-market",
+            "label": "Integrated Living Universe on EveJS v0.12.7.1",
+            "sourceDigest": digest,
+            "marketInputCount": len(build_input_records(repo / "externalservices/market-server")),
+            "modLivingUniverseActive": False,
+            "modLivingUniversePresent": False,
+            "loaderLivingUniverseEnabled": False,
+            "loaderLivingUniverseDigest": "",
+            "integratedLivingUniverseActive": True,
+            "integratedAuthoritySha256": authority,
+            "xpatchLivingUniverseActive": False,
+            "xpatchVersion": "",
+            "xpatchTrackedDigest": "",
+        }
+
     if mod_lu_present and xpatch_state_present:
         raise CompatError(
-            "Incompatible Living Universe variants are both present.\n"
+            "Incompatible older Living Universe variants are both present.\n"
             f"Loader LU: {repo / MOD_LU_PATH}\n"
             f"X-Patch LU: {repo / XPATCH_INSTALL}\n\n"
-            "Nothing was changed. EveJS v0.12.7 has no audited Living Universe runtime in Setup v1.10."
+            "Nothing was changed. Remove them with their own supported method before installing Integrated LU."
         )
     if xpatch_state_present:
         state = load_json(repo / XPATCH_INSTALL)
         raise CompatError(
-            "X-Patch Living Universe install state is present, but Setup v1.10 has no audited "
-            "X-Patch release for EveJS v0.12.7.\n"
+            "Older X-Patch Living Universe install state is present and is not reinterpreted by Setup v1.12.\n"
             f"Installed X-Patch version: {state.get('pluginVersion')!r}\n"
             f"Recorded EveJS baseline: {state.get('evejsVersion')!r}\n\n"
-            "Do not carry a v0.12.6 source overlay into v0.12.7. Use that X-Patch release's own "
-            "supported uninstall/rollback method before updating, then prepare stock v0.12.7."
+            "Use that release's supported uninstall/rollback method first, then install Integrated LU."
         )
 
     partial = detect_partial_xpatch(repo)
     if partial:
         raise CompatError(
-            "X-Patch-like source files were found without a supported v0.12.7 install authority.\n"
-            "The compatibility layer will not reinterpret or merge them.\nDetected:\n  - "
+            "Living-Universe/X-Patch-like source files were found without the v1.12 Integrated LU install authority.\n"
+            "The compatibility layer will not reinterpret, adopt, or merge them.\nDetected:\n  - "
             + "\n  - ".join(partial)
         )
 
     market_root = repo / "externalservices/market-server"
     actual_records = build_input_records(market_root)
-    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.7")
+    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.7.1")
     loader_digest = tree_digest(repo / LOADER_LU_ROOT) if mod_lu_present else ""
     if mod_lu_present:
         mode = "stock-loader-lu-disabled"
-        label = "Stock EveJS 0.12.7 (Living Universe loader present but disabled: compatibility unverified)"
+        label = "Stock EveJS 0.12.7.1 (older loader Living Universe preserved but disabled)"
     else:
         mode = "stock"
-        label = "Stock EveJS 0.12.7"
+        label = "Stock EveJS 0.12.7.1"
 
     return {
         "repo": str(repo),
         "mode": mode,
-        "marketProfile": "stock-v0.12.7-market",
+        "marketProfile": "stock-v0.12.7.1-market",
         "label": label,
         "sourceDigest": digest,
         "marketInputCount": len(actual_records),
@@ -222,6 +297,8 @@ def classify(repo: Path) -> dict:
         "modLivingUniversePresent": mod_lu_present,
         "loaderLivingUniverseEnabled": False,
         "loaderLivingUniverseDigest": loader_digest,
+        "integratedLivingUniverseActive": False,
+        "integratedAuthoritySha256": "",
         "xpatchLivingUniverseActive": False,
         "xpatchVersion": "",
         "xpatchTrackedDigest": "",
@@ -372,6 +449,7 @@ def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> 
             and after["sourceDigest"] == before["sourceDigest"]
             and after.get("loaderLivingUniverseDigest", "") == before.get("loaderLivingUniverseDigest", "")
             and after.get("xpatchTrackedDigest", "") == before.get("xpatchTrackedDigest", "")
+            and after.get("integratedAuthoritySha256", "") == before.get("integratedAuthoritySha256", "")
         )
         if not conserved:
             raise CompatError(
@@ -428,6 +506,8 @@ def emit(result: dict, as_shell: bool, as_json: bool):
             "EVEJS_MARKET_RUNTIME_SHA256": result.get("marketBinarySha256", ""),
             "EVEJS_RUNTIME_ROOT": result.get("runtimeRoot", ""),
             "EVEJS_XPATCH_VERSION": result.get("xpatchVersion", ""),
+            "EVEJS_INTEGRATED_LU_ACTIVE": "1" if result.get("integratedLivingUniverseActive") else "0",
+            "EVEJS_INTEGRATED_LU_AUTHORITY": result.get("integratedAuthoritySha256", ""),
         }
         for k, v in pairs.items():
             print(f"{k}={shell_quote(str(v))}")
@@ -442,19 +522,25 @@ def emit(result: dict, as_shell: bool, as_json: bool):
 
 
 def self_test():
-    manifest = load_json(STOCK_MANIFEST)
-    assert manifest["evejsVersion"] == "0.12.7"
-    assert manifest["sourceDigest"] == "E9164F59BA3140A4C1AA792D9BF82896D10ED266A43D1BCD062166F77DA9025A"
+    stock = load_json(STOCK_MANIFEST)
+    integrated = load_json(INTEGRATED_MARKET_MANIFEST)
+    lu = load_json(INTEGRATED_LU_MANIFEST)
+    assert stock["evejsVersion"] == "0.12.7.1"
+    assert stock["sourceDigest"] == "5CD44206D164E9189E1ED74A1949B0814E858431C7125F4085ECB3B6D129CBB5"
+    assert integrated["sourceDigest"] == lu["market"]["sourceDigest"]
+    assert lu["authority"]["evejsVersion"] == "0.12.7.1"
     print(json.dumps({
         "status": "PASS",
         "targetVersion": TARGET_VERSION,
-        "stockDigest": manifest["sourceDigest"],
-        "livingUniversePolicy": "unverified v0.12.6 LU is preserved-but-disabled; X-Patch source overlays are blocked",
+        "stockDigest": stock["sourceDigest"],
+        "integratedLuDigest": integrated["sourceDigest"],
+        "integratedLuAuthority": lu["authority"]["sourceArchiveSha256"],
+        "livingUniversePolicy": "current Integrated LU is supported; older loader-LU stays disabled; older X-Patch states remain blocked",
     }, indent=2))
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Read-only EveJS v0.12.7 runtime compatibility authority")
+    ap = argparse.ArgumentParser(description="EveJS v0.12.7.1 stock + Integrated Living Universe runtime compatibility authority")
     sub = ap.add_subparsers(dest="command", required=True)
 
     for name in ("detect", "verify-runtime"):

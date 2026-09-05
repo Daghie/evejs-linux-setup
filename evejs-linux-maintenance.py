@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-EveJS Linux Installer Maintenance Engine v1.10
-Target release: EveJS v0.12.7 / EVE client build 3396210
+EveJS Linux Installer Maintenance Engine v1.12
+Target release: EveJS v0.12.7.1 / EVE client build 3396210
 
 This file is an internal companion to install-evejs-linux.sh.
 The Installer is the user-facing entry point for:
@@ -28,18 +28,22 @@ import subprocess
 import sys
 import tempfile
 import uuid
+import zipfile
+import stat
 
-TARGET_VERSION = "0.12.7"
+TARGET_VERSION = "0.12.7.1"
 TARGET_BUILD = 3396210
-SUPPORTED_UPDATE_SOURCES = {"0.12.6"}
+SUPPORTED_UPDATE_SOURCES = {"0.12.7"}
 REQUIRED_PORTS = (443, 5222, 26000, 26001, 26002, 26003, 26400, 40110, 40111)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.6-to-0.12.7"
+CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.7-to-0.12.7.1"
 LAUNCHER_SOURCE = SCRIPT_DIR / "evejs-linux-launcher.sh"
-CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.7-stale-processes.sh"
+CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.7.1-stale-processes.sh"
 COMPAT_SOURCE = SCRIPT_DIR / "evejs-linux-lu-compat.py"
 COMPAT_DATA_SOURCE = SCRIPT_DIR / "compatibility"
+INTEGRATED_LU_MANAGER_SOURCE = SCRIPT_DIR / "evejs-linux-integrated-lu.py"
+INTEGRATED_LU_DATA_SOURCE = SCRIPT_DIR / "integrated-lu"
 
 
 class UI:
@@ -303,14 +307,48 @@ def resolve_archive_root(root: Path) -> Path | None:
     return unique[0] if len(unique) == 1 else None
 
 
+def _safe_extract_release_zip(zip_path: Path, dest: Path):
+    seen=set()
+    with zipfile.ZipFile(zip_path) as z:
+        bad_crc=z.testzip()
+        if bad_crc:
+            raise RuntimeError(f"ZIP CRC failed at {bad_crc}")
+        for info in z.infolist():
+            raw=info.filename
+            name=raw.replace("\\", "/")
+            if not name or name.startswith("/") or name.startswith("\\") or re.match(r"^[A-Za-z]:", name):
+                raise RuntimeError(f"unsafe ZIP path: {raw}")
+            parts=Path(name).parts
+            if any(part in ("..", "") for part in parts):
+                raise RuntimeError(f"unsafe ZIP path: {raw}")
+            key="/".join(parts).rstrip("/")
+            if key in seen and not info.is_dir():
+                raise RuntimeError(f"duplicate ZIP destination: {raw}")
+            if not info.is_dir(): seen.add(key)
+            mode=(info.external_attr >> 16) & 0xFFFF
+            if stat.S_ISLNK(mode):
+                raise RuntimeError(f"symlink ZIP member is not accepted: {raw}")
+            out=dest.joinpath(*parts)
+            if info.is_dir() or name.endswith("/"):
+                out.mkdir(parents=True, exist_ok=True)
+                continue
+            out.parent.mkdir(parents=True, exist_ok=True)
+            with z.open(info) as src, out.open("wb") as dst:
+                shutil.copyfileobj(src,dst)
+            perm=mode & 0o777
+            if perm:
+                out.chmod(perm)
+
+
 def extract_target_zip(ui: UI, zip_path: Path) -> tuple[Path, tempfile.TemporaryDirectory]:
     if not zip_path.is_file():
         die(ui, f"EveJS release ZIP not found:\n{zip_path}")
     temp = tempfile.TemporaryDirectory(prefix="evejs-update-source-")
-    cp = subprocess.run(["unzip", "-q", str(zip_path), "-d", temp.name])
-    if cp.returncode != 0:
+    try:
+        _safe_extract_release_zip(zip_path, Path(temp.name))
+    except Exception as exc:
         temp.cleanup()
-        die(ui, f"The selected file could not be extracted as an EveJS ZIP:\n{zip_path}")
+        die(ui, f"The selected file could not be safely extracted as an EveJS ZIP:\n{zip_path}\n\n{exc}")
     root = resolve_archive_root(Path(temp.name))
     if root is None:
         temp.cleanup()
@@ -409,39 +447,21 @@ def ensure_services_stopped(ui: UI, root: Path):
 
 
 def ensure_no_xpatch_overlay_for_update(ui: UI, root: Path):
-    """Fail closed on X-Patch source overlays before staging a new EveJS base."""
-    state = root / "_local" / "x-eve-patch" / "install.json"
-    signatures = [
-        root / "config" / "xeve.json",
-        root / "evejs.config.x-eve.json",
-        root / "server" / "src" / "services" / "xEve" / "xEveRuntime.js",
-    ]
-    present = [str(p.relative_to(root)) for p in signatures if p.exists()]
-    market_rpc = root / "externalservices" / "market-server" / "src" / "rpc.rs"
-    if market_rpc.is_file() and sha256(market_rpc).upper() == "F4892EC8D94D40B3BA07B52A55B663B700ADFE4FBBF856B093A35F5CF6D8A096":
-        present.append("externalservices/market-server/src/rpc.rs (X-Patch 0.3.2 hash)")
+    # A v1.11 installer-managed Integrated LU is an explicitly supported migration source.
+    if (root / "_local/evejs-linux-integrated-lu/install.json").is_file():
+        return
+    state = root / "_local/x-eve-patch/install.json"
+    signatures = [root/"config/xeve.json", root/"evejs.config.x-eve.json", root/"server/src/services/xEve/xEveRuntime.js"]
+    present=[str(x.relative_to(root)) for x in signatures if x.exists()]
     if state.is_file():
-        try:
-            payload = json.loads(state.read_text())
-        except Exception:
-            payload = {}
-        die(
-            ui,
-            "X-Patch Living Universe is installed in the v0.12.6 source tree.\n\n"
-            f"Install state: {state}\n"
-            f"X-Patch version: {payload.get('pluginVersion', 'unknown')}\n"
-            f"Recorded EveJS baseline: {payload.get('evejsVersion', 'unknown')}\n\n"
-            "Setup v1.10 will not merge or reinterpret that source overlay as EveJS v0.12.7. "
-            "Use the installed X-Patch release's own supported uninstall/rollback method first, "
-            "then run the 0.12.6 → 0.12.7 update again."
-        )
+        try: payload=json.loads(state.read_text())
+        except Exception: payload={}
+        die(ui, "Older X-Patch Living Universe state is present and is not a supported migration source.\n\n"
+                f"X-Patch: {payload.get('pluginVersion','unknown')} / EveJS {payload.get('evejsVersion','unknown')}\n"
+                "Remove it with its own supported method first.")
     if present:
-        die(
-            ui,
-            "X-Patch-like source files were detected without a supported install authority.\n\n"
-            + "\n".join(f"  - {x}" for x in present)
-            + "\n\nThe update was stopped before staging. Setup v1.10 will not guess or merge a partial source overlay."
-        )
+        die(ui, "Living-Universe-like source files were found without the installer-managed Integrated LU authority.\n\n"
+                "The updater will not guess or adopt them.\n  - " + "\n  - ".join(present))
 
 def sqlite_checkpoint_integrity(ui: UI, path: Path, label: str) -> str | None:
     if not path.is_file():
@@ -477,6 +497,51 @@ def overlay_dir(src: Path, dst: Path):
     if cp.returncode != 0:
         run(["cp", "-a", f"{src}/.", f"{dst}/"])
 
+
+def copy_preserved_update_state(existing: Path, stage: Path):
+    """Preserve user/world state named by EveJS v0.12.7.1's upstream updater policy."""
+    if (existing / "_local").is_dir():
+        overlay_dir(existing / "_local", stage / "_local")
+
+    existing_mod_manifest = tree_manifest(existing / "mods")
+    if (existing / "mods").is_dir():
+        if (stage / "mods").exists(): shutil.rmtree(stage / "mods")
+        copy_reflink(existing / "mods", stage / "mods")
+    else:
+        (stage / "mods").mkdir(exist_ok=True)
+    if tree_manifest(stage / "mods") != existing_mod_manifest:
+        raise RuntimeError("mod conservation failure")
+
+    for rel in ("logs", "server/logs", "server/src/logs", "server/src/_secondary/data/chat",
+                "server/src/_secondary/image/generated/Alliance", "server/src/_secondary/image/generated/Character",
+                "server/src/gameStore/images", "tools/ConfigEditor/assets"):
+        src=existing/rel
+        if src.is_dir(): overlay_dir(src, stage/rel)
+
+    # Preserve all Market runtime data, never only the main sqlite file.
+    market_data=existing/"externalservices/market-server/data"
+    if market_data.is_dir():
+        if (stage/"externalservices/market-server/data").exists(): shutil.rmtree(stage/"externalservices/market-server/data")
+        copy_reflink(market_data, stage/"externalservices/market-server/data")
+
+    for rel in ("server/certs", "server/src/_secondary/express/certs"):
+        src=existing/rel
+        if src.is_dir(): overlay_dir(src, stage/rel)
+
+    # User-local root/config files explicitly kept by upstream update-policy.json.
+    for rel in (".env", ".env.local", "evejs.config.json", "evejs.config.local.json",
+                "evejs.config.x-eve.local.json", "tools/ClientSETUP/scripts/EvEJSConfig.bat"):
+        src=existing/rel
+        if src.is_file():
+            dst=stage/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
+
+    # Generated source-tree game-store data.json files can be operator-owned.
+    src_data=existing/"server/src/gameStore/data"
+    if src_data.is_dir():
+        for p in src_data.glob("*/data.json"):
+            rel=p.relative_to(existing); dst=stage/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,dst)
+
+    return existing_mod_manifest
 
 MISSING = object()
 
@@ -757,7 +822,7 @@ def validate_stage_runtime(ui: UI, stage: Path, node: Path, cargo: Path,
     market_dir = stage / "externalservices" / "market-server"
     market_bin = market_dir / "target" / "release" / "market-server"
     if not market_bin.is_file():
-        die(ui, "The v0.12.7 Market server binary was not built.")
+        die(ui, "The v0.12.7.1 Market server binary was not built.")
     run([str(market_bin), "--config", "config/market-server.local.toml", "doctor"], cwd=market_dir)
 
 
@@ -819,187 +884,104 @@ def choose_existing_install(ui: UI, explicit: str | None) -> Path:
     return root
 
 
+OLD_V111_LU_AUTHORITY = "58B1FEA6365E81051DAA4024AFE84BEC04B8A0D9B5C9C5F256FAD9FFE09061CA"
+
+def verify_old_integrated_lu_for_migration(ui: UI, existing: Path) -> bool:
+    record_path=existing/"_local/evejs-linux-integrated-lu/install.json"
+    if not record_path.is_file(): return False
+    try: record=json.loads(record_path.read_text())
+    except Exception as exc: die(ui,f"Could not parse prior Integrated LU install record: {exc}")
+    if str(record.get("authoritySha256","")).upper()!=OLD_V111_LU_AUTHORITY or str(record.get("evejsVersion",""))!="0.12.7":
+        die(ui,"An installer-managed Integrated LU is present, but it is not the audited v1.11/v0.12.7 authority supported by this migration. Nothing was changed.")
+    mgr=existing/".evejs-linux-tools/evejs-linux-integrated-lu.py"
+    manifest=existing/".evejs-linux-tools/integrated-lu/manifest.json"
+    if not mgr.is_file() or not manifest.is_file():
+        die(ui,"The prior v1.11 LU verification authority is missing from .evejs-linux-tools; migration cannot be proven safely.")
+    cp=subprocess.run([sys.executable,str(mgr),"verify","--repo",str(existing)],text=True,capture_output=True)
+    if cp.returncode!=0:
+        die(ui,"Prior Integrated LU verification failed. The update was stopped before staging.\n\n"+(cp.stdout+cp.stderr)[-5000:])
+    print("    ✓ Prior v1.11 Integrated LU source verified for transactional migration")
+    return True
+
 def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
                   node: Path, cargo: Path, game_hash: str | None, market_hash: str | None) -> tuple[Path, dict]:
     parent = existing.parent
     stage = parent / f".evejs-update-stage-{existing.name}-{uuid.uuid4().hex[:10]}"
     stage.mkdir(parents=False, exist_ok=False)
-
     print(f"\n==> Staging EveJS v{TARGET_VERSION}\n    {stage}")
     overlay_dir(source_root, stage)
 
-    # Preserve the complete unknown/mod-owned _local namespace, then regenerate
-    # only target-version generated static authority.
-    if (existing / "_local").is_dir():
-        overlay_dir(existing / "_local", stage / "_local")
-
-    # Preserve installed mods and their own files exactly.  Mods are expected
-    # content, not an obstacle to updating EveJS.
-    existing_mod_manifest = tree_manifest(existing / "mods")
-    if (existing / "mods").is_dir():
-        if (stage / "mods").exists():
-            shutil.rmtree(stage / "mods")
-        copy_reflink(existing / "mods", stage / "mods")
-    else:
-        (stage / "mods").mkdir(exist_ok=True)
-
-    staged_mod_manifest = tree_manifest(stage / "mods")
-    if staged_mod_manifest != existing_mod_manifest:
-        die(
-            ui,
-            "Mod conservation check failed while staging the update.\n\n"
-            "The existing EveJS installation has NOT been replaced.\n"
-            "No mod file is permitted to be added, removed or changed by the updater.",
-        )
-
-    print(
-        f"    ✓ Preserved mods exactly: {tree_file_count(existing / 'mods')} files "
-        f"(manifest {manifest_digest(existing_mod_manifest)[:16]}…)"
-    )
-
-    # Preserve logs for research continuity.
-    if (existing / "logs").is_dir():
-        overlay_dir(existing / "logs", stage / "logs")
-    if (existing / "server" / "logs").is_dir():
-        overlay_dir(existing / "server" / "logs", stage / "server" / "logs")
-
-    # Preserve current local certificates because this audited update keeps the
-    # same client build and certificate contract.
-    if (existing / "server" / "certs").is_dir():
-        overlay_dir(existing / "server" / "certs", stage / "server" / "certs")
-    old_gateway_certs = existing / "server" / "src" / "_secondary" / "express" / "certs"
-    if old_gateway_certs.is_dir():
-        overlay_dir(old_gateway_certs, stage / "server" / "src" / "_secondary" / "express" / "certs")
-
-    # Preserve the live economy byte-for-byte. Never call a seeder during update.
-    old_market_dir = existing / "externalservices" / "market-server" / "data" / "generated"
-    new_market_dir = stage / "externalservices" / "market-server" / "data" / "generated"
-    new_market_dir.mkdir(parents=True, exist_ok=True)
-    for suffix in ("", "-wal", "-shm"):
-        src = old_market_dir / f"market.sqlite{suffix}"
-        dst = new_market_dir / f"market.sqlite{suffix}"
-        if src.exists():
-            dst.unlink(missing_ok=True)
-            copy_reflink(src, dst)
+    existing_mod_manifest = copy_preserved_update_state(existing, stage)
+    if tree_manifest(stage / "mods") != existing_mod_manifest:
+        die(ui, "Mod conservation check failed while staging the update. The live installation was not replaced.")
+    print(f"    ✓ Preserved mods exactly: {tree_file_count(existing / 'mods')} files")
 
     merge_report = merge_configs(ui, existing, stage)
-
-    # Install target dependencies into the stage only.
     npm = node.parent / "npm"
     if not npm.exists():
         found = shutil.which("npm")
-        if not found:
-            die(ui, "npm could not be found for the selected Node.js runtime.")
+        if not found: die(ui, "npm could not be found for the selected Node.js runtime.")
         npm = Path(found)
+    env = os.environ.copy(); env["PATH"] = f"{node.parent}:{cargo.parent}:{env.get('PATH','')}"
 
-    env = os.environ.copy()
-    env["PATH"] = f"{node.parent}:{cargo.parent}:{env.get('PATH','')}"
-
-    print("\n==> Installing v0.12.7 root dependencies in the staging tree")
+    print("\n==> Installing v0.12.7.1 root dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage, env=env)
-
-    # v0.12.7 introduces persistent optional content under _local/gameStore/content-packs.
-    # It is player-owned state and must survive the target static-data refresh exactly.
-    existing_content_pack_manifest = tree_manifest(existing / "_local" / "gameStore" / "content-packs")
-
-    print("\n==> Rebuilding only v0.12.7 generated static game data")
-    rebuild_static_database(ui, stage, node, TARGET_BUILD)
-
-    staged_content_pack_manifest = tree_manifest(stage / "_local" / "gameStore" / "content-packs")
-    if staged_content_pack_manifest != existing_content_pack_manifest:
-        die(
-            ui,
-            "Content Pack conservation check failed while refreshing v0.12.7 static game data.\n\n"
-            "The existing installation has NOT been replaced."
-        )
-    if existing_content_pack_manifest:
-        print(
-            "    ✓ Preserved Content Packs exactly "
-            f"(manifest {manifest_digest(existing_content_pack_manifest)[:16]}…)"
-        )
-
-    print("\n==> Installing v0.12.7 server dependencies in the staging tree")
+    print("\n==> Installing v0.12.7.1 server dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage / "server", env=env)
+    run([str(node), "-e", "const DB=require('better-sqlite3');const db=new DB(':memory:');db.exec('CREATE TABLE t(x INTEGER)');db.close();require('protobufjs');console.log('EveJS native Node dependency smoke test PASS');"], cwd=stage / "server", env=env)
 
-    # npm may warn about native install scripts depending on the user's npm
-    # policy.  Do not guess: prove that the native SQLite module actually loads
-    # and opens a database before the update can proceed.
-    run(
-        [
-            str(node), "-e",
-            "const DB=require('better-sqlite3');"
-            "const db=new DB(':memory:');"
-            "db.exec('CREATE TABLE t(x INTEGER)');"
-            "db.close();"
-            "require('protobufjs');"
-            "console.log('EveJS native Node dependency smoke test PASS');",
-        ],
-        cwd=stage / "server",
-        env=env,
-    )
-
-    # Only perform official legacy migrations if legacy artifacts actually exist.
-    if (stage / "_local" / "newDatabase").exists():
+    if (stage / "_local/newDatabase").exists():
         run([str(npm), "run", "db:migrate-legacy"], cwd=stage / "server", env=env)
-
-    legacy_image_roots = [
-        stage / "server" / "src" / "_secondary" / "image" / "generated" / "characters",
-        stage / "server" / "src" / "_secondary" / "image" / "generated" / "alliances",
-    ]
+    legacy_image_roots=[stage/"server/src/_secondary/image/generated/characters",stage/"server/src/_secondary/image/generated/alliances"]
     if any(p.exists() for p in legacy_image_roots):
         run([str(npm), "run", "images:migrate", "--", "--quiet"], cwd=stage / "server", env=env)
 
-    print("\n==> Building the v0.12.7 Market daemon without reseeding")
-    market_dir = stage / "externalservices" / "market-server"
+    migrating_lu = (existing / "_local/evejs-linux-integrated-lu/install.json").is_file()
+    if migrating_lu:
+        # Keep user-owned LU configuration, but archive the old manager record/backups in the staged world.
+        for rel in ("config/xeve.json", "evejs.config.x-eve.local.json"):
+            src=existing/rel
+            if src.is_file():
+                dst=stage/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
+        old_state=stage/"_local/evejs-linux-integrated-lu"
+        if old_state.exists():
+            legacy=stage/"_local/evejs-linux-integrated-lu-legacy-v1.11"
+            if legacy.exists(): shutil.rmtree(legacy)
+            old_state.rename(legacy)
+        print("\n==> Applying the new v0.12.7.1 Integrated Living Universe authority inside the staging tree")
+        run([sys.executable, str(INTEGRATED_LU_MANAGER_SOURCE), "install", "--repo", str(stage)])
+        run([sys.executable, str(INTEGRATED_LU_MANAGER_SOURCE), "verify", "--repo", str(stage)])
+
+    print("\n==> Building the v0.12.7.1 Market daemon without reseeding")
+    market_dir = stage / "externalservices/market-server"
     run([str(cargo), "build", "--release"], cwd=market_dir, env=env)
 
-    # Install current runtime scripts. Launcher remains runtime-only.
     shutil.copy2(LAUNCHER_SOURCE, stage / "evejs-linux-launcher.sh")
     shutil.copy2(CLEANUP_SOURCE, stage / "evejs-stale-process-cleanup.sh")
-    tools_dir = stage / ".evejs-linux-tools"
-    (tools_dir / "compatibility").mkdir(parents=True, exist_ok=True)
+    tools_dir = stage / ".evejs-linux-tools"; (tools_dir / "compatibility").mkdir(parents=True, exist_ok=True)
     shutil.copy2(COMPAT_SOURCE, tools_dir / "evejs-linux-lu-compat.py")
     for compat_file in COMPAT_DATA_SOURCE.iterdir():
-        if compat_file.is_file():
-            shutil.copy2(compat_file, tools_dir / "compatibility" / compat_file.name)
-    (stage / "evejs-linux-launcher.sh").chmod(0o755)
-    (stage / "evejs-stale-process-cleanup.sh").chmod(0o755)
-    (tools_dir / "evejs-linux-lu-compat.py").chmod(0o755)
+        if compat_file.is_file(): shutil.copy2(compat_file, tools_dir / "compatibility" / compat_file.name)
+    shutil.copy2(INTEGRATED_LU_MANAGER_SOURCE, tools_dir / "evejs-linux-integrated-lu.py")
+    if (tools_dir / "integrated-lu").exists(): shutil.rmtree(tools_dir / "integrated-lu")
+    shutil.copytree(INTEGRATED_LU_DATA_SOURCE, tools_dir / "integrated-lu")
+    (tools_dir / "evejs-linux-integrated-lu.py").chmod(0o755)
 
-    updated_conf = dict(conf)
-    updated_conf["EVEJS_REPO"] = str(existing)
-    updated_conf["EVEJS_VERSION"] = TARGET_VERSION
-    updated_conf["SUPPORTED_BUILD"] = str(TARGET_BUILD)
-    updated_conf["NODE_BIN"] = str(node)
-    updated_conf["NODE_BIN_DIR"] = str(node.parent)
-    updated_conf["CARGO_BIN"] = str(cargo)
+    (stage / "evejs-linux-launcher.sh").chmod(0o755); (stage / "evejs-stale-process-cleanup.sh").chmod(0o755); (tools_dir / "evejs-linux-lu-compat.py").chmod(0o755)
+
+    updated_conf=dict(conf); updated_conf.update({"EVEJS_REPO":str(existing),"EVEJS_VERSION":TARGET_VERSION,"SUPPORTED_BUILD":str(TARGET_BUILD),"NODE_BIN":str(node),"NODE_BIN_DIR":str(node.parent),"CARGO_BIN":str(cargo)})
     write_linux_conf(stage / ".evejs-linux.conf", updated_conf)
-
-    update_summary = stage / "UPDATE-LINUX-SUMMARY.txt"
-    update_summary.write_text(
-        "EveJS Linux transactional update\n"
-        "================================\n"
-        f"From: {conf.get('EVEJS_VERSION','unknown')}\n"
-        f"To:   {TARGET_VERSION}\n"
-        f"Installation path retained: {existing}\n"
-        f"EVE client retained: {conf.get('TQ_PATH','')}\n"
-        f"Proton prefix retained: {conf.get('PROTON_PREFIX','')}\n"
-        f"Market profile retained: {conf.get('MARKET_LABEL') or conf.get('MARKET_PROFILE','')}\n"
-        "Market reseeded: NO\n"
-        "Player/world database preserved: YES\n"
-        "Mods preserved: YES\n"
-        "Unknown _local/mod-owned state preserved: YES\n"
-        "Content Packs preserved exactly: YES\n"
-        "Loader Living Universe files preserved: YES (activation disabled until an audited v0.12.7-compatible release is supplied)\n"
-        "X-Patch source overlay merged: NO (unsupported v0.12.6 overlays are blocked before staging)\n"
-        "Certificates preserved: YES\n"
-        "Generated static game data rebuilt for target release: YES\n"
-        "Configuration: three-way merged\n"
+    (stage / "UPDATE-LINUX-SUMMARY.txt").write_text(
+        "EveJS Linux transactional update\n================================\n"
+        f"From: {conf.get('EVEJS_VERSION','unknown')}\nTo:   {TARGET_VERSION}\n"
+        "Market reseeded: NO\nPlayer/world database preserved: YES (entire _local tree)\n"
+        "Market data preserved: YES\nMods preserved: YES\nCertificates/local config preserved: YES\n"
+        "Generated static game data rebuilt during update: NO\n"
+        "First v0.12.7.1 server start seeds only missing safe shipped static tables.\n"
+        "Configuration: three-way merged\n" + ("Living Universe migration: " + ("v1.11 v0.12.7 -> current v0.12.7.1 authority\n" if migrating_lu else "not installed during base update; available through Installer option 3\n"))
     )
-
     validate_stage_runtime(ui, stage, node, cargo, game_hash, market_hash)
     return stage, merge_report
-
 
 def do_update(ui: UI, args):
     existing = choose_existing_install(ui, args.existing)
@@ -1017,8 +999,8 @@ def do_update(ui: UI, args):
             "This update path has not been audited.\n\n"
             f"Existing installation: EveJS v{old_version or 'unknown'}\n"
             f"Target installer:      EveJS v{TARGET_VERSION}\n\n"
-            "v1.10 currently supports only:\n"
-            "  v0.12.6 → v0.12.7\n\n"
+            "v1.12 currently supports only:\n"
+            "  v0.12.7 → v0.12.7.1\n\n"
             "The updater will not guess across unaudited versions.",
         )
 
@@ -1039,7 +1021,7 @@ def do_update(ui: UI, args):
         die(
             ui,
             f"The existing copied EVE client is missing or no longer build {TARGET_BUILD}:\n{tq}\n\n"
-            "This audited update does not replace the client because v0.12.6 and v0.12.7 use the same directly verified build 3396210 contract.",
+            "This audited update does not replace the client because v0.12.7 and v0.12.7.1 use the same directly verified build 3396210 contract.",
         )
 
     zip_path = Path(args.zip).expanduser().resolve() if args.zip else None
@@ -1050,6 +1032,7 @@ def do_update(ui: UI, args):
 
     source_root, source_temp = extract_target_zip(ui, zip_path)
     try:
+        verify_old_integrated_lu_for_migration(ui, existing)
         ensure_no_xpatch_overlay_for_update(ui, existing)
         ensure_services_stopped(ui, existing)
 
@@ -1104,8 +1087,8 @@ def do_update(ui: UI, args):
                 f"  Player/world DB: {'present' if game_hash else 'not yet created'}\n"
                 f"  Market DB:       preserved exactly ({market_hash[:16]}…)\n"
                 f"  Mod files:       {mods_count} (exact manifest {mods_manifest_sha256[:16]}…)\n"
-                "  _local runtime/mod state: preserved (including v0.12.7 Content Packs)\n"
-                "  Loader Living Universe files: preserved but disabled until v0.12.7 compatibility is audited\n"
+                "  _local runtime/mod state: preserved (including Content Packs)\n"
+                "  Living Universe handling follows this package edition and is fail-closed\n"
                 "  Certificates: preserved\n"
                 "  EVE client + Proton prefix: retained\n"
                 "  Market reseed: NO\n\n"

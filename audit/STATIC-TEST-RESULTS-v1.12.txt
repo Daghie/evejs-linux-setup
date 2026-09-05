@@ -1,0 +1,26 @@
+EveJS v0.12.7.1 Universal Linux Setup v1.12 Living Universe — Verification
+===============================================================================
+PASS EveJS v0.12.7.1 input SHA/CRC/path-safety audit
+PASS living-universe-dac-dev.zip SHA/CRC/path-safety audit
+PASS full v0.12.7 -> v0.12.7.1 tree inventory/diff
+PASS client build 3396210 and unchanged ClientSETUP contract
+PASS stock Market source manifest/digest 5CD44206D164E9189E1ED74A1949B0814E858431C7125F4085ECB3B6D129CBB5
+PASS LU Market source manifest/digest BA9BC7E44C7B78A215AF03C8ABF892622A080A634A9707C4CA9D6A29D268E6B5
+PASS Bash syntax: Installer / Launcher / stale cleanup / packaged LUMonitor.sh
+PASS Python compile: compatibility helper / maintenance engine / Integrated-LU manager
+PASS LU compatibility helper self-test
+PASS maintenance config/backup self-test
+PASS Integrated-LU manager self-test
+PASS actual clean v0.12.7.1 classifier = stock
+PASS actual clean -> LU install -> verify -> classifier = integrated-lu
+PASS managed LU uninstall restored all 673 managed paths cleanly
+PASS deliberate managed-source drift blocks verify/uninstall
+PASS prior v1.11 installer-managed LU authority verification fixture
+PASS prior v1.11 -> current v1.12 LU user-config migration fixture
+PASS 53 packaged LU Monitor entries and 45 Monitor JavaScript syntax checks
+PASS Launcher [L] LU Monitor control on loopback port 26050
+PASS Launcher distinguishes Redshift 26400 from LU Monitor 26050
+PASS Launcher runs LU Market topology synchronization before starting a stopped Integrated-LU Market
+PASS v0.12.7.1 backslash-ZIP safe extraction through the maintenance engine
+
+NOT EXECUTABLE IN THIS SANDBOX: Cargo/rustc are absent; Node is v22.16.0 while the supplied native LU node_modules binary targets a newer Node ABI. Therefore real Market compile/doctor/topology sync, live Monitor browser session, Game server, Proton client and user-world persistence remain LIVE BAZZITE ACCEPTANCE PENDING.

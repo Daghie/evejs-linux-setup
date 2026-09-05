@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.10 — v0.12.7 source-audited stock runtime
+# EveJS Portable Linux Launcher v1.12 — v0.12.7.1 stock + Integrated LU runtime
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -15,10 +15,10 @@
 #   6. Launch EVE only after all backend/TLS checks pass.
 #
 # Audited runtime policy:
-#   * Stock EveJS v0.12.7 is supported.
-#   * mods/x-eve-living-universe/loader.js may be preserved but is deliberately not
-#     passed to Node until a v0.12.7-compatible Living Universe release is audited.
-#   * X-Patch source overlays are rejected by the compatibility authority.
+#   * Stock EveJS v0.12.7.1 is supported.
+#   * The v1.12 Integrated Living Universe authority derived from living-universe-dac-dev.zip is supported.
+#   * Older mods/x-eve-living-universe loader variants remain preserved-but-disabled.
+#   * Older X-Patch source overlays remain rejected by the compatibility authority.
 #
 # The launcher is runtime-only and never installs/updates/repairs EveJS or Living Universe.
 # Market binaries are verified external runtime builds matched to installed source.
@@ -50,6 +50,8 @@ EVEJS_MARKET_SOURCE_DIGEST=""
 EVEJS_MARKET_RUNTIME_SHA256=""
 EVEJS_RUNTIME_ROOT=""
 EVEJS_XPATCH_VERSION=""
+EVEJS_INTEGRATED_LU_ACTIVE="0"
+EVEJS_INTEGRATED_LU_AUTHORITY=""
 MARKET_RPC_PORT="40111"
 
 XMPP_BIND_HOST="127.0.0.1"
@@ -60,6 +62,10 @@ GATEWAY_TLS_PORT="26003"
 GATEWAY_TLS_SNI="dev-public-gateway.evetech.net"
 IMAGE_EDGE_PORT="26001"
 REDSHIFT_EDGE_PORT="26400"
+LU_MONITOR_PORT="26050"
+LU_MONITOR_DIR="$EVEJS_REPO/tools/lu-monitor"
+LU_MONITOR_SCRIPT="$LU_MONITOR_DIR/LUMonitor.sh"
+LU_TOPOLOGY_SYNC="$EVEJS_REPO/server/scripts/syncLivingEconomyMarketTopology.js"
 
 GAME_PORT="26000"
 PROXY_URL="http://127.0.0.1:26002"
@@ -84,11 +90,13 @@ PID_DIR="$LOG_DIR/.pids"
 MARKET_LOG="$LOG_DIR/market-latest.log"
 SERVER_LOG="$LOG_DIR/server-latest.log"
 CLIENT_LOG="$LOG_DIR/client-latest.log"
+LU_MONITOR_LOG="$LOG_DIR/lu-monitor-latest.log"
 mkdir -p "$LOG_DIR" "$ARCHIVE_DIR" "$RUNNER_DIR" "$PID_DIR" "$PROTON_PREFIX"
 
 MARKET_PID=""
 SERVER_PID=""
 CLIENT_PID=""
+LU_MONITOR_PID=""
 FULLLOG_PID=""
 
 MOD_REQUIRE_ARGS=()
@@ -540,8 +548,8 @@ detect_mods() {
         [[ -f "$loader" ]] || continue
         name="$(basename "${mod_dir%/}")"
         if [[ "$name" == "x-eve-living-universe" ]]; then
-            # v1.10 intentionally preserves this mod tree across an update but never
-            # activates it on v0.12.7 without a separately audited compatible release.
+            # v1.12 supports Living Universe as an installer-managed integrated source authority.
+            # The older loader-style LU remains a separate unsupported variant and is not activated.
             DISABLED_LU_LOADER=1
             continue
         fi
@@ -554,8 +562,8 @@ detect_mods() {
 
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
-        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.7"
-        echo "       (no audited v0.12.7 Living Universe compatibility authority in Setup v1.10)"
+        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.7.1"
+        echo "       (older loader variant; Setup v1.12 supports the separate Integrated LU authority instead)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -594,6 +602,29 @@ market_process_binary_matches() {
     expected="$(readlink -f "$MARKET_BIN" 2>/dev/null || true)"
     actual="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
     [[ -n "$expected" && "$actual" == "$expected" ]]
+}
+
+market_rpc_probe_integrated_lu() {
+    [[ "$EVEJS_RUNTIME_MODE" == "integrated-lu" ]] || return 0
+    python3 - "$MARKET_RPC_PORT" <<'PYRPC'
+import json, socket, sys
+port=int(sys.argv[1])
+requests=[
+    {"id":"lu-probe-1","method":"GetSeedStocks","params":{"keys":[]}},
+    {"id":"lu-probe-2","method":"AdjustSeedStocks","params":{"adjustments":[]}},
+]
+with socket.create_connection(("127.0.0.1",port),timeout=4) as sock:
+    f=sock.makefile("rwb",buffering=0)
+    for req in requests:
+        f.write((json.dumps(req,separators=(",",":"))+"\n").encode())
+        line=f.readline()
+        if not line:
+            raise SystemExit(f"no RPC response for {req['method']}")
+        res=json.loads(line)
+        if res.get("id") != req["id"] or res.get("ok") is not True:
+            raise SystemExit(f"{req['method']} rejected: {res}")
+print("Integrated LU Market RPC contract PASS: GetSeedStocks + AdjustSeedStocks")
+PYRPC
 }
 
 ensure_loopback_443_permission() {
@@ -729,6 +760,7 @@ stop_pid() {
 cleanup() {
     echo
     echo "[eve.js] Stopping this launcher session..."
+    stop_pid "$LU_MONITOR_PID" "LU Monitor" 10
     stop_pid "$CLIENT_PID" "EVE client" 10
     stop_pid "$SERVER_PID" "game server" 30
     stop_pid "$MARKET_PID" "market server" 10
@@ -763,6 +795,108 @@ repair_client_ca_bundles || exit 1
 detect_mods
 
 # ── Runners ───────────────────────────────────────────────────────────────────
+prepare_lu_market_topology() {
+    [[ "$EVEJS_RUNTIME_MODE" == "integrated-lu" ]] || return 0
+    [[ -f "$LU_TOPOLOGY_SYNC" ]] || {
+        echo "[ERROR] Integrated LU topology synchronizer is missing: $LU_TOPOLOGY_SYNC" >&2
+        return 1
+    }
+    [[ -s "$MARKET_DB" ]] || {
+        echo "[ERROR] Market database is missing before LU topology synchronization: $MARKET_DB" >&2
+        return 1
+    }
+    [[ -d "$EVEJS_REPO/_local/gameStore/data" ]] || {
+        echo "[ERROR] EveJS static game-store data is missing before LU topology synchronization." >&2
+        return 1
+    }
+    echo "  Synchronizing Living Universe Market topology..."
+    (
+        cd "$EVEJS_REPO" || exit 1
+        "$NODE_BIN" "$LU_TOPOLOGY_SYNC" \
+            --database "$MARKET_DB" \
+            --static-data "$EVEJS_REPO/_local/gameStore/data"
+    ) || {
+        echo "[ERROR] Living Universe Market topology synchronization failed; Market startup blocked." >&2
+        return 1
+    }
+    echo "  ✓ Living Universe Market topology synchronized"
+}
+
+write_lu_monitor_runner() {
+    local runner="$RUNNER_DIR/run-lu-monitor.sh" pidfile="$PID_DIR/lu-monitor.pid"
+    cat > "$runner" <<EOF
+#!/usr/bin/env bash
+set -o pipefail
+echo \$\$ > $(printf '%q' "$pidfile")
+trap 'rm -f $(printf '%q' "$pidfile")' EXIT
+export PATH=$(printf '%q' "$(dirname "$NODE_BIN")"):\$PATH
+cd $(printf '%q' "$LU_MONITOR_DIR") || exit 1
+exec > >(tee -a $(printf '%q' "$LU_MONITOR_LOG")) 2>&1
+echo '══════════════════════════════════════════'
+echo '  Living Universe Monitor'
+echo '  EveJS:   $EVEJS_VERSION'
+echo '  URL:     http://127.0.0.1:$LU_MONITOR_PORT/'
+echo '  Runtime: $(printf '%s' "$EVEJS_RUNTIME_LABEL")'
+echo '══════════════════════════════════════════'
+exec ./LUMonitor.sh
+EOF
+    chmod +x "$runner"
+    printf '%s\n' "$runner"
+}
+
+launch_lu_monitor() {
+    refresh_runtime_compatibility || return 1
+    if [[ "$EVEJS_RUNTIME_MODE" != "integrated-lu" ]]; then
+        echo "[LU MONITOR BLOCKED] Living Universe is not installed/verified in this EveJS tree." >&2
+        echo "Use the LU-capable Installer to install Living Universe first." >&2
+        return 1
+    fi
+    [[ -x "$LU_MONITOR_SCRIPT" ]] || {
+        echo "[ERROR] Living Universe Monitor launcher is missing/not executable: $LU_MONITOR_SCRIPT" >&2
+        return 1
+    }
+    LU_MONITOR_PID="$(read_pidfile "$PID_DIR/lu-monitor.pid")"
+    if is_pid_running "$LU_MONITOR_PID"; then
+        if port_exclusively_owned_by_tree "$LU_MONITOR_PORT" "$LU_MONITOR_PID"; then
+            echo "  ✓ LU Monitor already running: http://127.0.0.1:$LU_MONITOR_PORT/"
+            return 0
+        fi
+        echo "[ERROR] LU Monitor PID is running but does not own port $LU_MONITOR_PORT." >&2
+        return 1
+    fi
+    if port_listening "$LU_MONITOR_PORT"; then
+        echo "[ERROR] LU Monitor port $LU_MONITOR_PORT is already occupied by another process." >&2
+        port_owner_report "$LU_MONITOR_PORT" "" "LU Monitor"
+        return 1
+    fi
+    rotate_one_log "$LU_MONITOR_LOG" lu-monitor
+    rm -f "$PID_DIR/lu-monitor.pid"
+    local runner ready=0
+    runner="$(write_lu_monitor_runner)"
+    echo
+    echo "[LU MONITOR] Starting Living Universe Monitor..."
+    open_terminal "EveJS $EVEJS_VERSION — Living Universe Monitor" "$runner"
+    LU_MONITOR_PID="$(wait_for_pidfile "$PID_DIR/lu-monitor.pid")" || {
+        echo "  ✗ LU Monitor process did not start. Log: $LU_MONITOR_LOG"
+        return 1
+    }
+    for _ in $(seq 1 90); do
+        if port_exclusively_owned_by_tree "$LU_MONITOR_PORT" "$LU_MONITOR_PID"; then
+            ready=1
+            break
+        fi
+        is_pid_running "$LU_MONITOR_PID" || break
+        sleep 1
+    done
+    if (( ! ready )); then
+        echo "  ✗ LU Monitor did not become available on port $LU_MONITOR_PORT."
+        port_owner_report "$LU_MONITOR_PORT" "$LU_MONITOR_PID" "LU Monitor"
+        echo "    Log: $LU_MONITOR_LOG"
+        return 1
+    fi
+    echo "  ✓ LU Monitor: http://127.0.0.1:$LU_MONITOR_PORT/"
+}
+
 write_market_runner() {
     local runner="$RUNNER_DIR/run-market.sh" pidfile="$PID_DIR/market.pid"
     cat > "$runner" <<EOF
@@ -797,6 +931,7 @@ launch_market_server() {
         echo "Perform a Full ordered reload after preparing compatibility." >&2
         return 1
     fi
+    prepare_lu_market_topology || return 1
     rotate_one_log "$MARKET_LOG" market
     rm -f "$PID_DIR/market.pid"
     local runner
@@ -831,6 +966,12 @@ launch_market_server() {
         stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
         return 1
     fi
+    if ! market_rpc_probe_integrated_lu; then
+        echo "  ✗ Integrated LU Market RPC contract probe failed."
+        stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
+        return 1
+    fi
+    [[ "$EVEJS_RUNTIME_MODE" == "integrated-lu" ]] && echo "  ✓ Integrated LU RPCs: GetSeedStocks + AdjustSeedStocks"
     echo "  ✓ Market HTTP: 127.0.0.1:40110 (owned by current market tree)"
     echo "  ✓ Market RPC:  127.0.0.1:$MARKET_RPC_PORT (owned by current market tree)"
     echo "  ✓ Market binary: $MARKET_BIN"
@@ -1112,7 +1253,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.7 Linux Launcher — v1.10 Source Audited ║"
+echo "║  EveJS v0.12.7.1 Linux Launcher — v1.12 LU Edition    ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"
@@ -1142,6 +1283,7 @@ while true; do
     MARKET_PID="$(read_pidfile "$PID_DIR/market.pid")"
     SERVER_PID="$(read_pidfile "$PID_DIR/server.pid")"
     CLIENT_PID="$(read_pidfile "$PID_DIR/client.pid")"
+    LU_MONITOR_PID="$(read_pidfile "$PID_DIR/lu-monitor.pid")"
     echo
     echo "Market: $(status_line "$MARKET_PID")"
     echo "Game:   $(status_line "$SERVER_PID")"
@@ -1162,11 +1304,18 @@ while true; do
     fi
 
     if is_pid_running "$SERVER_PID" && port_exclusively_owned_by_tree "$REDSHIFT_EDGE_PORT" "$SERVER_PID"; then
-        echo -e "Monitor:\033[0;32m ● OWNED\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
+        echo -e "Redshift: \033[0;32m● OWNED\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
     elif port_listening "$REDSHIFT_EDGE_PORT"; then
-        echo -e "Monitor:\033[1;31m ● FOREIGN/STALE\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
+        echo -e "Redshift: \033[1;31m● FOREIGN/STALE\033[0m (127.0.0.1:$REDSHIFT_EDGE_PORT)"
     else
-        echo -e "Monitor:\033[0;31m ○ NOT LISTENING\033[0m"
+        echo -e "Redshift: \033[0;31m○ NOT LISTENING\033[0m"
+    fi
+    if is_pid_running "$LU_MONITOR_PID" && port_exclusively_owned_by_tree "$LU_MONITOR_PORT" "$LU_MONITOR_PID"; then
+        echo -e "LU Monitor: \033[0;32m● OWNED\033[0m (http://127.0.0.1:$LU_MONITOR_PORT/)"
+    elif port_listening "$LU_MONITOR_PORT"; then
+        echo -e "LU Monitor: \033[1;31m● FOREIGN/STALE\033[0m (127.0.0.1:$LU_MONITOR_PORT)"
+    else
+        echo -e "LU Monitor: \033[0;31m○ STOPPED\033[0m"
     fi
     echo "Client: $(status_line "$CLIENT_PID")"
     echo "Mods:   $MOD_COUNT"
@@ -1178,11 +1327,12 @@ while true; do
     echo "[R] Restart Game + client"
     echo "[M] Reload mods (restart Game + client)"
     echo "[A] Full ordered reload (Market → Game → Client)"
+    echo "[L] Start/stop LU Monitor"
     echo "[S] Show mods"
     echo "[D] Diagnose required ports"
     echo "[P] Show paths"
     echo "[Q] Quit"
-    read -r -p "Choose [1/2/3/R/M/A/S/D/P/Q]: " choice
+    read -r -p "Choose [1/2/3/R/M/A/L/S/D/P/Q]: " choice
 
     case "${choice,,}" in
         1)
@@ -1219,6 +1369,14 @@ while true; do
             restart_game_and_client
             ;;
         a) restart_all ;;
+        l)
+            LU_MONITOR_PID="$(read_pidfile "$PID_DIR/lu-monitor.pid")"
+            if is_pid_running "$LU_MONITOR_PID"; then
+                stop_pid "$LU_MONITOR_PID" "LU Monitor" 10; LU_MONITOR_PID=""
+            else
+                launch_lu_monitor
+            fi
+            ;;
         s) show_mods ;;
         d)
             echo
@@ -1235,6 +1393,7 @@ while true; do
             port_owner_report 26002 "$SERVER_PID" "Gateway HTTP"
             port_owner_report 26003 "$SERVER_PID" "Gateway TLS"
             port_owner_report 26400 "$SERVER_PID" "RedshiftEdge"
+            port_owner_report "$LU_MONITOR_PORT" "$LU_MONITOR_PID" "LU Monitor"
             echo
             ;;
         p)
@@ -1259,6 +1418,9 @@ while true; do
             echo "Market log:    $MARKET_LOG"
             echo "Server log:    $SERVER_LOG"
             echo "Client log:    $CLIENT_LOG"
+            echo "LU Monitor:    $LU_MONITOR_SCRIPT"
+            echo "LU Monitor URL:http://127.0.0.1:$LU_MONITOR_PORT/"
+            echo "LU Monitor log:$LU_MONITOR_LOG"
             echo
             ;;
         q) exit 0 ;;

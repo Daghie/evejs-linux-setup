@@ -26,12 +26,17 @@
     "universeSiteCountsByFamily": {
       "combat": 1,
       "combat_anomaly": 5,
+      "drone_anomaly": 1,
       "ore": 3,
       "gas": 1,
       "data": 1,
       "relic": 1,
       "ghost": 1,
-      "combat_hacking": 1
+      "combat_hacking": 1,
+      "wormhole_anomaly": 3,
+      "wormhole_data": 1,
+      "wormhole_relic": 1,
+      "wormhole_ore": 1
     }
   },
   "scenery": {

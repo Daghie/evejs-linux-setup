@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.12 — v0.12.7.1 Stock-Only Edition
+# EveJS Portable Linux Launcher v1.13 — v0.12.8 Stock-Only Edition
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -15,7 +15,7 @@
 #   6. Launch EVE only after all backend/TLS checks pass.
 #
 # Audited runtime policy:
-#   * Stock EveJS v0.12.7.1 is supported.
+#   * Stock EveJS v0.12.8 is supported.
 #   * Living Universe is intentionally not supported by this Stock-only edition.
 #   * Any Living Universe/X-Patch/unknown integrated source state is fail-closed.
 #   * Older X-Patch source overlays remain rejected by the compatibility authority.
@@ -555,8 +555,8 @@ detect_mods() {
 
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
-        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.7.1"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.12 edition)"
+        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.8"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.13 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -1120,7 +1120,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.7.1 Linux Launcher — v1.12 Stock Only    ║"
+echo "║  EveJS v0.12.8 Linux Launcher — v1.13 Stock Only           ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

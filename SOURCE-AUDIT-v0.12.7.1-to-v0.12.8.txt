@@ -1,0 +1,45 @@
+EveJS v0.12.7.1 -> v0.12.8 Source Audit — Setup v1.13
+===========================================================
+Date: 2026-09-14
+
+Input authority
+---------------
+EveJS-v0.12.8.zip
+SHA-256: 8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd
+Size: 39421238 bytes
+ZIP members: 1536 (1530 files)
+CRC: PASS
+Unsafe/duplicate/symlink destinations: 0
+
+Direct comparison authority
+---------------------------
+EveJS-v0.12.7.1.zip
+SHA-256: 9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0
+Size: 27190691 bytes
+ZIP members/files: 1503
+CRC/path safety: PASS
+
+Full tree comparison against directly retained clean EveJS v0.12.7.1
+--------------------------------------------------------------------
+ADDED:     39
+REMOVED:   7
+MODIFIED:  183
+UNCHANGED: 1547
+
+Verified compatibility facts
+----------------------------
+- EVE client remains V24.01 / build 3396210.
+- tools/ClientSETUP is byte-identical between v0.12.7.1 and v0.12.8 (16 files; 0 differences).
+- tools/ClientSETUP/blue_patch_recipe.json is unchanged.
+- tools/Updater/update-policy.json is byte-identical between the releases.
+- Stock Rust Market source changed in rpc.rs, state.rs and transaction_tests.rs.
+- Stock v0.12.8 Market build-input digest: 643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746
+- v0.12.8 adds server/bootstrap.js, achievement services, new runtime/inventory support and expanded shipped content.
+- The shipped content-pack set changes from five packs to nine: five version upgrades plus four new packs.
+- Existing worlds are preserved during update. On first v0.12.8 startup, syncStaticTables.js reconciles missing/changed engine-owned static tables and autoInstallContentPacks.js reconciles the shipped pack set.
+- Market data is preserved and is not reseeded by the transactional updater.
+- Configuration is three-way merged from old official default / current user value / new official default.
+- gameplay.json adds planets.planetSchematicOutputMultiplier; world.json adds three always-on systems and six site-family limits.
+- The supplied v0.12.8 ZIP is a flat, forward-slash archive. Setup v1.13 accepts both this layout and the older wrapped/backslash layout only after CRC and path-safety validation.
+
+The complete machine-readable difference list is in audit/full-tree-diff-0.12.7.1-to-0.12.8.json.

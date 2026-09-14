@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-05",
+  "generated": "2026-09-14",
   "inputs": [
     {
       "file": "EveJS-v0.12.7.1.zip",
@@ -10,18 +10,18 @@
       "unsafeOrDuplicateOrSymlinkIssues": 0,
       "roots": [
         "v0.12.7.1"
-      ]
+      ],
+      "layout": "single wrapped root; Windows backslash members"
     },
     {
-      "file": "living-universe-dac-dev.zip",
-      "sizeBytes": 41590277,
-      "sha256": "76d4e1738bc4bf909518bb36b4c0d0e70c9d2137c50fdc145044134f9f5e10c4",
-      "members": 5014,
+      "file": "EveJS-v0.12.8.zip",
+      "sizeBytes": 39421238,
+      "sha256": "8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd",
+      "members": 1536,
+      "files": 1530,
       "crc": "PASS",
       "unsafeOrDuplicateOrSymlinkIssues": 0,
-      "roots": [
-        "living-universe-dac-dev"
-      ]
+      "layout": "flat EveJS root; forward-slash members"
     }
   ]
 }

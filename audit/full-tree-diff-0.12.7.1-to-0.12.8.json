@@ -1,13 +1,13 @@
 {
   "counts": {
-    "ADDED": 26,
-    "REMOVED": 0,
-    "MODIFIED": 73,
-    "UNCHANGED": 1638
+    "ADDED": 39,
+    "REMOVED": 7,
+    "MODIFIED": 183,
+    "UNCHANGED": 1547
   },
   "rows": [
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": ".dockerignore",
       "old": {
         "path": ".dockerignore",
@@ -19,8 +19,8 @@
       "new": {
         "path": ".dockerignore",
         "type": "file",
-        "size": 1761,
-        "sha256": "BE9B306A5739146CAED4A002B409D7E0AA1E2A4EB6D03B984C015172F98F55CD",
+        "size": 2042,
+        "sha256": "E8592B9BEAEBD31F815CACF5DFBE6997C969DBDED5A9D04DBC9DC53E8D99ACD8",
         "mode": "0o644"
       }
     },
@@ -61,13 +61,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": ".gitignore",
       "old": {
         "path": ".gitignore",
         "type": "file",
-        "size": 1890,
-        "sha256": "0C597C565193EFC8DA068F7061BEA34065AED68745CC8A1F746932E3CF812F8C",
+        "size": 1833,
+        "sha256": "F92AAD1D08D0417020FBE1ED114E7F9FB28E3B3D23D312D1E14B6E45C325F6C1",
         "mode": "0o644"
       },
       "new": {
@@ -79,14 +79,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "BuildMarketSeed.bat",
       "old": {
         "path": "BuildMarketSeed.bat",
         "type": "file",
         "size": 100,
         "sha256": "01A3F48388CDEC6D981DBF798C020B01B9E80314D41690AEE717D0E6D33216C1",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "BuildMarketSeed.bat",
@@ -97,14 +97,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "ContentPacks.bat",
       "old": {
         "path": "ContentPacks.bat",
         "type": "file",
         "size": 95,
         "sha256": "58EFB0BE086C5A4C67C81C2913648AFB6989BD5EB0EB148D563FB5EDF9B7952C",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "ContentPacks.bat",
@@ -151,14 +151,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "Play.bat",
       "old": {
         "path": "Play.bat",
         "type": "file",
         "size": 27275,
         "sha256": "1E8487367CFC759C9C79E21567CAB786E9A03CFBF220E4F73AEAFBEB42460143",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "Play.bat",
@@ -169,14 +169,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "PlayDebug.bat",
       "old": {
         "path": "PlayDebug.bat",
         "type": "file",
         "size": 26481,
         "sha256": "50A9C7DFD53740CFBC480162B79ED78808AD351C4888FD51A296B63FF2952876",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "PlayDebug.bat",
@@ -192,27 +192,27 @@
       "old": {
         "path": "README.md",
         "type": "file",
-        "size": 2250,
-        "sha256": "916D96C55823C2C5B46C1987B3E1E15B9EBFE2F627D5FAA6841F897C06D065B1",
+        "size": 2327,
+        "sha256": "7F8547FBEC06D656793198D97BC8605ED3ADBBB44083D452E37C3AC2433A7839",
         "mode": "0o644"
       },
       "new": {
         "path": "README.md",
         "type": "file",
-        "size": 2327,
-        "sha256": "7F8547FBEC06D656793198D97BC8605ED3ADBBB44083D452E37C3AC2433A7839",
+        "size": 2268,
+        "sha256": "56B332F4142CBF75CDDE6D9B97EF0C2808EEE0314426B8F57D88745E373DB690",
         "mode": "0o644"
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "SetupEveJS.bat",
       "old": {
         "path": "SetupEveJS.bat",
         "type": "file",
         "size": 1078,
         "sha256": "EA50312D4FB1A7C7B64D5170201EA97C7263FBEA7C9102BF24AE17ECEDFFB562",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "SetupEveJS.bat",
@@ -223,14 +223,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "StartMarketServer.bat",
       "old": {
         "path": "StartMarketServer.bat",
         "type": "file",
         "size": 9280,
         "sha256": "AD7283A3ECC302F2BE3890AAABACADD59DF3059B22CEBC733B868D3AD75F7E62",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "StartMarketServer.bat",
@@ -241,14 +241,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "StartServer.bat",
       "old": {
         "path": "StartServer.bat",
         "type": "file",
         "size": 7899,
         "sha256": "EFC2291B11F54F95DA1CAE46D87D7AA6529824E2DAAAAF9A4293CBE1F85895EA",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "StartServer.bat",
@@ -259,9 +259,15 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "UpdateEveJS.bat",
-      "old": null,
+      "old": {
+        "path": "UpdateEveJS.bat",
+        "type": "file",
+        "size": 1943,
+        "sha256": "C5257435904EF11AAFFAD243B19CC0EBDF57C484FC8DF8465F9C5A0CF21F6CFD",
+        "mode": "0o644"
+      },
       "new": {
         "path": "UpdateEveJS.bat",
         "type": "file",
@@ -321,7 +327,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "config/gameplay.json",
       "old": {
         "path": "config/gameplay.json",
@@ -333,8 +339,8 @@
       "new": {
         "path": "config/gameplay.json",
         "type": "file",
-        "size": 714,
-        "sha256": "1723965429D10C39A6F070F668F5CBB904FE25A5BB73F5BBBB0D4BBC7908CF1F",
+        "size": 743,
+        "sha256": "4A72CF9713CCD0C5F9B16F0E8C8DFBA9436FEF9981DEB02A8C1BD615F0CE7DF1",
         "mode": "0o644"
       }
     },
@@ -398,15 +404,15 @@
       "old": {
         "path": "config/version.json",
         "type": "file",
-        "size": 59,
-        "sha256": "B943728CD7AE245B7882B7C4BEA36865E21019543CDBB193FF3EE2FFDC6D49EF",
+        "size": 61,
+        "sha256": "DD6DC8D4ABDF0365ED9263C1CA5D358AB75FD119054A6F5128F3EF52C3EDC1C1",
         "mode": "0o644"
       },
       "new": {
         "path": "config/version.json",
         "type": "file",
-        "size": 61,
-        "sha256": "DD6DC8D4ABDF0365ED9263C1CA5D358AB75FD119054A6F5128F3EF52C3EDC1C1",
+        "size": 59,
+        "sha256": "C15870EB49E5EECDAFDEF60096A4F271D918591858EC516F7350A11D578670DA",
         "mode": "0o644"
       }
     },
@@ -416,22 +422,26 @@
       "old": {
         "path": "config/world.json",
         "type": "file",
-        "size": 1108,
-        "sha256": "DD7E54BF8D2383EBFCA18D80AAC346C379B17BFEF3D0F081D1C7BBA623AF0008",
+        "size": 1241,
+        "sha256": "0EFFF1A914DB9E991562983A0692455FF8F53C2F0324A6CB5397BDCE5517EC3A",
         "mode": "0o644"
       },
       "new": {
         "path": "config/world.json",
         "type": "file",
-        "size": 1241,
-        "sha256": "0EFFF1A914DB9E991562983A0692455FF8F53C2F0324A6CB5397BDCE5517EC3A",
+        "size": 1478,
+        "sha256": "22844E55D44F31161A4A8A687301C2E44354AF838303B5D5D7D30D140E870143",
         "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "content-packs",
-      "old": null,
+      "old": {
+        "path": "content-packs",
+        "type": "dir",
+        "mode": "0o755"
+      },
       "new": {
         "path": "content-packs",
         "type": "dir",
@@ -440,61 +450,169 @@
     },
     {
       "status": "ADDED",
-      "path": "content-packs/evejs-combat-anomalies-1.0.0.json",
+      "path": "content-packs/evejs-booster-production-1.1.0.json",
       "old": null,
       "new": {
+        "path": "content-packs/evejs-booster-production-1.1.0.json",
+        "type": "file",
+        "size": 21764958,
+        "sha256": "259EF2288863CD6029B1D848550581194B4AE8C43FB0862E5694F74E2604632A",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "REMOVED",
+      "path": "content-packs/evejs-combat-anomalies-1.0.0.json",
+      "old": {
         "path": "content-packs/evejs-combat-anomalies-1.0.0.json",
         "type": "file",
         "size": 65488324,
         "sha256": "7AC75A61E955DA82C56E45E006F2CA06BF11CFE42CD2494A2284BCA4DC662978",
         "mode": "0o644"
-      }
+      },
+      "new": null
     },
     {
       "status": "ADDED",
-      "path": "content-packs/evejs-drone-anomalies-1.0.0.json",
+      "path": "content-packs/evejs-combat-anomalies-1.4.4.json",
       "old": null,
       "new": {
+        "path": "content-packs/evejs-combat-anomalies-1.4.4.json",
+        "type": "file",
+        "size": 70542604,
+        "sha256": "A14B1E4D69917CEF442E5B35A912BCCA443B0F195517F89A3CBCB244361799B9",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "REMOVED",
+      "path": "content-packs/evejs-drone-anomalies-1.0.0.json",
+      "old": {
         "path": "content-packs/evejs-drone-anomalies-1.0.0.json",
         "type": "file",
         "size": 7477119,
         "sha256": "CD0FC7E28E5C30E3C6156E0E62E958ED4770698A9BD95B10434418AEC2C79EC2",
         "mode": "0o644"
+      },
+      "new": null
+    },
+    {
+      "status": "ADDED",
+      "path": "content-packs/evejs-drone-anomalies-1.4.0.json",
+      "old": null,
+      "new": {
+        "path": "content-packs/evejs-drone-anomalies-1.4.0.json",
+        "type": "file",
+        "size": 8162640,
+        "sha256": "CAD158E85A6F220C09DBB7BEB9BEECE6C9E3C29EED04F3EF3D26C2AE7BCD8E6B",
+        "mode": "0o644"
       }
     },
     {
       "status": "ADDED",
-      "path": "content-packs/evejs-ghost-sites-1.0.0.json",
+      "path": "content-packs/evejs-gas-sites-1.0.0.json",
       "old": null,
       "new": {
+        "path": "content-packs/evejs-gas-sites-1.0.0.json",
+        "type": "file",
+        "size": 15367573,
+        "sha256": "68162F3822B83A4DEF5AC41755076A24D1D1F782D09BB8103CC4C0777E84088B",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "REMOVED",
+      "path": "content-packs/evejs-ghost-sites-1.0.0.json",
+      "old": {
         "path": "content-packs/evejs-ghost-sites-1.0.0.json",
         "type": "file",
         "size": 3658622,
         "sha256": "E182EF38627E5C2BCA694EA35FC5E424A8833E3843BDFEB8F5EABD00D6B5FADE",
         "mode": "0o644"
-      }
+      },
+      "new": null
     },
     {
       "status": "ADDED",
-      "path": "content-packs/evejs-ore-anomalies-1.0.0.json",
+      "path": "content-packs/evejs-ghost-sites-1.1.0.json",
       "old": null,
       "new": {
-        "path": "content-packs/evejs-ore-anomalies-1.0.0.json",
+        "path": "content-packs/evejs-ghost-sites-1.1.0.json",
         "type": "file",
-        "size": 31953630,
-        "sha256": "EA04782CA2B608C5F66C17FAACCAC81D015005345A64BDF04FED94B0FE250D05",
+        "size": 3791046,
+        "sha256": "409EFD28CB4BDE88905C2E09BDDCA87B85EBC8438CF6208E40D4D93C334804D9",
         "mode": "0o644"
       }
     },
     {
       "status": "ADDED",
-      "path": "content-packs/evejs-wormhole-sites-1.0.0.json",
+      "path": "content-packs/evejs-mining-missions-1.0.0.json",
       "old": null,
       "new": {
+        "path": "content-packs/evejs-mining-missions-1.0.0.json",
+        "type": "file",
+        "size": 3996293,
+        "sha256": "07D6818D37D78FB6DDCB5C77B1746D3AEBE5A11EF742774B0EB4DB609A176DBA",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "REMOVED",
+      "path": "content-packs/evejs-ore-anomalies-1.0.0.json",
+      "old": {
+        "path": "content-packs/evejs-ore-anomalies-1.0.0.json",
+        "type": "file",
+        "size": 31953630,
+        "sha256": "EA04782CA2B608C5F66C17FAACCAC81D015005345A64BDF04FED94B0FE250D05",
+        "mode": "0o644"
+      },
+      "new": null
+    },
+    {
+      "status": "ADDED",
+      "path": "content-packs/evejs-ore-anomalies-1.1.0.json",
+      "old": null,
+      "new": {
+        "path": "content-packs/evejs-ore-anomalies-1.1.0.json",
+        "type": "file",
+        "size": 31389533,
+        "sha256": "612FE8BBF429A86E8FFAE7C7EA87A18A3382F11554B598C0BEEDD171308741D5",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "content-packs/evejs-pirate-exploration-1.0.0.json",
+      "old": null,
+      "new": {
+        "path": "content-packs/evejs-pirate-exploration-1.0.0.json",
+        "type": "file",
+        "size": 66260344,
+        "sha256": "6E8CB69B22A80F3959EEBD94072DE726AC610D0044B66383C4A75A54D36C3E59",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "REMOVED",
+      "path": "content-packs/evejs-wormhole-sites-1.0.0.json",
+      "old": {
         "path": "content-packs/evejs-wormhole-sites-1.0.0.json",
         "type": "file",
         "size": 27920822,
         "sha256": "B62894A90DD878AD8CA1F0067345CF138C238CF1170295B89BEB397FD0AC60B7",
+        "mode": "0o644"
+      },
+      "new": null
+    },
+    {
+      "status": "ADDED",
+      "path": "content-packs/evejs-wormhole-sites-1.2.0.json",
+      "old": null,
+      "new": {
+        "path": "content-packs/evejs-wormhole-sites-1.2.0.json",
+        "type": "file",
+        "size": 30550561,
+        "sha256": "1766AF7AA0F1DF9A6D3879E092152D05F6D9C0BE3D4DD732401C60FA6483AFE2",
         "mode": "0o644"
       }
     },
@@ -518,15 +636,15 @@
       "old": {
         "path": "doc/CONTENT_PACKS.md",
         "type": "file",
-        "size": 7007,
-        "sha256": "D9A3EDED745AD91B9B33D0B9DE1679D22FD3160EB7BC447C53411D67471C697D",
+        "size": 12295,
+        "sha256": "EF8550F42A72A9143547A30B1A0022E0DD6A0040915055C0FABC89BA06AF11B3",
         "mode": "0o644"
       },
       "new": {
         "path": "doc/CONTENT_PACKS.md",
         "type": "file",
-        "size": 12295,
-        "sha256": "EF8550F42A72A9143547A30B1A0022E0DD6A0040915055C0FABC89BA06AF11B3",
+        "size": 15021,
+        "sha256": "2F2970441774DAE75B72AEF88965E01D3D54509BEE3E82699F9F65C1E0FCE250",
         "mode": "0o644"
       }
     },
@@ -554,15 +672,15 @@
       "old": {
         "path": "doc/LAUNCHERS.md",
         "type": "file",
-        "size": 3573,
-        "sha256": "BDF6071197AA82534EB78F55124AA5287BBF19CFBF8954FAAF9EC1F5CBB30B6B",
+        "size": 3867,
+        "sha256": "DB4818AC1E4519547A10106630BF1FB483923B138CCD5A5DC1C3CB4B91B4432C",
         "mode": "0o644"
       },
       "new": {
         "path": "doc/LAUNCHERS.md",
         "type": "file",
-        "size": 3867,
-        "sha256": "DB4818AC1E4519547A10106630BF1FB483923B138CCD5A5DC1C3CB4B91B4432C",
+        "size": 3712,
+        "sha256": "9D95B589CB4E985633897CBBABB5E8F87436F0670E4900F8C713EFACB6EE7974",
         "mode": "0o644"
       }
     },
@@ -626,15 +744,15 @@
       "old": {
         "path": "doc/SETUP.md",
         "type": "file",
-        "size": 35221,
-        "sha256": "0394529FC810E3DD7E01B223B6DC01484ED3205904D16E462BD97CD34192CC0A",
+        "size": 33709,
+        "sha256": "37A525C679035EBF329CEEC5EBB04452E6763CCAC9C900EC8E70AF57AAD68A7E",
         "mode": "0o644"
       },
       "new": {
         "path": "doc/SETUP.md",
         "type": "file",
-        "size": 33709,
-        "sha256": "37A525C679035EBF329CEEC5EBB04452E6763CCAC9C900EC8E70AF57AAD68A7E",
+        "size": 32556,
+        "sha256": "946C81D70E116502BF9A787AF0252272A28DA72E3C932EACA4F8CE800834E84F",
         "mode": "0o644"
       }
     },
@@ -644,15 +762,15 @@
       "old": {
         "path": "doc/TOOLS.md",
         "type": "file",
-        "size": 2243,
-        "sha256": "C63C2DE92DA9F0B72E492B4784CADCD70669F2ACD52954C913FF29DCF22FF851",
+        "size": 2672,
+        "sha256": "F66AE8FED76015A05D4D52D95C13884F1A86FDDA5D91C23DB51BE3FBBF58AE05",
         "mode": "0o644"
       },
       "new": {
         "path": "doc/TOOLS.md",
         "type": "file",
-        "size": 2672,
-        "sha256": "F66AE8FED76015A05D4D52D95C13884F1A86FDDA5D91C23DB51BE3FBBF58AE05",
+        "size": 2730,
+        "sha256": "5DE70C65CF16F690EAEF147DDEE6905ECBE63097A9013CB9CC4E18923AB0E926",
         "mode": "0o644"
       }
     },
@@ -675,14 +793,20 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "doc/UPDATING.md",
-      "old": null,
-      "new": {
+      "old": {
         "path": "doc/UPDATING.md",
         "type": "file",
         "size": 19072,
         "sha256": "02E223D2624CC805626A492C376D6A62AAA2A26C001C5902F7BD26A66155FA8F",
+        "mode": "0o644"
+      },
+      "new": {
+        "path": "doc/UPDATING.md",
+        "type": "file",
+        "size": 16611,
+        "sha256": "BA9C6EEB5A64EAC5B17BF562BE2FE57BC2CD604670A595B4B5867B5EA1693F1E",
         "mode": "0o644"
       }
     },
@@ -909,13 +1033,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "externalservices/market-server/README.md",
       "old": {
         "path": "externalservices/market-server/README.md",
         "type": "file",
-        "size": 2322,
-        "sha256": "E4C4597A3D1A3AE0543D6B4E74FD66D2102E1CEA43643B8BDC21AFD8460C340B",
+        "size": 4389,
+        "sha256": "584A9291EF8FAB8810D92124C7B47A82DB45FA7143F314B013475812DA32A1B0",
         "mode": "0o644"
       },
       "new": {
@@ -1191,7 +1315,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "externalservices/market-server/src/rpc.rs",
       "old": {
         "path": "externalservices/market-server/src/rpc.rs",
@@ -1203,15 +1327,19 @@
       "new": {
         "path": "externalservices/market-server/src/rpc.rs",
         "type": "file",
-        "size": 11388,
-        "sha256": "49BAB7A7A5DF24BFF9334747ED5AB1EDD6468C8E167DD1C46FF213296AE918A0",
+        "size": 12244,
+        "sha256": "91875B95694132E3F9D35E6EC48D9C7B0FE4EF99A7E9FCC6BD66FD038A414FB3",
         "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "externalservices/market-server/src/state",
-      "old": null,
+      "old": {
+        "path": "externalservices/market-server/src/state",
+        "type": "dir",
+        "mode": "0o755"
+      },
       "new": {
         "path": "externalservices/market-server/src/state",
         "type": "dir",
@@ -1224,22 +1352,28 @@
       "old": {
         "path": "externalservices/market-server/src/state.rs",
         "type": "file",
-        "size": 137261,
-        "sha256": "6910B24E95CFDEDD00692B0D311868D6119340AFF520248DC673B93C80F060ED",
+        "size": 145453,
+        "sha256": "9E567233F91FC0F944C883461B49A4127B1D4243E56FAB5DB62DF2308526187A",
         "mode": "0o644"
       },
       "new": {
         "path": "externalservices/market-server/src/state.rs",
         "type": "file",
-        "size": 145453,
-        "sha256": "9E567233F91FC0F944C883461B49A4127B1D4243E56FAB5DB62DF2308526187A",
+        "size": 148617,
+        "sha256": "BB1B221DFD74A366552757D192AEEF446AFFCA1C15B387BF7CE22CDACD7C13C5",
         "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "externalservices/market-server/src/state/order_book_tests.rs",
-      "old": null,
+      "old": {
+        "path": "externalservices/market-server/src/state/order_book_tests.rs",
+        "type": "file",
+        "size": 3075,
+        "sha256": "E03A6716ED594098EB287BC6608619F02A4A684B57BD5E95B46B96380B2377DB",
+        "mode": "0o644"
+      },
       "new": {
         "path": "externalservices/market-server/src/state/order_book_tests.rs",
         "type": "file",
@@ -1249,14 +1383,20 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "externalservices/market-server/src/state/transaction_tests.rs",
-      "old": null,
-      "new": {
+      "old": {
         "path": "externalservices/market-server/src/state/transaction_tests.rs",
         "type": "file",
         "size": 24545,
         "sha256": "0837D04854C9B13D675A38DF6FF15EE02BD50D8540F5FC4E65C6A9CAB595598A",
+        "mode": "0o644"
+      },
+      "new": {
+        "path": "externalservices/market-server/src/state/transaction_tests.rs",
+        "type": "file",
+        "size": 24560,
+        "sha256": "284D338170F8697AC02D4A40C91F6D6B67C3D7E26F080BCA1EFDCA82560CCCE3",
         "mode": "0o644"
       }
     },
@@ -1266,15 +1406,15 @@
       "old": {
         "path": "package-lock.json",
         "type": "file",
-        "size": 3017,
-        "sha256": "D0D542D28E578DEBF9300B82E738F908F3A354962C657E57024B640AAA62E3F4",
+        "size": 3019,
+        "sha256": "999EEC3B1737FEB8C2FD7ADE38CC24967107DE66AF559E2A57BFAA9D708DCB5B",
         "mode": "0o644"
       },
       "new": {
         "path": "package-lock.json",
         "type": "file",
-        "size": 3019,
-        "sha256": "999EEC3B1737FEB8C2FD7ADE38CC24967107DE66AF559E2A57BFAA9D708DCB5B",
+        "size": 3761,
+        "sha256": "3E5F72979B401724A01C2DFF0207BEAB9BD252F1319C9C7E7769C91C2BA79ADF",
         "mode": "0o644"
       }
     },
@@ -1284,15 +1424,15 @@
       "old": {
         "path": "package.json",
         "type": "file",
-        "size": 195,
-        "sha256": "E898FB175302E800BF8D4BE8E404B0DEB5419C54579C7538851AEB3D191E6A58",
+        "size": 197,
+        "sha256": "CE6F47E919B44FEBCA5132518515C0C585D4582B524C4B5B42CAD132983EE8F0",
         "mode": "0o644"
       },
       "new": {
         "path": "package.json",
         "type": "file",
-        "size": 197,
-        "sha256": "CE6F47E919B44FEBCA5132518515C0C585D4582B524C4B5B42CAD132983EE8F0",
+        "size": 223,
+        "sha256": "374814E462E9C4FD403EC0D0E367EB689133F9BBAA9583DABC0D27F5F95F748F",
         "mode": "0o644"
       }
     },
@@ -1357,6 +1497,18 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/bootstrap.js",
+      "old": null,
+      "new": {
+        "path": "server/bootstrap.js",
+        "type": "file",
+        "size": 17929,
+        "sha256": "5F9ACB0832A1ABDE6E48B07B5F7B9237981D656AF66AC863F0807B8824A5C256",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "UNCHANGED",
       "path": "server/certs",
       "old": {
@@ -1403,7 +1555,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/contracts/evejs-web-bridge-contract.json",
       "old": {
         "path": "server/contracts/evejs-web-bridge-contract.json",
@@ -1415,8 +1567,8 @@
       "new": {
         "path": "server/contracts/evejs-web-bridge-contract.json",
         "type": "file",
-        "size": 42621,
-        "sha256": "227F8D41276CB99E6CD8A43DAEBFEF786365F0D78D236BE29CA7B7408C251924",
+        "size": 41447,
+        "sha256": "2BD2DBF365DC37E7B58F79BD5B563D6D73556ED7182C27605769E9D4819AD17C",
         "mode": "0o644"
       }
     },
@@ -1426,15 +1578,15 @@
       "old": {
         "path": "server/index.js",
         "type": "file",
-        "size": 12481,
-        "sha256": "33522DE28B311C0F28E82E0B2521BD872101F9548E427472A8620BF8B32A8AB9",
+        "size": 13294,
+        "sha256": "3145A05916A8EC4444164FD1726BBAD13E3E8E96FFE734F0022DFD91A4A60681",
         "mode": "0o644"
       },
       "new": {
         "path": "server/index.js",
         "type": "file",
-        "size": 13294,
-        "sha256": "3145A05916A8EC4444164FD1726BBAD13E3E8E96FFE734F0022DFD91A4A60681",
+        "size": 970,
+        "sha256": "D77C0AE8A48F9F82CF4F53E171000B9DDCFBEDBAC45B4E4EDE5734F7E583B6F1",
         "mode": "0o644"
       }
     },
@@ -1444,15 +1596,15 @@
       "old": {
         "path": "server/package-lock.json",
         "type": "file",
-        "size": 51600,
-        "sha256": "3CDD04FCD4812DDBA8F13D7AE87AEA327090349D383C393DAB3F2E1A99F82F28",
+        "size": 51604,
+        "sha256": "420DCD3E97739FAC074959B774E71F9C3E4DD589B493A67FC9B709C67E0AC9E4",
         "mode": "0o644"
       },
       "new": {
         "path": "server/package-lock.json",
         "type": "file",
-        "size": 51604,
-        "sha256": "420DCD3E97739FAC074959B774E71F9C3E4DD589B493A67FC9B709C67E0AC9E4",
+        "size": 51600,
+        "sha256": "31D45A147A6875E0CCF1B5A89CB5AAE56F4D36B212F39D23A05D5A7014BF3965",
         "mode": "0o644"
       }
     },
@@ -1462,15 +1614,15 @@
       "old": {
         "path": "server/package.json",
         "type": "file",
-        "size": 1032,
-        "sha256": "3B808398DB96DDBC293D67BA8EA46D6442A0F58665E2E051848A75440BCFB518",
+        "size": 1034,
+        "sha256": "6EBE9BF580E8B7866C3C3785434D10CE3C44AF4139EBA30B18B4C6E0220949E0",
         "mode": "0o644"
       },
       "new": {
         "path": "server/package.json",
         "type": "file",
-        "size": 1034,
-        "sha256": "6EBE9BF580E8B7866C3C3785434D10CE3C44AF4139EBA30B18B4C6E0220949E0",
+        "size": 1032,
+        "sha256": "DDB0307E1CC05F3E23DEB967CFC1582C74F79D62ED4DCA8204C6396CF7904C22",
         "mode": "0o644"
       }
     },
@@ -1585,7 +1737,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/chat/chatRuntime.js",
       "old": {
         "path": "server/src/_secondary/chat/chatRuntime.js",
@@ -1597,8 +1749,8 @@
       "new": {
         "path": "server/src/_secondary/chat/chatRuntime.js",
         "type": "file",
-        "size": 65391,
-        "sha256": "5141F38E505DE68BB98B3202FCEEF193F4DB80A1FFC74EEE59B9CB3E4811A0BE",
+        "size": 65586,
+        "sha256": "8DA39B747F2281E877D10388F1460BB33A7CA32EDE48580E4A4BD2F2143B241F",
         "mode": "0o644"
       }
     },
@@ -1721,7 +1873,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/express/evejsWebGateway.js",
       "old": {
         "path": "server/src/_secondary/express/evejsWebGateway.js",
@@ -1733,13 +1885,13 @@
       "new": {
         "path": "server/src/_secondary/express/evejsWebGateway.js",
         "type": "file",
-        "size": 61629,
-        "sha256": "7B629867B33321AA545B7CE57374C3F452F940680360669C5A632B530792F8F7",
+        "size": 59950,
+        "sha256": "6F3C1D62FDC184903136D37638FC5FFA05D084A654ABC561E8CFB93B090E6E4D",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/express/evejsWebGatewayRuntime.js",
       "old": {
         "path": "server/src/_secondary/express/evejsWebGatewayRuntime.js",
@@ -1751,8 +1903,8 @@
       "new": {
         "path": "server/src/_secondary/express/evejsWebGatewayRuntime.js",
         "type": "file",
-        "size": 425057,
-        "sha256": "58177439EB72A09873B85220C02D4B6C7DB9CABD4D1070E42374A6B50432FE19",
+        "size": 415982,
+        "sha256": "225114DDD52666A237DB1CB7534126AF5354CCAAE5D7BCD653E599F96D650077",
         "mode": "0o644"
       }
     },
@@ -1768,6 +1920,18 @@
         "path": "server/src/_secondary/express/gatewayServices",
         "type": "dir",
         "mode": "0o755"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/_secondary/express/gatewayServices/achievementGatewayService.js",
+      "old": null,
+      "new": {
+        "path": "server/src/_secondary/express/gatewayServices/achievementGatewayService.js",
+        "type": "file",
+        "size": 18290,
+        "sha256": "FE48B556E5631AF987BA4D49DFA173862A280C15E658090AAB04C9B58EBD61A6",
+        "mode": "0o644"
       }
     },
     {
@@ -1987,7 +2151,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/express/gatewayServices/index.js",
       "old": {
         "path": "server/src/_secondary/express/gatewayServices/index.js",
@@ -1999,8 +2163,8 @@
       "new": {
         "path": "server/src/_secondary/express/gatewayServices/index.js",
         "type": "file",
-        "size": 3416,
-        "sha256": "0A3BBD5967AFC17C38CCFC3C3F1431272189682CC1A069254F2B74E1EE462D89",
+        "size": 3544,
+        "sha256": "9FD13D69E797A02A350FB562C298524D136997E865EF2D94D97DC330F3758421",
         "mode": "0o644"
       }
     },
@@ -2203,7 +2367,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "REMOVED",
       "path": "server/src/_secondary/express/gatewayServices/webChatGatewayService.js",
       "old": {
         "path": "server/src/_secondary/express/gatewayServices/webChatGatewayService.js",
@@ -2212,13 +2376,7 @@
         "sha256": "2BACD869C0D42A4811F6B2AE64C141AF4118261426C65B18762F411746AB002A",
         "mode": "0o644"
       },
-      "new": {
-        "path": "server/src/_secondary/express/gatewayServices/webChatGatewayService.js",
-        "type": "file",
-        "size": 12141,
-        "sha256": "2BACD869C0D42A4811F6B2AE64C141AF4118261426C65B18762F411746AB002A",
-        "mode": "0o644"
-      }
+      "new": null
     },
     {
       "status": "UNCHANGED",
@@ -2275,7 +2433,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/express/server.js",
       "old": {
         "path": "server/src/_secondary/express/server.js",
@@ -2287,8 +2445,8 @@
       "new": {
         "path": "server/src/_secondary/express/server.js",
         "type": "file",
-        "size": 37508,
-        "sha256": "32019CCA092E1AF6B6BEAAACA9946FAF4B53408D958199DA39036920D4415351",
+        "size": 38504,
+        "sha256": "A628804A5B6B10F362C246F8586C49D47FF32A0FA9D4F6B23309C885557700AA",
         "mode": "0o644"
       }
     },
@@ -2361,7 +2519,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/fitting/fittingRuntime.js",
       "old": {
         "path": "server/src/_secondary/fitting/fittingRuntime.js",
@@ -2373,13 +2531,13 @@
       "new": {
         "path": "server/src/_secondary/fitting/fittingRuntime.js",
         "type": "file",
-        "size": 8107,
-        "sha256": "2353C4810A6D6852DFDDF7692E53B5B61498749CDC83C00ECDFC674BD50A2ABE",
+        "size": 8296,
+        "sha256": "6F67123B2EFFD1FB9201DFA21C100B18A523CE65ED587F21AB916D742CBDFE0D",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/_secondary/fitting/fittingSnapshotBuilder.js",
       "old": {
         "path": "server/src/_secondary/fitting/fittingSnapshotBuilder.js",
@@ -2391,8 +2549,8 @@
       "new": {
         "path": "server/src/_secondary/fitting/fittingSnapshotBuilder.js",
         "type": "file",
-        "size": 13196,
-        "sha256": "E912F1B4101B54D2768CA704A06AEF42524826C5D4DDFC97F354E3EB6AE396EC",
+        "size": 13358,
+        "sha256": "7FB7B3F518F75B766AC322B4B40C4B4747F8823347B06B805967B9F7416AC83D",
         "mode": "0o644"
       }
     },
@@ -5836,15 +5994,15 @@
       "old": {
         "path": "server/src/config/manager.js",
         "type": "file",
-        "size": 41042,
-        "sha256": "4E9BE8ECAC15EBF02821DEA90E37312BDDC8F0D3C9070013B4677B3499DDB253",
+        "size": 41044,
+        "sha256": "92A870E4504A97882222D5564C081D95E1AF7D7B87888E0E8FF0B8ED8620B190",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/config/manager.js",
         "type": "file",
-        "size": 41044,
-        "sha256": "92A870E4504A97882222D5564C081D95E1AF7D7B87888E0E8FF0B8ED8620B190",
+        "size": 41868,
+        "sha256": "F4DF1DED658F3B7F0992873F2C64FF629D47D2D12DBC00E5DA8AF1EA173AFCAF",
         "mode": "0o644"
       }
     },
@@ -5917,7 +6075,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/config/schema/gameplay.js",
       "old": {
         "path": "server/src/config/schema/gameplay.js",
@@ -5929,8 +6087,8 @@
       "new": {
         "path": "server/src/config/schema/gameplay.js",
         "type": "file",
-        "size": 8566,
-        "sha256": "90E098C44F5336E00719DCF624906940D1AC934D1664D02AAA9A38D85923FB21",
+        "size": 11059,
+        "sha256": "65510CE6B424C5EE7CCD3FBB3D0A25C8A98A49395462D77CBC53B51B57628B56",
         "mode": "0o644"
       }
     },
@@ -6012,15 +6170,15 @@
       "old": {
         "path": "server/src/config/schema/world.js",
         "type": "file",
-        "size": 11009,
-        "sha256": "F401D03A349EED94C2AFD58A5DE01CD126D3FB5D9859B55C8ABE5D38AFDEA3C7",
+        "size": 11143,
+        "sha256": "4ACC85E208DBC3BF2755CDAC3AFFD8B3F65F7060CD29695C9C4DCEF9478621BD",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/config/schema/world.js",
         "type": "file",
-        "size": 11143,
-        "sha256": "4ACC85E208DBC3BF2755CDAC3AFFD8B3F65F7060CD29695C9C4DCEF9478621BD",
+        "size": 12006,
+        "sha256": "D5CE43FB5F310D09005511347131FC7AF81C5FF83D7D37AE24890012D4E292CF",
         "mode": "0o644"
       }
     },
@@ -6039,20 +6197,32 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/src/contentPacks/autoInstallContentPacks.js",
+      "old": null,
+      "new": {
+        "path": "server/src/contentPacks/autoInstallContentPacks.js",
+        "type": "file",
+        "size": 8173,
+        "sha256": "E0B0A713563064CACBFBAD03C2B283AA1884D27A06C0FA46EA344B1105DED477",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "MODIFIED",
       "path": "server/src/contentPacks/contentPackManager.js",
       "old": {
         "path": "server/src/contentPacks/contentPackManager.js",
         "type": "file",
-        "size": 29744,
-        "sha256": "B34399AF397B75EB9D659D8E8B7B21F2193D2148142E56E14DA9782419FC90CB",
+        "size": 40282,
+        "sha256": "A5165EA46FBFC8AB02229CF39F4713E9A7A6FFE5CC8CF7FDA7DB5158124B07D1",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/contentPacks/contentPackManager.js",
         "type": "file",
-        "size": 40282,
-        "sha256": "A5165EA46FBFC8AB02229CF39F4713E9A7A6FFE5CC8CF7FDA7DB5158124B07D1",
+        "size": 42137,
+        "sha256": "A87F8FCACAC9F286C42F8AA4166BB6F6731B6AFF609404076478118F03AE2C44",
         "mode": "0o644"
       }
     },
@@ -6121,7 +6291,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/edge/chat/chatSocketAuthorityBridge.js",
       "old": {
         "path": "server/src/edge/chat/chatSocketAuthorityBridge.js",
@@ -6133,8 +6303,8 @@
       "new": {
         "path": "server/src/edge/chat/chatSocketAuthorityBridge.js",
         "type": "file",
-        "size": 6548,
-        "sha256": "F362B1E090707ECF1D3FDD1C3CA0C8F580A110C33FD93DF50FD6C4433EE88D8B",
+        "size": 15309,
+        "sha256": "4756A5E33ADC3EDC344D503E72B7B2CA012CCE828D1CBD0B4CD5A305B6978606",
         "mode": "0o644"
       }
     },
@@ -6419,7 +6589,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/edge/gateway/gatewayRuntimeProtocol.js",
       "old": {
         "path": "server/src/edge/gateway/gatewayRuntimeProtocol.js",
@@ -6431,8 +6601,8 @@
       "new": {
         "path": "server/src/edge/gateway/gatewayRuntimeProtocol.js",
         "type": "file",
-        "size": 1869,
-        "sha256": "8DBA4ACA8A7D1023BA3597FC77B6F1B5BEDAED1D70C40FCA3F083B8709DF010A",
+        "size": 1841,
+        "sha256": "E4FBD529F190AF3F27C4CD5387BC8DFF840A416B029BA87BD5BAD4671298DF31",
         "mode": "0o644"
       }
     },
@@ -6994,15 +7164,15 @@
       "old": {
         "path": "server/src/gameStore/index.js",
         "type": "file",
-        "size": 74904,
-        "sha256": "C2FE849DE6DED7E89CF9ADB3F858B24A322933B18F8D7C2573F992F1A6B15DC0",
+        "size": 75870,
+        "sha256": "4250DB275F76D9DC91E2D3E7B6FD4D6D2A5C5355EA62FE6496706C739AD3045D",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/gameStore/index.js",
         "type": "file",
-        "size": 75870,
-        "sha256": "4250DB275F76D9DC91E2D3E7B6FD4D6D2A5C5355EA62FE6496706C739AD3045D",
+        "size": 76366,
+        "sha256": "98EE6874833FC9DD45208F4460D3476348BB4C7B2844468466B66BB27D92FFCE",
         "mode": "0o644"
       }
     },
@@ -7079,7 +7249,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/gameStore/persistenceRoles.js",
       "old": {
         "path": "server/src/gameStore/persistenceRoles.js",
@@ -7091,8 +7261,8 @@
       "new": {
         "path": "server/src/gameStore/persistenceRoles.js",
         "type": "file",
-        "size": 2942,
-        "sha256": "FE40031EAC8139FBF0EA8556C8365E1BB4DCB995A6D7783C627621694470C489",
+        "size": 3456,
+        "sha256": "906E930BB399C8CFB88F44851D738F715F67D6859825BE4692AE2A0704DA2D36",
         "mode": "0o644"
       }
     },
@@ -7151,25 +7321,25 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "REMOVED",
       "path": "server/src/gameStore/seedStaticTables.js",
-      "old": null,
-      "new": {
+      "old": {
         "path": "server/src/gameStore/seedStaticTables.js",
         "type": "file",
         "size": 5309,
         "sha256": "7F21E8A60654236CEC802277E2F19F90CAA8D0D24B4ED36F87926A43954022A9",
         "mode": "0o644"
-      }
+      },
+      "new": null
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "server/src/gameStore/sqliteStore.js",
       "old": {
         "path": "server/src/gameStore/sqliteStore.js",
         "type": "file",
-        "size": 54755,
-        "sha256": "9FE99DB7ACC0C9D96993F114F7628727F740FC6973B0DD783FB1E1FA66942B55",
+        "size": 55871,
+        "sha256": "E910CF0F67242EA099883CF88F8FFCC354820045AE14B54B8B015C32ADB55EDA",
         "mode": "0o644"
       },
       "new": {
@@ -7199,20 +7369,32 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/src/gameStore/syncStaticTables.js",
+      "old": null,
+      "new": {
+        "path": "server/src/gameStore/syncStaticTables.js",
+        "type": "file",
+        "size": 6793,
+        "sha256": "D4CB82449CBEFFAE7A81F26515EFD7FA9F5709886F7FBF203B120E3C3E5316F5",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "MODIFIED",
       "path": "server/src/gameStore/tableOwnership.js",
       "old": {
         "path": "server/src/gameStore/tableOwnership.js",
         "type": "file",
-        "size": 18317,
-        "sha256": "651C08C805CA0C8BCF23DE5D7D75AFA694A6716779DAA2DC0AF9A40B5FBE47E1",
+        "size": 18364,
+        "sha256": "2B1F9DDC33963CCE842B3B8B346A2EFD78EECAAE4FC377875892595F42DFF974",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/gameStore/tableOwnership.js",
         "type": "file",
-        "size": 18364,
-        "sha256": "2B1F9DDC33963CCE842B3B8B346A2EFD78EECAAE4FC377875892595F42DFF974",
+        "size": 18581,
+        "sha256": "BCFC52D397E48132DB204E95CAD2A4AFE83FED1F2D525F6FC68B8C978BD9199D",
         "mode": "0o644"
       }
     },
@@ -7538,15 +7720,15 @@
       "old": {
         "path": "server/src/network/tcp/index.js",
         "type": "file",
-        "size": 21934,
-        "sha256": "6D76F9D8871502A96500F176BA2D05D7C77A5DC3A3192B43CEA0D1E6A41C0FDE",
+        "size": 22853,
+        "sha256": "15CB9EEF612800F362882339327B2417BDC91C9D1769D9F948C5661251733217",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/network/tcp/index.js",
         "type": "file",
-        "size": 22853,
-        "sha256": "15CB9EEF612800F362882339327B2417BDC91C9D1769D9F948C5661251733217",
+        "size": 23019,
+        "sha256": "8F1AC6786967F23AC6086724586D1F62E2636B26028720F4C3A5B96BBFCD028B",
         "mode": "0o644"
       }
     },
@@ -8211,7 +8393,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/_shared/presenceReconciler.js",
       "old": {
         "path": "server/src/services/_shared/presenceReconciler.js",
@@ -8223,13 +8405,13 @@
       "new": {
         "path": "server/src/services/_shared/presenceReconciler.js",
         "type": "file",
-        "size": 5318,
-        "sha256": "7B6DEB33C3C667018776C5F6EBB178F3B1A4AB4C562FB2C9629F1EEFDD515EC2",
+        "size": 6273,
+        "sha256": "390BB566F4851A1AF1EE71C1B7D2C2B901A660B1FB26A40E7F8A52B20D8A08CB",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/_shared/referenceData.js",
       "old": {
         "path": "server/src/services/_shared/referenceData.js",
@@ -8241,8 +8423,8 @@
       "new": {
         "path": "server/src/services/_shared/referenceData.js",
         "type": "file",
-        "size": 12656,
-        "sha256": "7073ABCD8824BB72E48592277E33D525B6C79091A5F0D102DB153E0571EA6CE5",
+        "size": 12736,
+        "sha256": "589EFC2669F9B22C649C373CFA3AD9F79CACC1350264BE6263C444B9064B30F9",
         "mode": "0o644"
       }
     },
@@ -8711,13 +8893,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "server/src/services/account/walletState.js",
       "old": {
         "path": "server/src/services/account/walletState.js",
         "type": "file",
-        "size": 32392,
-        "sha256": "83E71131381DC1379C5E356D01D20E428E0EC56F1EEDB61CF274940ED747338B",
+        "size": 32498,
+        "sha256": "1E3C75BC903F64B869BAFC82350321C07F9D8CC9393BCD86EDE43C79DE07D74F",
         "mode": "0o644"
       },
       "new": {
@@ -8725,6 +8907,122 @@
         "type": "file",
         "size": 32498,
         "sha256": "1E3C75BC903F64B869BAFC82350321C07F9D8CC9393BCD86EDE43C79DE07D74F",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement",
+        "type": "dir",
+        "mode": "0o755"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/achievementAuthority.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/achievementAuthority.js",
+        "type": "file",
+        "size": 5910,
+        "sha256": "59E93C0E39D6D168F1178720E7D6E6E68446B85FD1723E041E2644866439255A",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/achievementGatewayProto.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/achievementGatewayProto.js",
+        "type": "file",
+        "size": 36164,
+        "sha256": "41A9DC8FAECEBF52DF5095FE3B4C46A5E3501E2557020D0026F9C1F794560BEF",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/achievementRuntime.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/achievementRuntime.js",
+        "type": "file",
+        "size": 14839,
+        "sha256": "BE7A5027781936B72878A66AD34712994A4B5A7EA226CE90507539F2292CAD1B",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/achievementState.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/achievementState.js",
+        "type": "file",
+        "size": 27727,
+        "sha256": "4CEE680CB01C63F36E7E5BCB7FBAE1AE71EBA2BAFA30172B7153BCDF6AB1E656",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/data",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/data",
+        "type": "dir",
+        "mode": "0o755"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/data/definitions.json",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/data/definitions.json",
+        "type": "file",
+        "size": 190992,
+        "sha256": "AAD7FB0426AE0D15FE22789D8065F7B62E2DB9DAC0691A54D57FE1CAED3BD63C",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/data/latest.achv",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/data/latest.achv",
+        "type": "file",
+        "size": 38512,
+        "sha256": "9765AF63A034884BA5102CECDE4735343F52C7CD9F0DD6C2AB325A1D878EF351",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/data/latest.chti",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/data/latest.chti",
+        "type": "file",
+        "size": 4752,
+        "sha256": "58994D7F93ACDC8905B756FAF870947EA0BDA7FCC3F6753849C2F4B711C9DC30",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/achievement/data/titles.json",
+      "old": null,
+      "new": {
+        "path": "server/src/services/achievement/data/titles.json",
+        "type": "file",
+        "size": 13948,
+        "sha256": "55C02B22FD8F33A5489EE89B5183E5A702325CE906C2949660E409A58D3814F3",
         "mode": "0o644"
       }
     },
@@ -9042,15 +9340,15 @@
       "old": {
         "path": "server/src/services/agent/agentMgrService.js",
         "type": "file",
-        "size": 42416,
-        "sha256": "D9FEA117BB9F13B2FE0CBFA487CCA870941C1DE164743208B16D64DB27750198",
+        "size": 45572,
+        "sha256": "7829CE51FFEBA9F7F20C7C38EEB3951653BE951B3EBD9A99FDA0D7B4F1EEE788",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/agent/agentMgrService.js",
         "type": "file",
-        "size": 45572,
-        "sha256": "7829CE51FFEBA9F7F20C7C38EEB3951653BE951B3EBD9A99FDA0D7B4F1EEE788",
+        "size": 45856,
+        "sha256": "C7BA03F77834726919AE3D92C67D5DB233D80553E1370C72FBEEDF7848906CBC",
         "mode": "0o644"
       }
     },
@@ -9060,15 +9358,15 @@
       "old": {
         "path": "server/src/services/agent/agentMissionRuntime.js",
         "type": "file",
-        "size": 294369,
-        "sha256": "4DE284BC35EF26A57FE831D848BD4D859295A0B76D92058DF2D9CA7534FA716A",
+        "size": 300248,
+        "sha256": "CC90600E0263A9420211DD2912023267CE71CAE57EA6A5EB330206DB58C68DBA",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/agent/agentMissionRuntime.js",
         "type": "file",
-        "size": 300248,
-        "sha256": "CC90600E0263A9420211DD2912023267CE71CAE57EA6A5EB330206DB58C68DBA",
+        "size": 302817,
+        "sha256": "BCFD35268CF21AA3831B2342F67F4F6B44A161959F35C167B79DECB439F7AB99",
         "mode": "0o644"
       }
     },
@@ -9091,7 +9389,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/agent/missionAuthority.js",
       "old": {
         "path": "server/src/services/agent/missionAuthority.js",
@@ -9103,8 +9401,8 @@
       "new": {
         "path": "server/src/services/agent/missionAuthority.js",
         "type": "file",
-        "size": 33305,
-        "sha256": "928EDF25D86C262E69A74A93279A52E8E7D80F4B20E4801DD63F007558202E7A",
+        "size": 35296,
+        "sha256": "99C82725153EB2AEF5B079FA4F862C1CB2D2ACF1DFCA5CE72C1AFCFA8E3FC874",
         "mode": "0o644"
       }
     },
@@ -9145,13 +9443,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "server/src/services/agent/missionRuntimeState.js",
       "old": {
         "path": "server/src/services/agent/missionRuntimeState.js",
         "type": "file",
-        "size": 54386,
-        "sha256": "B0280F8D4B851D8F6BE0F164721986E80D59175A8B8DED7FA848D25EE558F301",
+        "size": 54967,
+        "sha256": "A2326F78F33D5502B719F441B07418FFFEC2D9D4AB6F65D8C549331D6FD5E639",
         "mode": "0o644"
       },
       "new": {
@@ -9181,9 +9479,15 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "server/src/services/agent/researchAuthority.js",
-      "old": null,
+      "old": {
+        "path": "server/src/services/agent/researchAuthority.js",
+        "type": "file",
+        "size": 4189,
+        "sha256": "99F88BBBC9DD2114A5B466482087D56628251D898EA67FDCA29D97EE9AB736A2",
+        "mode": "0o644"
+      },
       "new": {
         "path": "server/src/services/agent/researchAuthority.js",
         "type": "file",
@@ -9193,9 +9497,15 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "server/src/services/agent/researchDialogue.js",
-      "old": null,
+      "old": {
+        "path": "server/src/services/agent/researchDialogue.js",
+        "type": "file",
+        "size": 15932,
+        "sha256": "3D868C911408D5B3A6E19E7A28C77CFCDDF47D26F6B6358DC9EE9FE7B26592BE",
+        "mode": "0o644"
+      },
       "new": {
         "path": "server/src/services/agent/researchDialogue.js",
         "type": "file",
@@ -9205,21 +9515,33 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "server/src/services/agent/researchRuntime.js",
-      "old": null,
-      "new": {
+      "old": {
         "path": "server/src/services/agent/researchRuntime.js",
         "type": "file",
         "size": 34935,
         "sha256": "73979A8A64168B042E57D9339AA2F8F26E04130421DE204A8097CDAE615C63FB",
         "mode": "0o644"
+      },
+      "new": {
+        "path": "server/src/services/agent/researchRuntime.js",
+        "type": "file",
+        "size": 35521,
+        "sha256": "FBD7DAD59BC8FDC2919433B7DBFE96B870B160B79609B31AEA0359C76C0536DD",
+        "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "server/src/services/agent/researchRuntimeState.js",
-      "old": null,
+      "old": {
+        "path": "server/src/services/agent/researchRuntimeState.js",
+        "type": "file",
+        "size": 9309,
+        "sha256": "D2DE6DC5EC69032CDE4832E638235B38C93DEEDD59F10F9C59E1EA68B4E0DE70",
+        "mode": "0o644"
+      },
       "new": {
         "path": "server/src/services/agent/researchRuntimeState.js",
         "type": "file",
@@ -9347,7 +9669,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/bookmark/bookmarkNotifications.js",
       "old": {
         "path": "server/src/services/bookmark/bookmarkNotifications.js",
@@ -9359,13 +9681,13 @@
       "new": {
         "path": "server/src/services/bookmark/bookmarkNotifications.js",
         "type": "file",
-        "size": 7376,
-        "sha256": "3D872BCA2E30636B3DB51AA03A602152B1BCA474452DA24F6472EA5EE38DA418",
+        "size": 7805,
+        "sha256": "CE90B926359C0F9FBB0541E2BA666BDDDD3BF06677C5034E48626AFF40BFB56E",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/bookmark/bookmarkPayloads.js",
       "old": {
         "path": "server/src/services/bookmark/bookmarkPayloads.js",
@@ -9377,8 +9699,8 @@
       "new": {
         "path": "server/src/services/bookmark/bookmarkPayloads.js",
         "type": "file",
-        "size": 5611,
-        "sha256": "C324F1C4208DFB48A7A4A754B9340D045CA1AD89BF823397B447A34CE653CA0F",
+        "size": 6522,
+        "sha256": "DBD51BAFC5062A0E480A78BDF77163EC6506F240EF31B3753D05B6644B399480",
         "mode": "0o644"
       }
     },
@@ -9401,7 +9723,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/bookmark/bookmarkRuntimeState.js",
       "old": {
         "path": "server/src/services/bookmark/bookmarkRuntimeState.js",
@@ -9413,13 +9735,13 @@
       "new": {
         "path": "server/src/services/bookmark/bookmarkRuntimeState.js",
         "type": "file",
-        "size": 46644,
-        "sha256": "E6B85865F54CEFCA65B986AB7E3CA191540EF227112AFB48CEB31EAFE65F0655",
+        "size": 52016,
+        "sha256": "BCB5E1A2777788C71CCE135C0995095D63C8FC074D1DD9D8C9230A95A786D8B8",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/bookmark/bookmarkRuntimeStore.js",
       "old": {
         "path": "server/src/services/bookmark/bookmarkRuntimeStore.js",
@@ -9431,8 +9753,8 @@
       "new": {
         "path": "server/src/services/bookmark/bookmarkRuntimeStore.js",
         "type": "file",
-        "size": 10071,
-        "sha256": "656071208F3E8AE4F2F3F3B6F7AB449106990141BEE3A197508668988A80DAF3",
+        "size": 10612,
+        "sha256": "37A5B19B1154ADF7319630131E682703424909153A2CBAAA5F89DF2AF2F7784C",
         "mode": "0o644"
       }
     },
@@ -9957,7 +10279,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/campaign/crateService.js",
       "old": {
         "path": "server/src/services/campaign/crateService.js",
@@ -9969,8 +10291,8 @@
       "new": {
         "path": "server/src/services/campaign/crateService.js",
         "type": "file",
-        "size": 19548,
-        "sha256": "4064E45CE87EBB3797F065D7D344A38CA97487F02803A06A831BD1779329D429",
+        "size": 21869,
+        "sha256": "69A0DDA854545D52A68F36C01AD0E636D220E9F729593CCFD576D52D0E96EFB5",
         "mode": "0o644"
       }
     },
@@ -10025,7 +10347,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/accessGroupBookmarkMgrService.js",
       "old": {
         "path": "server/src/services/character/accessGroupBookmarkMgrService.js",
@@ -10037,8 +10359,8 @@
       "new": {
         "path": "server/src/services/character/accessGroupBookmarkMgrService.js",
         "type": "file",
-        "size": 21295,
-        "sha256": "E1308B64E7D91AD637C8B522528F7131DDBD5D65BF56BC7CECBA690818F917EC",
+        "size": 21551,
+        "sha256": "BB777BEC59EF04B50CD2E7425D772197B52D1AA3E81C55ADBBB14A96D4FF984B",
         "mode": "0o644"
       }
     },
@@ -10061,7 +10383,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/achievementTrackerMgrService.js",
       "old": {
         "path": "server/src/services/character/achievementTrackerMgrService.js",
@@ -10073,8 +10395,8 @@
       "new": {
         "path": "server/src/services/character/achievementTrackerMgrService.js",
         "type": "file",
-        "size": 5591,
-        "sha256": "E943203816C57A7831864537690F36A9FC193FE71C33CF17CC9E2BB3E2703435",
+        "size": 6979,
+        "sha256": "DD7DB5E6E4E7B1153EFA7C014C5CE9BFE48A5A94B18501C3C772C6E2809369D4",
         "mode": "0o644"
       }
     },
@@ -10169,13 +10491,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "server/src/services/character/characterDeletionRuntime.js",
       "old": {
         "path": "server/src/services/character/characterDeletionRuntime.js",
         "type": "file",
-        "size": 26202,
-        "sha256": "3D65B47434434FEAFDD030658CEFAE472079FD9D8C316306BA3783CD3914F596",
+        "size": 25629,
+        "sha256": "006766F94DFDA281BD9EC1AA789D782CA378CCABE257541C1B32E2D745FD025B",
         "mode": "0o644"
       },
       "new": {
@@ -10187,7 +10509,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/characterEnergyMgrService.js",
       "old": {
         "path": "server/src/services/character/characterEnergyMgrService.js",
@@ -10199,8 +10521,8 @@
       "new": {
         "path": "server/src/services/character/characterEnergyMgrService.js",
         "type": "file",
-        "size": 9442,
-        "sha256": "16D45143817E8E22F692478C1F6B4FFF7508A09261EEF0321C05B30FFE8B6B6B",
+        "size": 10099,
+        "sha256": "E62E73EBFB8D4AB7ADE6EA95EAEA2F6CBAAF5E069ABD2E6A0528738E90EA15AA",
         "mode": "0o644"
       }
     },
@@ -10259,7 +10581,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/characterNoteState.js",
       "old": {
         "path": "server/src/services/character/characterNoteState.js",
@@ -10271,8 +10593,8 @@
       "new": {
         "path": "server/src/services/character/characterNoteState.js",
         "type": "file",
-        "size": 12735,
-        "sha256": "80B4CE6D4853763A45D5E289D922440950B59A1D6CDEE57BC2C45D3465E222A1",
+        "size": 13389,
+        "sha256": "495C37EC4FB4F0C7FAABC3990BFF5096D85E91D5F36DFD4C82C044BE2C105B7B",
         "mode": "0o644"
       }
     },
@@ -10295,7 +10617,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/characterState.js",
       "old": {
         "path": "server/src/services/character/characterState.js",
@@ -10307,8 +10629,8 @@
       "new": {
         "path": "server/src/services/character/characterState.js",
         "type": "file",
-        "size": 159123,
-        "sha256": "383CA253D1A2F67A085F541B4FBA91C6BACBD7FA04223333993EBCDF55013070",
+        "size": 162511,
+        "sha256": "9B41180942C677D54DED67EE4B5FAF4AF3B8B133DFD2A2303BC1B0F2273D57CB",
         "mode": "0o644"
       }
     },
@@ -10457,7 +10779,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/ownerGroupManagerService.js",
       "old": {
         "path": "server/src/services/character/ownerGroupManagerService.js",
@@ -10469,8 +10791,8 @@
       "new": {
         "path": "server/src/services/character/ownerGroupManagerService.js",
         "type": "file",
-        "size": 11413,
-        "sha256": "5D31EA8DE2D9A365C3630615E0BCC1BD9E981060CBF1852E82CAAC8FB4767D05",
+        "size": 14888,
+        "sha256": "8F03390B9A92AB7741CDEE840F874F0F57E6AEE9599F53CBB5B3289E9A07F14C",
         "mode": "0o644"
       }
     },
@@ -10601,7 +10923,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/character/standingRuntime.js",
       "old": {
         "path": "server/src/services/character/standingRuntime.js",
@@ -10613,8 +10935,8 @@
       "new": {
         "path": "server/src/services/character/standingRuntime.js",
         "type": "file",
-        "size": 58956,
-        "sha256": "99F602D9A6BC7469FE1379F3CEBDEF2CC2C4FAAF3F5C3F7B15AE18723C6CACFB",
+        "size": 58952,
+        "sha256": "20C4C8BB0189C68713352B3B53C913B7ABD11FDAC7AD3A6B8D5E5731ADD7E3E6",
         "mode": "0o644"
       }
     },
@@ -10773,7 +11095,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/chat/chatCommands.js",
       "old": {
         "path": "server/src/services/chat/chatCommands.js",
@@ -10785,8 +11107,8 @@
       "new": {
         "path": "server/src/services/chat/chatCommands.js",
         "type": "file",
-        "size": 399890,
-        "sha256": "365B7EBF5DD98F8E1EB7711FC1379151EAFBD5B94547AD732EA1982D0A4BB03E",
+        "size": 407929,
+        "sha256": "4E819E47D0870A60626F66F592D161BDE7E2D23000A0A535F93633F69D1A3E7A",
         "mode": "0o644"
       }
     },
@@ -11071,7 +11393,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/chat/xmppStubServer.js",
       "old": {
         "path": "server/src/services/chat/xmppStubServer.js",
@@ -11083,8 +11405,8 @@
       "new": {
         "path": "server/src/services/chat/xmppStubServer.js",
         "type": "file",
-        "size": 103746,
-        "sha256": "804759EF4A70C50B646623CA248545B6FA71DABB01DBC9E72701E93C58C53A1E",
+        "size": 105559,
+        "sha256": "39733D285FDCF6D02E81CA82EB07D8D9FF36FAA10DA85381C8DD3E227D8F5B3A",
         "mode": "0o644"
       }
     },
@@ -11108,15 +11430,15 @@
       "old": {
         "path": "server/src/services/config/configService.js",
         "type": "file",
-        "size": 23087,
-        "sha256": "13522F4E4694460449946DDD9EF953078651B3101C61E63BADF2CA650AD27695",
+        "size": 24535,
+        "sha256": "1E55A6F3126506996DEE5F819259BA94F8D2E6CA3ED8D6061BB13AF10985E8CC",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/config/configService.js",
         "type": "file",
-        "size": 24535,
-        "sha256": "1E55A6F3126506996DEE5F819259BA94F8D2E6CA3ED8D6061BB13AF10985E8CC",
+        "size": 26590,
+        "sha256": "A5E3D20C76921311F9DEE1214EBE16C51CB0E43A10734E11E85E72D50C22EDC2",
         "mode": "0o644"
       }
     },
@@ -11153,7 +11475,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/contracts/contractRuntimeState.js",
       "old": {
         "path": "server/src/services/contracts/contractRuntimeState.js",
@@ -11165,8 +11487,8 @@
       "new": {
         "path": "server/src/services/contracts/contractRuntimeState.js",
         "type": "file",
-        "size": 131483,
-        "sha256": "7A9723205676F14304ABA2BF08D81AD351CFD8E8040A1076AE1A5B0AD5366F4D",
+        "size": 136176,
+        "sha256": "4F3F2137581B8A38AE7515771EF4E508F05793DB6C00DD748216BDE76E2BD71E",
         "mode": "0o644"
       }
     },
@@ -11419,7 +11741,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/allianceViewState.js",
       "old": {
         "path": "server/src/services/corporation/allianceViewState.js",
@@ -11431,8 +11753,8 @@
       "new": {
         "path": "server/src/services/corporation/allianceViewState.js",
         "type": "file",
-        "size": 15053,
-        "sha256": "C88B4884B269E319E50EDE1855685627675E26BC93266E2FFF1CBD11EFB50C14",
+        "size": 16012,
+        "sha256": "4041A79D187353B7AA2B69AFB1CD8FEFD32FB7EB9FA04E77BB397691A7FAC129",
         "mode": "0o644"
       }
     },
@@ -11635,7 +11957,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/corpRegistryRuntime.js",
       "old": {
         "path": "server/src/services/corporation/corpRegistryRuntime.js",
@@ -11647,8 +11969,8 @@
       "new": {
         "path": "server/src/services/corporation/corpRegistryRuntime.js",
         "type": "file",
-        "size": 127610,
-        "sha256": "E01E9E5969432775466B3B5135BAB4ECE58BA139AE21FC32AB97C26793242133",
+        "size": 133744,
+        "sha256": "C0661D110BC9EFF313E2F5C6006D4ECCA3939E279FBFE5AB825CB35A193DCC55",
         "mode": "0o644"
       }
     },
@@ -11671,7 +11993,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/corpService.js",
       "old": {
         "path": "server/src/services/corporation/corpService.js",
@@ -11683,8 +12005,8 @@
       "new": {
         "path": "server/src/services/corporation/corpService.js",
         "type": "file",
-        "size": 18653,
-        "sha256": "1422EED86FDD141853022278113C43072CA10AEEA2C8599A8160DEED069C3FE8",
+        "size": 21199,
+        "sha256": "A4B03571EA3CD262D81BAEF5B1063FEE559A86DB0127F5D2BDCC83EA8EA84A1F",
         "mode": "0o644"
       }
     },
@@ -11725,7 +12047,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/corpmgrService.js",
       "old": {
         "path": "server/src/services/corporation/corpmgrService.js",
@@ -11737,8 +12059,8 @@
       "new": {
         "path": "server/src/services/corporation/corpmgrService.js",
         "type": "file",
-        "size": 19340,
-        "sha256": "FBD85F746AB341FAF8BFEA9CD05A0EB80E729DC919F3AD3CF7CA4662B7FC64BF",
+        "size": 19528,
+        "sha256": "9FD0DBF712CF1FF592F58F5ABE4ECBFE57F721B2280090416B3118AB5C227250",
         "mode": "0o644"
       }
     },
@@ -11851,7 +12173,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/corporationNotifications.js",
       "old": {
         "path": "server/src/services/corporation/corporationNotifications.js",
@@ -11863,13 +12185,13 @@
       "new": {
         "path": "server/src/services/corporation/corporationNotifications.js",
         "type": "file",
-        "size": 39736,
-        "sha256": "C41B1015A508F7436A1E4DA41A6821D862E7A7CF85E81B1A9E7ECC7DC3D664D4",
+        "size": 39768,
+        "sha256": "C9C5C053969B5B055646EFB973E5729D3C677AD1A90831061964CC5A557539A6",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/corporationRuntimeState.js",
       "old": {
         "path": "server/src/services/corporation/corporationRuntimeState.js",
@@ -11881,8 +12203,8 @@
       "new": {
         "path": "server/src/services/corporation/corporationRuntimeState.js",
         "type": "file",
-        "size": 64312,
-        "sha256": "1F53697F8FCA6B106CCAA4B40FD2E63AD4930D2CCB24B0B0690C60D36F312523",
+        "size": 64758,
+        "sha256": "EE5A17B3A46C331004071334CEDDCD78DBFF871B253FFA2D05B1E2722A7B1F37",
         "mode": "0o644"
       }
     },
@@ -11905,7 +12227,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/corporationState.js",
       "old": {
         "path": "server/src/services/corporation/corporationState.js",
@@ -11917,8 +12239,8 @@
       "new": {
         "path": "server/src/services/corporation/corporationState.js",
         "type": "file",
-        "size": 54719,
-        "sha256": "6B7CCB1EB3F25D88BFD62825077553DA86F25767AD7FF4D0C051A1968B000B71",
+        "size": 55718,
+        "sha256": "333AB4E3A1EC2FF8384A3F7935CD2883BBE9BE8AEB7E8FAD0FFEBF5A3381A033",
         "mode": "0o644"
       }
     },
@@ -11995,7 +12317,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/lpWalletState.js",
       "old": {
         "path": "server/src/services/corporation/lpWalletState.js",
@@ -12007,8 +12329,8 @@
       "new": {
         "path": "server/src/services/corporation/lpWalletState.js",
         "type": "file",
-        "size": 25721,
-        "sha256": "85215DFC7CFB65B5F5312BCE3C0483B155C391C43060D4988E616698A306ADAA",
+        "size": 26482,
+        "sha256": "2EC5F6F21D97BCFADEDB0EF3B8CD725DFE0607DAAF7E8E13B78875D300E25A5F",
         "mode": "0o644"
       }
     },
@@ -12121,7 +12443,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/voteManagerService.js",
       "old": {
         "path": "server/src/services/corporation/voteManagerService.js",
@@ -12133,13 +12455,13 @@
       "new": {
         "path": "server/src/services/corporation/voteManagerService.js",
         "type": "file",
-        "size": 8913,
-        "sha256": "DEE51EF43360F7136480F7D153F061500EAB8B861FAEB7F8EE00E6F4C1BD0ECE",
+        "size": 8941,
+        "sha256": "C153D96FE25E1956B31ABE9C6D3C04E17A3B46B0B253D048CE854CED1AB48AF1",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/voteRuntimeState.js",
       "old": {
         "path": "server/src/services/corporation/voteRuntimeState.js",
@@ -12151,8 +12473,8 @@
       "new": {
         "path": "server/src/services/corporation/voteRuntimeState.js",
         "type": "file",
-        "size": 32311,
-        "sha256": "E9C0AD287975703B90D6248D5226BD0A77B66D2A1D7BFE98023E2B1DB319A53E",
+        "size": 33188,
+        "sha256": "FEDF21566C7C1B284B429835D19C35391AC363FFCB925BB6DE9873A019794721",
         "mode": "0o644"
       }
     },
@@ -12175,7 +12497,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/warNegotiationRuntimeState.js",
       "old": {
         "path": "server/src/services/corporation/warNegotiationRuntimeState.js",
@@ -12187,8 +12509,8 @@
       "new": {
         "path": "server/src/services/corporation/warNegotiationRuntimeState.js",
         "type": "file",
-        "size": 26237,
-        "sha256": "3709466A32C2340FAE71D47F0B5C297A3C5F542F9C3E17736A64BF08D09E5FC5",
+        "size": 27401,
+        "sha256": "E1C0CAE8521B991105B3BCF614A2689889CE70675E3CE82864282EDB3B512542",
         "mode": "0o644"
       }
     },
@@ -12229,7 +12551,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/warRegistryService.js",
       "old": {
         "path": "server/src/services/corporation/warRegistryService.js",
@@ -12241,8 +12563,8 @@
       "new": {
         "path": "server/src/services/corporation/warRegistryService.js",
         "type": "file",
-        "size": 10739,
-        "sha256": "08D7A1634E5C9C6AAC4DFFB97B05C8D599DD677C638BCFAA6AAEA560E7A200EA",
+        "size": 12169,
+        "sha256": "9BBB38086AB6118182E08FAA74DE70FBAE90ECC1A3F3147F65BF8905907A5811",
         "mode": "0o644"
       }
     },
@@ -12265,7 +12587,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/corporation/warStatisticMgrService.js",
       "old": {
         "path": "server/src/services/corporation/warStatisticMgrService.js",
@@ -12277,8 +12599,8 @@
       "new": {
         "path": "server/src/services/corporation/warStatisticMgrService.js",
         "type": "file",
-        "size": 6028,
-        "sha256": "9633F05993083353E3D75139BE0E8954DEB388AEBBE049C9975E608C86A46E49",
+        "size": 6278,
+        "sha256": "74AF48173620DFB8D78A1801FA329B83F1A1BB1466BF68F31F3BDA96A111B7AD",
         "mode": "0o644"
       }
     },
@@ -12351,7 +12673,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dailyGoals/dailyGoalsState.js",
       "old": {
         "path": "server/src/services/dailyGoals/dailyGoalsState.js",
@@ -12363,8 +12685,8 @@
       "new": {
         "path": "server/src/services/dailyGoals/dailyGoalsState.js",
         "type": "file",
-        "size": 40396,
-        "sha256": "88ECCC21B751C6892F4AF98307B69494A2B52AD381AA7441B12AD9BB406ACDF7",
+        "size": 41048,
+        "sha256": "5E9C11557B74C3DA374607FEA40E349FA15EDD648035CEEB96403D664957DEF3",
         "mode": "0o644"
       }
     },
@@ -12542,20 +12864,20 @@
       "old": {
         "path": "server/src/services/dogma/dogmaService.js",
         "type": "file",
-        "size": 386763,
-        "sha256": "0DC7F8A41FB9263C1EB77CD1B8467D2B26962F3D767328348B1B9999E0777164",
+        "size": 387374,
+        "sha256": "00C48B51ACDDDA265993EEFE3AE11C8F91965ED521DCBBCD66F8C06FA606CD63",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/dogma/dogmaService.js",
         "type": "file",
-        "size": 387374,
-        "sha256": "00C48B51ACDDDA265993EEFE3AE11C8F91965ED521DCBBCD66F8C06FA606CD63",
+        "size": 394770,
+        "sha256": "BB2A0C0BE19A72E8DCAA0FF7E244CB5C23FC9B6553B97701D56DBC7464F57252",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dogma/dynamicItemService.js",
       "old": {
         "path": "server/src/services/dogma/dynamicItemService.js",
@@ -12567,8 +12889,8 @@
       "new": {
         "path": "server/src/services/dogma/dynamicItemService.js",
         "type": "file",
-        "size": 16975,
-        "sha256": "AF246B1E316E2453B2D341B4E427D089D8CCCD5EAE913CAF080E0E33168975D4",
+        "size": 17158,
+        "sha256": "FCA9902E35FDF2DB842324B59244A835C0823D387FC6A6EF985621CFCDB75ABE",
         "mode": "0o644"
       }
     },
@@ -12587,7 +12909,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dogma/implants/activeImplantModifiers.js",
       "old": {
         "path": "server/src/services/dogma/implants/activeImplantModifiers.js",
@@ -12599,8 +12921,8 @@
       "new": {
         "path": "server/src/services/dogma/implants/activeImplantModifiers.js",
         "type": "file",
-        "size": 33101,
-        "sha256": "A48CF724AFBED5A960B700EA7FB4D66FF1B216E1CEFC888EE65E8EACE628AB6A",
+        "size": 33756,
+        "sha256": "643A83A75E93E1E6D493E85BFB486F8DA0833C4C6509AF782C9416E9B78A82D5",
         "mode": "0o644"
       }
     },
@@ -12673,7 +12995,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/drone/droneRuntime.js",
       "old": {
         "path": "server/src/services/drone/droneRuntime.js",
@@ -12685,8 +13007,8 @@
       "new": {
         "path": "server/src/services/drone/droneRuntime.js",
         "type": "file",
-        "size": 236998,
-        "sha256": "E84172ADE85F80B5C6215E4B8FADFC230ED392E016350BEFD60B96D905ED2388",
+        "size": 242440,
+        "sha256": "1D6C3F6AD01C2EC9A6BB7F6577F9968A437133B07F38FEDE84F99D0D3C074884",
         "mode": "0o644"
       }
     },
@@ -12741,7 +13063,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dungeon/dungeonAuthority.js",
       "old": {
         "path": "server/src/services/dungeon/dungeonAuthority.js",
@@ -12753,8 +13075,8 @@
       "new": {
         "path": "server/src/services/dungeon/dungeonAuthority.js",
         "type": "file",
-        "size": 13030,
-        "sha256": "B9FAEE91E34B5842D844F12ACE5A26F4839E6C370423F1986BE8DEE7A58012F9",
+        "size": 19186,
+        "sha256": "AD5A05E09DB0205C932AD2EB9F48DAE3389FF3FCE32F1137FCF3D2927A6F0C72",
         "mode": "0o644"
       }
     },
@@ -12813,7 +13135,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dungeon/dungeonRuntime.js",
       "old": {
         "path": "server/src/services/dungeon/dungeonRuntime.js",
@@ -12825,13 +13147,13 @@
       "new": {
         "path": "server/src/services/dungeon/dungeonRuntime.js",
         "type": "file",
-        "size": 74433,
-        "sha256": "A59DE2F92E98A834CE91906BCEFAFF7316538F15DC1E7A47C5849175FD3B38BB",
+        "size": 74668,
+        "sha256": "0E9E014E66D49CA27FF241062BF989E5BD19ABEB51DB7EBA72794F9E39B4C09E",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dungeon/dungeonRuntimeState.js",
       "old": {
         "path": "server/src/services/dungeon/dungeonRuntimeState.js",
@@ -12843,8 +13165,8 @@
       "new": {
         "path": "server/src/services/dungeon/dungeonRuntimeState.js",
         "type": "file",
-        "size": 31887,
-        "sha256": "209EC2D712C52527B0B14F7C47C62D5A7CBC8DEB99A624903F4525D36E2ABCE3",
+        "size": 40896,
+        "sha256": "A70B70C18867597CB54C785B2D22E913710C2449BAB321025E761C0265C33C07",
         "mode": "0o644"
       }
     },
@@ -12908,20 +13230,20 @@
       "old": {
         "path": "server/src/services/dungeon/dungeonSiteSpawnPolicy.js",
         "type": "file",
-        "size": 34897,
-        "sha256": "5D4EB0979967FF920C711BAFF2DB222146103C84A382B677D404849513D74C55",
+        "size": 44667,
+        "sha256": "D44E61344B9243A6C34AE286E01BCAFD0CFF177325E3195D8763B4FCAC2C7A40",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/dungeon/dungeonSiteSpawnPolicy.js",
         "type": "file",
-        "size": 44667,
-        "sha256": "D44E61344B9243A6C34AE286E01BCAFD0CFF177325E3195D8763B4FCAC2C7A40",
+        "size": 49033,
+        "sha256": "BA5F9DE65CA0795374CBED02FF0B7C474681F02277E914FCBB5CAD67FBD80BD8",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dungeon/dungeonTrackingRuntime.js",
       "old": {
         "path": "server/src/services/dungeon/dungeonTrackingRuntime.js",
@@ -12933,8 +13255,8 @@
       "new": {
         "path": "server/src/services/dungeon/dungeonTrackingRuntime.js",
         "type": "file",
-        "size": 20384,
-        "sha256": "B634730D09E16261235BEB50F72F4C4D63F1B16EDA0CBA684FF41FF512DC3D29",
+        "size": 21147,
+        "sha256": "8F5C91F6B0153DBF137FF1792652334661B7E5167DA4FC52904525AF2E913745",
         "mode": "0o644"
       }
     },
@@ -12944,15 +13266,15 @@
       "old": {
         "path": "server/src/services/dungeon/dungeonUniverseRuntime.js",
         "type": "file",
-        "size": 185033,
-        "sha256": "CFD79B60847B672F8E721A60762FD606F5F0714FA58CBA631AB6FB79139450A7",
+        "size": 195695,
+        "sha256": "9ED93C9C9642275A6FD45B2BC0C6E2F89170AAB32A29E2869D84513F7F0A60E0",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/dungeon/dungeonUniverseRuntime.js",
         "type": "file",
-        "size": 195695,
-        "sha256": "9ED93C9C9642275A6FD45B2BC0C6E2F89170AAB32A29E2869D84513F7F0A60E0",
+        "size": 200877,
+        "sha256": "40FF19BAC0EB06D2B0A94ABDE07E25BCE56BFF82393C563AC05B1F3F897F5415",
         "mode": "0o644"
       }
     },
@@ -12962,20 +13284,20 @@
       "old": {
         "path": "server/src/services/dungeon/dungeonUniverseSiteService.js",
         "type": "file",
-        "size": 346738,
-        "sha256": "114A8E896BDF92406726A3E8CDDD94862C603E239FCD3C207A83D58552DB041C",
+        "size": 357710,
+        "sha256": "FB4014E7B7EFC36E8F59499BA8100456FA3DA93A3A69B5625BBC50AFF52093DD",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/dungeon/dungeonUniverseSiteService.js",
         "type": "file",
-        "size": 357710,
-        "sha256": "FB4014E7B7EFC36E8F59499BA8100456FA3DA93A3A69B5625BBC50AFF52093DD",
+        "size": 360728,
+        "sha256": "79B8D72062B3FEC4D111633357C9595A5585FF97CE9E0FFA70041CB42C3E299B",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dungeon/dungeonVisibilityPolicy.js",
       "old": {
         "path": "server/src/services/dungeon/dungeonVisibilityPolicy.js",
@@ -12987,13 +13309,13 @@
       "new": {
         "path": "server/src/services/dungeon/dungeonVisibilityPolicy.js",
         "type": "file",
-        "size": 7529,
-        "sha256": "AB2A369E2258047016F35DA1149D853030628E4E7C3765A83214ACDF725393F3",
+        "size": 8439,
+        "sha256": "99EEA97C0FE53747550C80E7FC553A92DD392A98BF90281E2A811588C5CA75F8",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/dungeon/globalSiteSchedulerRuntime.js",
       "old": {
         "path": "server/src/services/dungeon/globalSiteSchedulerRuntime.js",
@@ -13005,8 +13327,8 @@
       "new": {
         "path": "server/src/services/dungeon/globalSiteSchedulerRuntime.js",
         "type": "file",
-        "size": 13048,
-        "sha256": "A00CFBD38D2F72833B65F32AA477C37893207FC62743E26E56567B0DE803327B",
+        "size": 13437,
+        "sha256": "D42F7A01012A250B161BA628DC878A49DC3BD0CACC064EB531C4FD83DAAEE33C",
         "mode": "0o644"
       }
     },
@@ -13129,6 +13451,28 @@
         "type": "file",
         "size": 11165,
         "sha256": "12D4792EF7F51FEFB9045BF46ECC1BCB6443A1C904BCF6D34C11BB756D684A1A",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/eveOffline",
+      "old": null,
+      "new": {
+        "path": "server/src/services/eveOffline",
+        "type": "dir",
+        "mode": "0o755"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/eveOffline/transportLocationResolver.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/eveOffline/transportLocationResolver.js",
+        "type": "file",
+        "size": 3133,
+        "sha256": "C57E781A265841F7C86999840FC9C4C403241A1FB36CBF6A928F435CDE8BA94C",
         "mode": "0o644"
       }
     },
@@ -13273,7 +13617,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/evermarks/lpStoreMgrService.js",
       "old": {
         "path": "server/src/services/evermarks/lpStoreMgrService.js",
@@ -13285,13 +13629,13 @@
       "new": {
         "path": "server/src/services/evermarks/lpStoreMgrService.js",
         "type": "file",
-        "size": 11381,
-        "sha256": "2E07F775450A892ABFB2272F256DD1D6D9E97E2E6CE920B07E7260FA46A780D1",
+        "size": 13660,
+        "sha256": "5DF47258B1EF914227FC81624ACEB2E7DB2DD9721DEB430DFAAF6A95F168EF58",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/evermarks/lpStorePurchaseState.js",
       "old": {
         "path": "server/src/services/evermarks/lpStorePurchaseState.js",
@@ -13303,8 +13647,8 @@
       "new": {
         "path": "server/src/services/evermarks/lpStorePurchaseState.js",
         "type": "file",
-        "size": 22936,
-        "sha256": "449179212A44F0C2288E01913CE844D86EFB17B637C18A5D687462C8C4FF1E61",
+        "size": 25847,
+        "sha256": "A1A7238B83134C7BA8D8FB8925B535CE9000FB61017E2DA6FED59BFB0502D81B",
         "mode": "0o644"
       }
     },
@@ -13346,15 +13690,15 @@
       "old": {
         "path": "server/src/services/exploration/hackingMgrService.js",
         "type": "file",
-        "size": 16558,
-        "sha256": "BF52AB00D328D2C11A9247A7AA4E8623B1824A164ADAA7C663F7577DC8909A46",
+        "size": 16999,
+        "sha256": "BFEF6A5B9FE51F2C07430CC147303BF1CF6056C03D7C5CCE83E8294E3E989DF4",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/exploration/hackingMgrService.js",
         "type": "file",
-        "size": 16999,
-        "sha256": "BFEF6A5B9FE51F2C07430CC147303BF1CF6056C03D7C5CCE83E8294E3E989DF4",
+        "size": 19068,
+        "sha256": "C65725440DD81E24E902AAC31725F4E7C7CF59CB2E54DA1D3140B8244F233E08",
         "mode": "0o644"
       }
     },
@@ -13391,7 +13735,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/exploration/probes/probeScanRuntime.js",
       "old": {
         "path": "server/src/services/exploration/probes/probeScanRuntime.js",
@@ -13403,8 +13747,8 @@
       "new": {
         "path": "server/src/services/exploration/probes/probeScanRuntime.js",
         "type": "file",
-        "size": 34074,
-        "sha256": "AA0CEA6DC91F4EF52FA67583B605AE6053FA20DC732019B23DF8D0CBF0CCB938",
+        "size": 34583,
+        "sha256": "3F677287C356AF4166D00A1C086EF3E280660B12B7DEE0531BB461051448267B",
         "mode": "0o644"
       }
     },
@@ -13445,7 +13789,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/exploration/probes/surveyProbeRuntime.js",
       "old": {
         "path": "server/src/services/exploration/probes/surveyProbeRuntime.js",
@@ -13457,13 +13801,13 @@
       "new": {
         "path": "server/src/services/exploration/probes/surveyProbeRuntime.js",
         "type": "file",
-        "size": 35511,
-        "sha256": "4853AE2C619EE118DC81403A03CB27AEFBB794710BDC4DECDB6F062E9F8237E2",
+        "size": 35893,
+        "sha256": "A8E8B8A3845D5ED9A53BFD95C9EB8CAFA6366A9EC40C975A160A9589EF6B6465",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/exploration/scanMgrService.js",
       "old": {
         "path": "server/src/services/exploration/scanMgrService.js",
@@ -13475,8 +13819,8 @@
       "new": {
         "path": "server/src/services/exploration/scanMgrService.js",
         "type": "file",
-        "size": 91631,
-        "sha256": "8BD97F7A8128DFAF91F24FA542D682F844EF30CCCAC3BBFD1FC3FFC2A8B622CC",
+        "size": 93051,
+        "sha256": "FDDE43FCCF82FD10A1A4633EA73B6F4E8C556173004EC2A4D5F20A19A63EC438",
         "mode": "0o644"
       }
     },
@@ -13775,7 +14119,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/exploration/wormholes/wormholeRuntime.js",
       "old": {
         "path": "server/src/services/exploration/wormholes/wormholeRuntime.js",
@@ -13787,8 +14131,8 @@
       "new": {
         "path": "server/src/services/exploration/wormholes/wormholeRuntime.js",
         "type": "file",
-        "size": 92710,
-        "sha256": "4EE1F8E33965A99B5437399EA34C0DD3C49CEF38EEA8AE739D9188E67C1AFB75",
+        "size": 93327,
+        "sha256": "DE50BB32C541E062722AC454D94E7DF1A96679974CE440E77F377A3554B76748",
         "mode": "0o644"
       }
     },
@@ -13829,14 +14173,20 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "server/src/services/exploration/wormholes/wormholeSpaceAuthority.js",
-      "old": null,
-      "new": {
+      "old": {
         "path": "server/src/services/exploration/wormholes/wormholeSpaceAuthority.js",
         "type": "file",
         "size": 14559,
         "sha256": "9313555F2DF354B9F693EBCD9C37F79E99D070549AE3C4520E9C95F3E0382384",
+        "mode": "0o644"
+      },
+      "new": {
+        "path": "server/src/services/exploration/wormholes/wormholeSpaceAuthority.js",
+        "type": "file",
+        "size": 14990,
+        "sha256": "BAAC6057DB2F8A02BBAE81E6BF44C685DD0BB2FC379B3A2A98D8E2C7A94C952E",
         "mode": "0o644"
       }
     },
@@ -13959,7 +14309,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fighter/fighterDogma.js",
       "old": {
         "path": "server/src/services/fighter/fighterDogma.js",
@@ -13971,8 +14321,8 @@
       "new": {
         "path": "server/src/services/fighter/fighterDogma.js",
         "type": "file",
-        "size": 30762,
-        "sha256": "B8295DFC7FBB12323FCC3819CF53C1CFBBC6B666CCA4C8A3413875950EB1B74F",
+        "size": 31823,
+        "sha256": "904B30EDAC5ADEF60623EA2FC57C822AB6607895D33D930DDB1F34FE442C2FCB",
         "mode": "0o644"
       }
     },
@@ -14013,7 +14363,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fighter/fighterRuntime.js",
       "old": {
         "path": "server/src/services/fighter/fighterRuntime.js",
@@ -14025,8 +14375,8 @@
       "new": {
         "path": "server/src/services/fighter/fighterRuntime.js",
         "type": "file",
-        "size": 161603,
-        "sha256": "CF7D93942C3F4361B78B1063E45FE6133F3B767B58DDB94CDF8976DE7050CB1D",
+        "size": 170612,
+        "sha256": "B369FA52CA35EA651E7F998EDC2DFD5453AFC29034CA81EBB421D061A535A335",
         "mode": "0o644"
       }
     },
@@ -14063,7 +14413,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fighter/npc/npcSupercarrierDirector.js",
       "old": {
         "path": "server/src/services/fighter/npc/npcSupercarrierDirector.js",
@@ -14075,8 +14425,8 @@
       "new": {
         "path": "server/src/services/fighter/npc/npcSupercarrierDirector.js",
         "type": "file",
-        "size": 15850,
-        "sha256": "7D2C6724B6AD745B87606D01AB81319A4512F16C208498EFD80363BEFC9F7923",
+        "size": 16120,
+        "sha256": "EA1DC322CF56EAD6E06F7C832E1F3F696FB85E0B7B692DB1B51937ECEFA68186",
         "mode": "0o644"
       }
     },
@@ -14199,7 +14549,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fitting/corpFittingMgrService.js",
       "old": {
         "path": "server/src/services/fitting/corpFittingMgrService.js",
@@ -14211,8 +14561,8 @@
       "new": {
         "path": "server/src/services/fitting/corpFittingMgrService.js",
         "type": "file",
-        "size": 6001,
-        "sha256": "8820E532728A16C0B2B99C299299C090735AC29289A1C66B8080643ADA3F50FC",
+        "size": 6246,
+        "sha256": "3AABE1BC6F3C145E27F6FADEAA6D9C9F11F5290FA22E1BC6024C1C0DDD7C1C61",
         "mode": "0o644"
       }
     },
@@ -14235,7 +14585,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fitting/fittingMgrServiceHelpers.js",
       "old": {
         "path": "server/src/services/fitting/fittingMgrServiceHelpers.js",
@@ -14247,8 +14597,8 @@
       "new": {
         "path": "server/src/services/fitting/fittingMgrServiceHelpers.js",
         "type": "file",
-        "size": 3953,
-        "sha256": "5975B1F12F4EC95C7E7BC6E1C1F9C9E3B15AB36FB8C6190AFABCE967ADAED0BF",
+        "size": 5723,
+        "sha256": "18D1171DCA72872756A1BE9A428ABC4324E9D2351C9EE1F6C594E905177FC976",
         "mode": "0o644"
       }
     },
@@ -14375,7 +14725,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fleets/fleetObjectHandlerService.js",
       "old": {
         "path": "server/src/services/fleets/fleetObjectHandlerService.js",
@@ -14387,8 +14737,8 @@
       "new": {
         "path": "server/src/services/fleets/fleetObjectHandlerService.js",
         "type": "file",
-        "size": 11137,
-        "sha256": "8781EDB18AE745DD1CB4535826C06EFE46B1EF8EE8C0A9F3FF84C7A74E082409",
+        "size": 11179,
+        "sha256": "7311253F9F410DDE4CF5C8F5829FF7B8B9F81BD13BACE5E4FBBA63C13642D84E",
         "mode": "0o644"
       }
     },
@@ -14429,7 +14779,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/fleets/fleetRuntime.js",
       "old": {
         "path": "server/src/services/fleets/fleetRuntime.js",
@@ -14441,8 +14791,8 @@
       "new": {
         "path": "server/src/services/fleets/fleetRuntime.js",
         "type": "file",
-        "size": 90242,
-        "sha256": "51D320745D69609876B61FA5094488081BD40759900E37F6A74F106239E81054",
+        "size": 93120,
+        "sha256": "4802207646ABC12B595EF705C289E4E2F25B7E77565FB5544C0857AE7FF440B5",
         "mode": "0o644"
       }
     },
@@ -14583,7 +14933,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/industry/facilityManagerService.js",
       "old": {
         "path": "server/src/services/industry/facilityManagerService.js",
@@ -14595,8 +14945,8 @@
       "new": {
         "path": "server/src/services/industry/facilityManagerService.js",
         "type": "file",
-        "size": 4831,
-        "sha256": "56AC54A60A6C65385B5F068B7B92E66FB26D82A2DE016D73AF7BC73BAED7379B",
+        "size": 5073,
+        "sha256": "782B95A8FDA20CD53EC63D9135534024CB2263533F20897F0A5B084C84F6FE9E",
         "mode": "0o644"
       }
     },
@@ -14871,7 +15221,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/industry/industryRuntimeState.js",
       "old": {
         "path": "server/src/services/industry/industryRuntimeState.js",
@@ -14883,8 +15233,8 @@
       "new": {
         "path": "server/src/services/industry/industryRuntimeState.js",
         "type": "file",
-        "size": 169855,
-        "sha256": "A754B1F6C5459A2065D2E1173068F9012409FF898E456D566581AABFFDF00ACA",
+        "size": 177763,
+        "sha256": "D6CEE9C19CD5F06E26FD42C1AE360BE1620E72D157E34BF7E5B38597DFC61C0E",
         "mode": "0o644"
       }
     },
@@ -15079,6 +15429,18 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/src/services/inventory/corporationOfficeInventoryObservers.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/inventory/corporationOfficeInventoryObservers.js",
+        "type": "file",
+        "size": 6631,
+        "sha256": "EC8ED42CBE982DC8476835C2F13B120DD0A95E11DD2D103E63E665570B1CD802",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "UNCHANGED",
       "path": "server/src/services/inventory/deathItemCustody.js",
       "old": {
@@ -15133,7 +15495,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/inventory/fuelBayInventory.js",
       "old": {
         "path": "server/src/services/inventory/fuelBayInventory.js",
@@ -15145,8 +15507,8 @@
       "new": {
         "path": "server/src/services/inventory/fuelBayInventory.js",
         "type": "file",
-        "size": 5030,
-        "sha256": "DC68EA9CF28D925093F8B5B69CD5F1C0ECC68426D31A458772FA1ACBFCAAEF67",
+        "size": 5170,
+        "sha256": "527834B793DA68E3916DB38C3B405C471E42057C5BC074C6357660D0346FB9B4",
         "mode": "0o644"
       }
     },
@@ -15187,7 +15549,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/inventory/invBrokerService.js",
       "old": {
         "path": "server/src/services/inventory/invBrokerService.js",
@@ -15199,8 +15561,8 @@
       "new": {
         "path": "server/src/services/inventory/invBrokerService.js",
         "type": "file",
-        "size": 497923,
-        "sha256": "1455FE08285DCE4B70233AB700502921278093E8D4B53BA44F9A1447DB1FBE7A",
+        "size": 558653,
+        "sha256": "5446267592085DB33828E3801724284E1C22300D923BCAB2CB94AD373B673AF7",
         "mode": "0o644"
       }
     },
@@ -15246,15 +15608,15 @@
       "old": {
         "path": "server/src/services/inventory/itemCustody.js",
         "type": "file",
-        "size": 90446,
-        "sha256": "3F64AA168D3CB8AD7AE4729B7E8DB52B4E4CA108B3ED372124CD5D1760A4159D",
+        "size": 94080,
+        "sha256": "3F51B5819BA9A20A0FBE54D809D8B95F81CAE04982E4BF0E10AB0716B5D8662E",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/inventory/itemCustody.js",
         "type": "file",
-        "size": 94080,
-        "sha256": "3F51B5819BA9A20A0FBE54D809D8B95F81CAE04982E4BF0E10AB0716B5D8662E",
+        "size": 94655,
+        "sha256": "BE3CB862CF14E3B251A29245FFF628EE34816C26721A698CC1B609AE32C240F5",
         "mode": "0o644"
       }
     },
@@ -15264,15 +15626,15 @@
       "old": {
         "path": "server/src/services/inventory/itemStore.js",
         "type": "file",
-        "size": 222370,
-        "sha256": "DCE16D3911290EB784AF8A706561E55EDC1E430F8D54BAAF6BCA5AD1B032926F",
+        "size": 225335,
+        "sha256": "A02EA51EA3D7017A999200D0FB257C6FB85E438061AC07EC3CDB37E47ED33E48",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/inventory/itemStore.js",
         "type": "file",
-        "size": 225335,
-        "sha256": "A02EA51EA3D7017A999200D0FB257C6FB85E438061AC07EC3CDB37E47ED33E48",
+        "size": 231590,
+        "sha256": "2C4C804439BB1E5083BA23EC3D7A3B741FBD40BEDB5932CB930150CBAAA7BC5E",
         "mode": "0o644"
       }
     },
@@ -15403,14 +15765,32 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "server/src/services/inventory/researchDatacoreItemCustody.js",
-      "old": null,
+      "old": {
+        "path": "server/src/services/inventory/researchDatacoreItemCustody.js",
+        "type": "file",
+        "size": 1830,
+        "sha256": "423ACCD5E443E6CDE78791AEE82BEFB94586136294A3023EC084C85B7804B025",
+        "mode": "0o644"
+      },
       "new": {
         "path": "server/src/services/inventory/researchDatacoreItemCustody.js",
         "type": "file",
         "size": 1830,
         "sha256": "423ACCD5E443E6CDE78791AEE82BEFB94586136294A3023EC084C85B7804B025",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/inventory/shipMaintenanceBayInventory.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/inventory/shipMaintenanceBayInventory.js",
+        "type": "file",
+        "size": 2988,
+        "sha256": "7B582AE43377C86B6A49D5175F9C0D6A83AAC73445F60CFEBE9A20C128100E54",
         "mode": "0o644"
       }
     },
@@ -15451,7 +15831,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/inventory/specialShipHoldRegistry.js",
       "old": {
         "path": "server/src/services/inventory/specialShipHoldRegistry.js",
@@ -15463,8 +15843,8 @@
       "new": {
         "path": "server/src/services/inventory/specialShipHoldRegistry.js",
         "type": "file",
-        "size": 10003,
-        "sha256": "C5F58183AADAB4F4F62B2F0C1C7B39180C0B06849B1D2CC792141038BCB4B352",
+        "size": 16437,
+        "sha256": "29AE53C7A4653833F0414E40F54B1E16C0AB23F273A3393B57C71BA354AF3F6B",
         "mode": "0o644"
       }
     },
@@ -15537,7 +15917,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/killmail/deathOutcomeResolver.js",
       "old": {
         "path": "server/src/services/killmail/deathOutcomeResolver.js",
@@ -15549,8 +15929,8 @@
       "new": {
         "path": "server/src/services/killmail/deathOutcomeResolver.js",
         "type": "file",
-        "size": 8568,
-        "sha256": "DD381C85EC465F7EEB34498CE009381580EEA97754674AA041ACFA92EF1ACA05",
+        "size": 11847,
+        "sha256": "71683DE6C04F3054496AB3545D7CFE5BBF230F72CB88BBFC5BAFFCB618A11715",
         "mode": "0o644"
       }
     },
@@ -16197,7 +16577,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/map/sovMgrService.js",
       "old": {
         "path": "server/src/services/map/sovMgrService.js",
@@ -16209,8 +16589,8 @@
       "new": {
         "path": "server/src/services/map/sovMgrService.js",
         "type": "file",
-        "size": 3311,
-        "sha256": "28F325E33D659804F99C2856641299D4EF80381C873094C899CEB68420A54C00",
+        "size": 5172,
+        "sha256": "42E807677F6E1AD344F43E7CC6EDCF408B637B2503AF05CDE429D659CDEB1DD3",
         "mode": "0o644"
       }
     },
@@ -16229,7 +16609,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/market/marketDaemonClient.js",
       "old": {
         "path": "server/src/services/market/marketDaemonClient.js",
@@ -16241,13 +16621,13 @@
       "new": {
         "path": "server/src/services/market/marketDaemonClient.js",
         "type": "file",
-        "size": 13257,
-        "sha256": "D21C39BA1EF12A185FC84EE7E3DDB006B9131FEB87B98501E84E6A030B08D3F7",
+        "size": 13412,
+        "sha256": "27C5B7FB52078501B8B29CD1B7916F6B335BDAD325F9469BC3DC974B1F3C89B2",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/market/marketEscrowState.js",
       "old": {
         "path": "server/src/services/market/marketEscrowState.js",
@@ -16259,13 +16639,13 @@
       "new": {
         "path": "server/src/services/market/marketEscrowState.js",
         "type": "file",
-        "size": 3453,
-        "sha256": "938F6ACD271B4FEBA59192337C0C51CC36635F2873658C665639D2FD5951B7DB",
+        "size": 3979,
+        "sha256": "78F9D8652DE4ECBAB4B21A2B0689DC1E7099EB965BD5F45EA0B6DC2D46FA78AD",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/market/marketProxyService.js",
       "old": {
         "path": "server/src/services/market/marketProxyService.js",
@@ -16277,8 +16657,8 @@
       "new": {
         "path": "server/src/services/market/marketProxyService.js",
         "type": "file",
-        "size": 245104,
-        "sha256": "7BC9CCADED3734249CCAFA7095086925BF175ECFE6631FE9A7F02E3C1CA9DB89",
+        "size": 249128,
+        "sha256": "DD1A5ADA917B83475D3F8A2930ECE2F8F3527320126539386ED1594EA428BEF4",
         "mode": "0o644"
       }
     },
@@ -16549,7 +16929,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/miningInventory.js",
       "old": {
         "path": "server/src/services/mining/miningInventory.js",
@@ -16561,13 +16941,13 @@
       "new": {
         "path": "server/src/services/mining/miningInventory.js",
         "type": "file",
-        "size": 4227,
-        "sha256": "B5DA0898D4F0F10C516B0395A3B62AE4DB8842BB3879A01F131B5852B9EB06F1",
+        "size": 5644,
+        "sha256": "9EF042A129160B9245E071BC281DCDF44423CE4403E2C191FB09C0EBC5DC55D7",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/miningLedgerState.js",
       "old": {
         "path": "server/src/services/mining/miningLedgerState.js",
@@ -16579,8 +16959,8 @@
       "new": {
         "path": "server/src/services/mining/miningLedgerState.js",
         "type": "file",
-        "size": 19450,
-        "sha256": "64B89B8FCCB768CC4D6BC25FECC112A6E1EA54115D3ACFDC8C080836A18B1709",
+        "size": 20483,
+        "sha256": "C838727B1B7E52484B871A16C9DC84ACD6EA4D94844EBEC4A7076D7C231F7114",
         "mode": "0o644"
       }
     },
@@ -16603,7 +16983,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/miningNpcOperations.js",
       "old": {
         "path": "server/src/services/mining/miningNpcOperations.js",
@@ -16615,8 +16995,8 @@
       "new": {
         "path": "server/src/services/mining/miningNpcOperations.js",
         "type": "file",
-        "size": 104779,
-        "sha256": "335BB9AB8A0393FCE573FE9D60D658994C34B7599B91CADC74991071DC068776",
+        "size": 105726,
+        "sha256": "C0AC7E9B042FB5F8EF754B29511B5B95F7AF968A8ABC5924091E6D4FBD3E16F5",
         "mode": "0o644"
       }
     },
@@ -16657,7 +17037,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/miningRuntime.js",
       "old": {
         "path": "server/src/services/mining/miningRuntime.js",
@@ -16669,13 +17049,13 @@
       "new": {
         "path": "server/src/services/mining/miningRuntime.js",
         "type": "file",
-        "size": 43469,
-        "sha256": "7ADA87792F5B4169A360FBB1B5ACA5950CFD621D833AE2AFC30494DC9967F880",
+        "size": 44346,
+        "sha256": "425B56F81BF398D79F67437F08F05B7746ECA2F982E9A7C0EBC5B98A1307A8C0",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/miningRuntimeState.js",
       "old": {
         "path": "server/src/services/mining/miningRuntimeState.js",
@@ -16687,8 +17067,8 @@
       "new": {
         "path": "server/src/services/mining/miningRuntimeState.js",
         "type": "file",
-        "size": 53910,
-        "sha256": "16C4256790DB93083277855DF9BA25D3F5BD76CA98DBABFE05D2F65B35B7A105",
+        "size": 54974,
+        "sha256": "69F616E95B094725818EF5E550496CB11257B84D96905D4E2E42FA2B83FDE858",
         "mode": "0o644"
       }
     },
@@ -16765,7 +17145,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/oreAnomalySecurityAuthority.js",
       "old": {
         "path": "server/src/services/mining/oreAnomalySecurityAuthority.js",
@@ -16777,13 +17157,13 @@
       "new": {
         "path": "server/src/services/mining/oreAnomalySecurityAuthority.js",
         "type": "file",
-        "size": 18849,
-        "sha256": "151A3D8099DE162775DAC9DF594FA301B5F501843477990A690941665F3DB1F0",
+        "size": 19123,
+        "sha256": "21ADE3EBC5750C3AB4BD30F92185A307518CEDAB6487986D4E5FED877ACAC011",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/mining/structureCompressionMgrService.js",
       "old": {
         "path": "server/src/services/mining/structureCompressionMgrService.js",
@@ -16795,8 +17175,8 @@
       "new": {
         "path": "server/src/services/mining/structureCompressionMgrService.js",
         "type": "file",
-        "size": 3267,
-        "sha256": "349E99AEB40D02CE41B31881B89AF60F34B0E978E29278B4C152E3FE31C76C9E",
+        "size": 3761,
+        "sha256": "801C2646CA4507B7E2416B533D97C5E86BBBFE8C0EA39A88A5222AE91D13B0B5",
         "mode": "0o644"
       }
     },
@@ -17009,7 +17389,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/newEdenStore/storePurchaseSettlementState.js",
       "old": {
         "path": "server/src/services/newEdenStore/storePurchaseSettlementState.js",
@@ -17021,13 +17401,13 @@
       "new": {
         "path": "server/src/services/newEdenStore/storePurchaseSettlementState.js",
         "type": "file",
-        "size": 24422,
-        "sha256": "405B62B8124A85B20005F17F37F81CCD1AD440786207C5F403AEFD434A4E357F",
+        "size": 25047,
+        "sha256": "925D3722F7C8568143409EB9C3203B3771814711C2DD12FE1496816063F48818",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/newEdenStore/storeState.js",
       "old": {
         "path": "server/src/services/newEdenStore/storeState.js",
@@ -17039,8 +17419,8 @@
       "new": {
         "path": "server/src/services/newEdenStore/storeState.js",
         "type": "file",
-        "size": 33029,
-        "sha256": "C63D4043C2947A10DCD54A7A9B8AA7216BA78F1A5443E9CE887BF2C9405CD5B7",
+        "size": 33453,
+        "sha256": "02D3C81466DB0A0AC56D40FFC2306828F27A0924B94CC4AF571D3A97DEC8AB4E",
         "mode": "0o644"
       }
     },
@@ -17485,7 +17865,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/planet/planetMgrService.js",
       "old": {
         "path": "server/src/services/planet/planetMgrService.js",
@@ -17497,8 +17877,8 @@
       "new": {
         "path": "server/src/services/planet/planetMgrService.js",
         "type": "file",
-        "size": 50850,
-        "sha256": "543653A0750100AF9EA2247CC477C6E40A83367B64D909E98B8F4DEB95E3911F",
+        "size": 51599,
+        "sha256": "65779D02E39521A82B3F583879B47B3ED9A37B6A91F41E7A4B8C9E441A754E3C",
         "mode": "0o644"
       }
     },
@@ -17521,7 +17901,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/planet/planetOrbitalState.js",
       "old": {
         "path": "server/src/services/planet/planetOrbitalState.js",
@@ -17533,13 +17913,13 @@
       "new": {
         "path": "server/src/services/planet/planetOrbitalState.js",
         "type": "file",
-        "size": 36188,
-        "sha256": "D833C3333D4688401E2A4F55D26E6C26E50BEF9A75F0671D053D9F5D28B5CBA2",
+        "size": 40915,
+        "sha256": "3617448EA36C8B3ED45FE70722BD4F7E13A13D1B3DE7E8AA95AB6FDB7B5928D0",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/planet/planetRuntimeStore.js",
       "old": {
         "path": "server/src/services/planet/planetRuntimeStore.js",
@@ -17551,8 +17931,8 @@
       "new": {
         "path": "server/src/services/planet/planetRuntimeStore.js",
         "type": "file",
-        "size": 160643,
-        "sha256": "9A9E290926DE7B3332077DF6F5DAB470833942C484AB04F58FDDEA7D176126EB",
+        "size": 165454,
+        "sha256": "28D4BD2E3049CFB8AB004EA7556BBD76A5F7D3180E57A25B79E344988417B59E",
         "mode": "0o644"
       }
     },
@@ -17575,7 +17955,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/planet/planetaryCustomsSettlementState.js",
       "old": {
         "path": "server/src/services/planet/planetaryCustomsSettlementState.js",
@@ -17587,13 +17967,13 @@
       "new": {
         "path": "server/src/services/planet/planetaryCustomsSettlementState.js",
         "type": "file",
-        "size": 35436,
-        "sha256": "92EC6F5727B0A93853198E6E4C3843D24D103C6B4086A48C21F33C34D9B8CEAD",
+        "size": 35561,
+        "sha256": "B5B7FED607A9CF31DE67333F6C7DC3913AA208D43F89E85C041BE537EEE17794",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/planet/posMgrService.js",
       "old": {
         "path": "server/src/services/planet/posMgrService.js",
@@ -17605,8 +17985,8 @@
       "new": {
         "path": "server/src/services/planet/posMgrService.js",
         "type": "file",
-        "size": 7992,
-        "sha256": "17E69B9EA10907DF6F003B883EE477B069115C7F5B269AE70121E2DC5CFDEB3C",
+        "size": 10283,
+        "sha256": "AEB42CE752BCEC078EC718ED61BD973C7EDAD83A0DBDB5254CCB01A83E33B2E3",
         "mode": "0o644"
       }
     },
@@ -17819,7 +18199,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/raffles/raffleRuntime.js",
       "old": {
         "path": "server/src/services/raffles/raffleRuntime.js",
@@ -17831,8 +18211,8 @@
       "new": {
         "path": "server/src/services/raffles/raffleRuntime.js",
         "type": "file",
-        "size": 45578,
-        "sha256": "0A1CB1048940036E461CC520129FD43A814C92BDD5A5ABF0AB5FB1780C294135",
+        "size": 46174,
+        "sha256": "7680367F6FF1E482017DC702FC7D0174B2E6A176485AECEBF4BEF0A0C7E61C88",
         "mode": "0o644"
       }
     },
@@ -18103,7 +18483,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/reprocessing/reprocessingRuntime.js",
       "old": {
         "path": "server/src/services/reprocessing/reprocessingRuntime.js",
@@ -18115,13 +18495,13 @@
       "new": {
         "path": "server/src/services/reprocessing/reprocessingRuntime.js",
         "type": "file",
-        "size": 39920,
-        "sha256": "3085ABFDFF8282B3FF678D5BDA4054C83DDE5FC9F618E6EDE18644E1A99DC981",
+        "size": 40133,
+        "sha256": "FEDCC266491DD1A2BB2B0651F93EBF3D05CF280977C2DC9F02CE677B9E0EDDE7",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/reprocessing/reprocessingSettlementState.js",
       "old": {
         "path": "server/src/services/reprocessing/reprocessingSettlementState.js",
@@ -18133,8 +18513,8 @@
       "new": {
         "path": "server/src/services/reprocessing/reprocessingSettlementState.js",
         "type": "file",
-        "size": 42182,
-        "sha256": "97305E1241B69989066AC4E35FC3575B47E08E11775CD8A497046DCAE6C53714",
+        "size": 45007,
+        "sha256": "AC7DD9D99805B6C2836EAFFBE58152954281D6CABC5EB0E0C2F8E316B171CBCB",
         "mode": "0o644"
       }
     },
@@ -18221,13 +18601,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "server/src/services/scheduler/durableSchedulerProcess.worker.js",
       "old": {
         "path": "server/src/services/scheduler/durableSchedulerProcess.worker.js",
         "type": "file",
-        "size": 9310,
-        "sha256": "ED388E490A6915A49A2E55529321AA14D35BBE4BACB7E562C8EAAA55708FFD50",
+        "size": 10316,
+        "sha256": "63A05C5780882AD44BD44F5951CC0D29E5FA35809DE3E4059419FAE375BA0AD7",
         "mode": "0o644"
       },
       "new": {
@@ -18461,7 +18841,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/beyonceService.js",
       "old": {
         "path": "server/src/services/ship/beyonceService.js",
@@ -18473,13 +18853,13 @@
       "new": {
         "path": "server/src/services/ship/beyonceService.js",
         "type": "file",
-        "size": 154514,
-        "sha256": "5730F384A55E496CBE57CB37E5C2FA896DDCA02C6FC0CE80FD892C6C680205EA",
+        "size": 157238,
+        "sha256": "4CDE51665E340AD498899CDA5D461E4D0CDB6E9F76EFB46550B1299EFC4AAFB8",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/cargoContainerRuntime.js",
       "old": {
         "path": "server/src/services/ship/cargoContainerRuntime.js",
@@ -18491,8 +18871,20 @@
       "new": {
         "path": "server/src/services/ship/cargoContainerRuntime.js",
         "type": "file",
-        "size": 63563,
-        "sha256": "4CA454DD5F6389794EC7CBB3D4EBB65EDAE040BBF0246EE63C4F7A468261C776",
+        "size": 65250,
+        "sha256": "1B98032B01B43DB6011DEA8E6539F3E11EEBC331E437EE9752EA8A313B2EC00F",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/ship/controlTowerRuntime.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/ship/controlTowerRuntime.js",
+        "type": "file",
+        "size": 51099,
+        "sha256": "D11B55462DDEECE6A4E9C20A4F656F23198908CF3F970B262D4E77FBBC3732B3",
         "mode": "0o644"
       }
     },
@@ -18533,7 +18925,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/ejectRuntime.js",
       "old": {
         "path": "server/src/services/ship/ejectRuntime.js",
@@ -18545,8 +18937,8 @@
       "new": {
         "path": "server/src/services/ship/ejectRuntime.js",
         "type": "file",
-        "size": 35837,
-        "sha256": "25F881EE312122B3C70E6D935ADE1A91854ADBF5E1AF74F6A146A96D5EC0D490",
+        "size": 37284,
+        "sha256": "2B9D5F2758964250C129213D9B6C30435A04CB5897F3D6E5FDCBECEF794B237D",
         "mode": "0o644"
       }
     },
@@ -18605,7 +18997,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/mobileAnalysisBeaconRuntime.js",
       "old": {
         "path": "server/src/services/ship/mobileAnalysisBeaconRuntime.js",
@@ -18617,8 +19009,8 @@
       "new": {
         "path": "server/src/services/ship/mobileAnalysisBeaconRuntime.js",
         "type": "file",
-        "size": 40177,
-        "sha256": "3AD29E8E7E1D993AE6C548F7E11355734DEAC0B93357F48A592D29DAB8049122",
+        "size": 40755,
+        "sha256": "48B9642F2E8DA05E89A69ADE917B746EBD7C600A6E9E4C65FCBB96CB62D9AAE8",
         "mode": "0o644"
       }
     },
@@ -18641,7 +19033,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/mobileDepotRuntime.js",
       "old": {
         "path": "server/src/services/ship/mobileDepotRuntime.js",
@@ -18653,8 +19045,8 @@
       "new": {
         "path": "server/src/services/ship/mobileDepotRuntime.js",
         "type": "file",
-        "size": 46906,
-        "sha256": "EAD5688FB2AF26797A13A5D3E89EA2A78BCD9CC77D0F5A9A8EFC5F8BE2DC01F0",
+        "size": 54874,
+        "sha256": "E4C8AB0A2024568D1DD5A19D52DFD9CC3B180FFC0FCB8B00338E379D082EE03A",
         "mode": "0o644"
       }
     },
@@ -18677,7 +19069,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/mobileObservatoryRuntime.js",
       "old": {
         "path": "server/src/services/ship/mobileObservatoryRuntime.js",
@@ -18689,8 +19081,8 @@
       "new": {
         "path": "server/src/services/ship/mobileObservatoryRuntime.js",
         "type": "file",
-        "size": 32127,
-        "sha256": "767C50C26DA56A93995330267CB347E7272F9761DE540D5130E36376907AA2FF",
+        "size": 33258,
+        "sha256": "8C8826CD9352F9BBFA68900CB32C3249C67A68D953BCFC75CD33ABBE5AF6C7B2",
         "mode": "0o644"
       }
     },
@@ -18713,7 +19105,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/mobileScanInhibitorRuntime.js",
       "old": {
         "path": "server/src/services/ship/mobileScanInhibitorRuntime.js",
@@ -18725,8 +19117,8 @@
       "new": {
         "path": "server/src/services/ship/mobileScanInhibitorRuntime.js",
         "type": "file",
-        "size": 30712,
-        "sha256": "3C04BCD9F4D87C2CB27F9B52880F00D87515B92C10A008F5D272392392DA7EAD",
+        "size": 31552,
+        "sha256": "126D8B7EFB8A3E7557DBCCF7068B2573B1E0CC503C23D0E50B6181CFD0797BF6",
         "mode": "0o644"
       }
     },
@@ -18749,7 +19141,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/mobileTractorUnitRuntime.js",
       "old": {
         "path": "server/src/services/ship/mobileTractorUnitRuntime.js",
@@ -18761,8 +19153,8 @@
       "new": {
         "path": "server/src/services/ship/mobileTractorUnitRuntime.js",
         "type": "file",
-        "size": 89777,
-        "sha256": "F9E48272388F51F041BA43757976E9CCD777B191BE150100D23B28A41A2A7D61",
+        "size": 90615,
+        "sha256": "52895C941A0B385A75C03603778C6E83B6091F4679677A6423DA98638ED2E0B8",
         "mode": "0o644"
       }
     },
@@ -18785,7 +19177,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/orbitalLaunchRuntime.js",
       "old": {
         "path": "server/src/services/ship/orbitalLaunchRuntime.js",
@@ -18797,8 +19189,8 @@
       "new": {
         "path": "server/src/services/ship/orbitalLaunchRuntime.js",
         "type": "file",
-        "size": 21378,
-        "sha256": "92E5229264FC8D9E8FD4FB111E82B7364D54CFB55A4AA5008E6850FAF25497CE",
+        "size": 22255,
+        "sha256": "B75DE547F1BC641765A5D43B96733A026792794BE4EE79E88DC418214B3BEA77",
         "mode": "0o644"
       }
     },
@@ -18839,7 +19231,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/ship/shipCosmeticsMgrService.js",
       "old": {
         "path": "server/src/services/ship/shipCosmeticsMgrService.js",
@@ -18851,8 +19243,8 @@
       "new": {
         "path": "server/src/services/ship/shipCosmeticsMgrService.js",
         "type": "file",
-        "size": 14692,
-        "sha256": "E22688C6CB894ADF15A24B64F91D507F21C6EBFCD5215B7AFBB4D4397F3158A9",
+        "size": 15286,
+        "sha256": "49AFB0CC7FEEF7D4D648C61308E1450F0BD6DCF54DA9326731103C7EA5B195FE",
         "mode": "0o644"
       }
     },
@@ -18965,6 +19357,18 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/src/services/ship/shipMaintenanceBayRules.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/ship/shipMaintenanceBayRules.js",
+        "type": "file",
+        "size": 2673,
+        "sha256": "7F5A6FC5897B2F7CDC387C845859B6F349A01B5D00AA09F9D504EE93B76C97E0",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "UNCHANGED",
       "path": "server/src/services/ship/shipNameUtils.js",
       "old": {
@@ -18988,15 +19392,15 @@
       "old": {
         "path": "server/src/services/ship/shipService.js",
         "type": "file",
-        "size": 74426,
-        "sha256": "95DF446502C32E724996E9B172782E8E683414B878FC96C13D5A9967A8D25E3A",
+        "size": 76623,
+        "sha256": "7E1595FD4A7177EE8C10ED0F9AC347C53D1E257B4C262C6200278C5A67F0C101",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/services/ship/shipService.js",
         "type": "file",
-        "size": 76623,
-        "sha256": "7E1595FD4A7177EE8C10ED0F9AC347C53D1E257B4C262C6200278C5A67F0C101",
+        "size": 77788,
+        "sha256": "D234078659DD2C42D84021F7DB21F83871D8F47684B6ABF1FA12D5B74BAF57A4",
         "mode": "0o644"
       }
     },
@@ -19259,7 +19663,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/skills/boosters/boosterRuntime.js",
       "old": {
         "path": "server/src/services/skills/boosters/boosterRuntime.js",
@@ -19271,8 +19675,8 @@
       "new": {
         "path": "server/src/services/skills/boosters/boosterRuntime.js",
         "type": "file",
-        "size": 16507,
-        "sha256": "E945964584A3E2957936BC84E31EE08EFC05914A1ADCFB86A597945BD662FEDC",
+        "size": 17066,
+        "sha256": "BB822FC4CE1AD3694154285335F02A6E991EDE06D8EAD73CDAA4AB8FAFD49E8E",
         "mode": "0o644"
       }
     },
@@ -19761,7 +20165,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/skills/trading/skillTradingState.js",
       "old": {
         "path": "server/src/services/skills/trading/skillTradingState.js",
@@ -19773,8 +20177,8 @@
       "new": {
         "path": "server/src/services/skills/trading/skillTradingState.js",
         "type": "file",
-        "size": 4176,
-        "sha256": "4D7C5DC00069C59CF3A7B78F1DF8B25929347E6CED34213783640C469D7D04C2",
+        "size": 4330,
+        "sha256": "E0DF744F850E118634C2D926A35A668F424AA413E0355CCDCC160C012799B371",
         "mode": "0o644"
       }
     },
@@ -19829,7 +20233,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/skills/training/skillQueueRuntime.js",
       "old": {
         "path": "server/src/services/skills/training/skillQueueRuntime.js",
@@ -19841,8 +20245,8 @@
       "new": {
         "path": "server/src/services/skills/training/skillQueueRuntime.js",
         "type": "file",
-        "size": 58825,
-        "sha256": "3555BE85A3964068C6836F15D42F8C35FED558EDD21B8EE0F882663E0BD9EE27",
+        "size": 59215,
+        "sha256": "01B97ECE33A6A5B70AEA4C676DC4EA33C6629601505BA36E7F652AC82E58B547",
         "mode": "0o644"
       }
     },
@@ -20077,7 +20481,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/sovereignty/sovCaptureState.js",
       "old": {
         "path": "server/src/services/sovereignty/sovCaptureState.js",
@@ -20089,8 +20493,8 @@
       "new": {
         "path": "server/src/services/sovereignty/sovCaptureState.js",
         "type": "file",
-        "size": 29581,
-        "sha256": "D34F99BF5BFC7B157F4F800544B96C5770F178235905EF5C2EA9DADB98C9DADD",
+        "size": 29889,
+        "sha256": "559116CD8A0476243F599D796E3151E1C6F15E7A9632F9BBBB02904ED193986A",
         "mode": "0o644"
       }
     },
@@ -20185,7 +20589,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/sovereignty/sovGmState.js",
       "old": {
         "path": "server/src/services/sovereignty/sovGmState.js",
@@ -20197,8 +20601,8 @@
       "new": {
         "path": "server/src/services/sovereignty/sovGmState.js",
         "type": "file",
-        "size": 32341,
-        "sha256": "F16DAE5321B3ECEB4FDD97A211ECC8266D77C9B3D96E5AB50C3844945AF17516",
+        "size": 33463,
+        "sha256": "83ACC8CD4CD29D7796D04B82BB439A94BCB488901B29D50B2810CA1AF860AB07",
         "mode": "0o644"
       }
     },
@@ -20221,7 +20625,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/sovereignty/sovModernState.js",
       "old": {
         "path": "server/src/services/sovereignty/sovModernState.js",
@@ -20233,8 +20637,8 @@
       "new": {
         "path": "server/src/services/sovereignty/sovModernState.js",
         "type": "file",
-        "size": 63535,
-        "sha256": "68A810FC3541582096C4D831A85E4CE83F963084C86C95C677A3E00CF3E5473C",
+        "size": 64519,
+        "sha256": "A838A6BE3CAAE69A9005FC068D959C67E80F53E932DBFBB42CA4DB2DE1332195",
         "mode": "0o644"
       }
     },
@@ -20311,7 +20715,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/sovereignty/sovState.js",
       "old": {
         "path": "server/src/services/sovereignty/sovState.js",
@@ -20323,8 +20727,8 @@
       "new": {
         "path": "server/src/services/sovereignty/sovState.js",
         "type": "file",
-        "size": 111415,
-        "sha256": "73E2864B92A4B386C7C37F92DBB4AC509F317482BCB27D02A8AAFD55C5134099",
+        "size": 113885,
+        "sha256": "64EB2C7AC53EB5D2EB7976671BB80E024D55F56093CFF1EEF1DB4466BB683D45",
         "mode": "0o644"
       }
     },
@@ -20365,7 +20769,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/sovereignty/sovStore.js",
       "old": {
         "path": "server/src/services/sovereignty/sovStore.js",
@@ -20377,8 +20781,8 @@
       "new": {
         "path": "server/src/services/sovereignty/sovStore.js",
         "type": "file",
-        "size": 5419,
-        "sha256": "D25A4A09C8254C192C79D5CB663FDE9E1061B4B464942DCE1212F6E8C978FDBF",
+        "size": 5914,
+        "sha256": "8F12EE508BD26DC3D463897E952E73D1A7FDD8D48B5B37119C3DC41F1A042FEA",
         "mode": "0o644"
       }
     },
@@ -20433,6 +20837,40 @@
         "type": "file",
         "size": 3582,
         "sha256": "27327C3E44551399959F747A8C3E2891C79466619A5F7C48A7F2E446B2ABFC3D",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/starbase",
+      "old": null,
+      "new": {
+        "path": "server/src/services/starbase",
+        "type": "dir",
+        "mode": "0o755"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/starbase/posChatCommands.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/starbase/posChatCommands.js",
+        "type": "file",
+        "size": 8350,
+        "sha256": "2DD341DCB86BF0E88973E588DC13BF2040FB06621C4D61905647F459E0A2A92C",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/starbase/posGmState.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/starbase/posGmState.js",
+        "type": "file",
+        "size": 21037,
+        "sha256": "A518FD5145587CF56D72BB4D51174355A373DFD9BA6162E1FADE5C49EB36EC8B",
         "mode": "0o644"
       }
     },
@@ -20523,7 +20961,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/station/repackagingSupport.js",
       "old": {
         "path": "server/src/services/station/repackagingSupport.js",
@@ -20535,13 +20973,13 @@
       "new": {
         "path": "server/src/services/station/repackagingSupport.js",
         "type": "file",
-        "size": 21049,
-        "sha256": "560D5496AD473A04A90EA435ED53E9963E2BA4D08D815C0030667DE8BC9924B2",
+        "size": 21956,
+        "sha256": "60014C3DD2B2BE72090FCFB10E51FDBB9C1B6A3DA06220DF854859051DECFEFF",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/station/repairRuntime.js",
       "old": {
         "path": "server/src/services/station/repairRuntime.js",
@@ -20553,8 +20991,8 @@
       "new": {
         "path": "server/src/services/station/repairRuntime.js",
         "type": "file",
-        "size": 43889,
-        "sha256": "FF98261A9ACFF312BD1A160BBA04A66BF8BE403E54C017EFDECB2647E6BA126F",
+        "size": 44560,
+        "sha256": "8FCA40F57065C85DFCB6446A10639B7D677D69AA9F6E511933ED44D16A671F54",
         "mode": "0o644"
       }
     },
@@ -20577,7 +21015,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/station/reprocessingService.js",
       "old": {
         "path": "server/src/services/station/reprocessingService.js",
@@ -20589,8 +21027,8 @@
       "new": {
         "path": "server/src/services/station/reprocessingService.js",
         "type": "file",
-        "size": 22773,
-        "sha256": "275775CEB8D157B6E94EF67D0FD95ECBB421289CE44D6B8C28F08BE7713E2CFD",
+        "size": 24018,
+        "sha256": "9429A64C5FC53A47BCA9AF0056694AD1F6AB817411303BCC3048FCDBDC2DC27E",
         "mode": "0o644"
       }
     },
@@ -20645,7 +21083,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/structure/autoMoonMiningService.js",
       "old": {
         "path": "server/src/services/structure/autoMoonMiningService.js",
@@ -20657,13 +21095,25 @@
       "new": {
         "path": "server/src/services/structure/autoMoonMiningService.js",
         "type": "file",
-        "size": 14467,
-        "sha256": "1FFFC2DACF50B0FD695457F1707978D598A1E6C7351FD7269ADF5E2BDB71C995",
+        "size": 14727,
+        "sha256": "A615C40E6038B1695F31F00891853F526D2AF29C99B7214406B012A3D8DCD6D3",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "ADDED",
+      "path": "server/src/services/structure/moonCompositionPackGenerator.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/structure/moonCompositionPackGenerator.js",
+        "type": "file",
+        "size": 22275,
+        "sha256": "2E074BF9747D8DECDC03F608CC651C4E077DE43021FE24A599A97448297C1B68",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "MODIFIED",
       "path": "server/src/services/structure/moonExtractionsService.js",
       "old": {
         "path": "server/src/services/structure/moonExtractionsService.js",
@@ -20675,8 +21125,8 @@
       "new": {
         "path": "server/src/services/structure/moonExtractionsService.js",
         "type": "file",
-        "size": 38778,
-        "sha256": "F854785AA1895EACC9BAF7E16423C149AE1601597D8613AED0EC3EB2DFC49C45",
+        "size": 40390,
+        "sha256": "1801A3BE9A6F19DDE501C9C8E691C03C40CB9842E0E68C2A1FD3B90FEA5EE06F",
         "mode": "0o644"
       }
     },
@@ -20695,6 +21145,18 @@
         "type": "file",
         "size": 12504,
         "sha256": "202A38A4A9E42410D6F960B6CAC852685E2102BAD36E1B6612170090C1AA9A07",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/services/structure/moonMiningPointAuthority.js",
+      "old": null,
+      "new": {
+        "path": "server/src/services/structure/moonMiningPointAuthority.js",
+        "type": "file",
+        "size": 6210,
+        "sha256": "37E306D465AD80AD73C526B16AA91BFA0837354103D8ED449B67B176ACB3F840",
         "mode": "0o644"
       }
     },
@@ -21041,7 +21503,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/structure/structureDeploymentPlacement.js",
       "old": {
         "path": "server/src/services/structure/structureDeploymentPlacement.js",
@@ -21053,8 +21515,8 @@
       "new": {
         "path": "server/src/services/structure/structureDeploymentPlacement.js",
         "type": "file",
-        "size": 14480,
-        "sha256": "139036149314C0FEED8B12240D44ADF6B4DFEFF51B54AC052599A23281F7FCFD",
+        "size": 15015,
+        "sha256": "97BEDBC639E931140693111B132826E3831297D3C91D1B3BCB0020BEE6873D49",
         "mode": "0o644"
       }
     },
@@ -21257,7 +21719,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/structure/structureJumpBridgeMgrService.js",
       "old": {
         "path": "server/src/services/structure/structureJumpBridgeMgrService.js",
@@ -21269,8 +21731,8 @@
       "new": {
         "path": "server/src/services/structure/structureJumpBridgeMgrService.js",
         "type": "file",
-        "size": 63480,
-        "sha256": "61084B1BBB019B2169B9F8D8B2F03FAA127A0275609ED68BB45C704BAA92AF7E",
+        "size": 65213,
+        "sha256": "8D951BF0095D7E3361CA94392D5A8F951E6DC0FFD7124C2D39EDFE9A5A827EED",
         "mode": "0o644"
       }
     },
@@ -21437,7 +21899,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/structure/structureServiceModules.js",
       "old": {
         "path": "server/src/services/structure/structureServiceModules.js",
@@ -21449,8 +21911,8 @@
       "new": {
         "path": "server/src/services/structure/structureServiceModules.js",
         "type": "file",
-        "size": 31352,
-        "sha256": "67940632972B4472D35337C0BB1B4E5AB3C671B9A741EA098C0FDBABB5AF44E4",
+        "size": 31389,
+        "sha256": "152F3E42292F2428367BB7DCA537CCFFAD6738A11E508E95F81C95963AB37064",
         "mode": "0o644"
       }
     },
@@ -21527,7 +21989,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/structure/structureState.js",
       "old": {
         "path": "server/src/services/structure/structureState.js",
@@ -21539,8 +22001,8 @@
       "new": {
         "path": "server/src/services/structure/structureState.js",
         "type": "file",
-        "size": 133998,
-        "sha256": "CACF6DB7E38FD2F2D75D8E71B930DB6F7AE9DA14980B66154468B66093BF5429",
+        "size": 135994,
+        "sha256": "3368D0130868FB20EE44D16137FB6FFEB2286ECC8CF3BABEE4B295A595B2F4F9",
         "mode": "0o644"
       }
     },
@@ -22053,7 +22515,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/services/user/userService.js",
       "old": {
         "path": "server/src/services/user/userService.js",
@@ -22065,8 +22527,8 @@
       "new": {
         "path": "server/src/services/user/userService.js",
         "type": "file",
-        "size": 38207,
-        "sha256": "61B2EC28CFFCB2EC8B2B733208591DC70BBAF71784152B7F08AA6EB122AF79F1",
+        "size": 39200,
+        "sha256": "CC0EA9C31A0A6544FF194494563197F329C9C9CD9BC009C3320A0EB2F9FCB122",
         "mode": "0o644"
       }
     },
@@ -22825,7 +23287,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/combat/killmailTracker.js",
       "old": {
         "path": "server/src/space/combat/killmailTracker.js",
@@ -22837,8 +23299,8 @@
       "new": {
         "path": "server/src/space/combat/killmailTracker.js",
         "type": "file",
-        "size": 35613,
-        "sha256": "0CCE063DCF7FEBFDEDC83A8B9E5819240FE3DBCA4AD7CA65AEE11F4877A95AFF",
+        "size": 36605,
+        "sha256": "65A4581FE7A5781C1CBA41CD2330343C09DADC0ADA9368BE29772201C20F21E0",
         "mode": "0o644"
       }
     },
@@ -24121,7 +24583,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/destiny/identity/interactionScope.js",
       "old": {
         "path": "server/src/space/destiny/identity/interactionScope.js",
@@ -24133,13 +24595,13 @@
       "new": {
         "path": "server/src/space/destiny/identity/interactionScope.js",
         "type": "file",
-        "size": 19428,
-        "sha256": "E1DEAC003D19C56D79FCD4AA26667D286F9AD3227F4480A9C6E2937F6573630E",
+        "size": 20260,
+        "sha256": "D77BE8C4626E973F27827152AA010DD3DB663A636A2CED671469B3DFCB8EB4B8",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/destiny/index.js",
       "old": {
         "path": "server/src/space/destiny/index.js",
@@ -24151,8 +24613,8 @@
       "new": {
         "path": "server/src/space/destiny/index.js",
         "type": "file",
-        "size": 32341,
-        "sha256": "5284B8195A04E910E1EE975BCBD0C870C107A724B9FA5283042B3C4F11B8D337",
+        "size": 32975,
+        "sha256": "3AD5B297666F8671284125653FD9038C9491613CE669CAD6083D6C8E9956D6D2",
         "mode": "0o644"
       }
     },
@@ -25471,7 +25933,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/modules/jammerModuleRuntime.js",
       "old": {
         "path": "server/src/space/modules/jammerModuleRuntime.js",
@@ -25483,8 +25945,8 @@
       "new": {
         "path": "server/src/space/modules/jammerModuleRuntime.js",
         "type": "file",
-        "size": 39434,
-        "sha256": "4600B34E26FEF44554EEF31E128970A93E223FD43C06B402DB2FC10D45EFD214",
+        "size": 39618,
+        "sha256": "E638E204F1367F21F5F428200BC0C330F73818FFC1D193E3A1DB57ACB0E3DC96",
         "mode": "0o644"
       }
     },
@@ -25669,7 +26131,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/modules/salvagerRuntime.js",
       "old": {
         "path": "server/src/space/modules/salvagerRuntime.js",
@@ -25681,19 +26143,19 @@
       "new": {
         "path": "server/src/space/modules/salvagerRuntime.js",
         "type": "file",
-        "size": 56822,
-        "sha256": "A09BD11B557FF67E8FFDADDB27C2FE5AD451B3B52F08951FD636E84C8B6E344C",
+        "size": 57085,
+        "sha256": "24EE84CBED90FFBC4855F7593B395BE753C6256DA272B760E522682881FD51A6",
         "mode": "0o644"
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "server/src/space/modules/scannerModuleRuntime.js",
       "old": {
         "path": "server/src/space/modules/scannerModuleRuntime.js",
         "type": "file",
-        "size": 21692,
-        "sha256": "5B587EE63ED2D3DB3B85A95E0757380A3D90C3C8F7B111EAB5B0F112D78329E3",
+        "size": 22260,
+        "sha256": "CA8C0C56D7533CC048CD8D314F53871D257534B7E7D8CEC379C3EEB597B1F1B3",
         "mode": "0o644"
       },
       "new": {
@@ -25891,7 +26353,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/beltRatRuntime.js",
       "old": {
         "path": "server/src/space/npc/beltRatRuntime.js",
@@ -25903,8 +26365,8 @@
       "new": {
         "path": "server/src/space/npc/beltRatRuntime.js",
         "type": "file",
-        "size": 42735,
-        "sha256": "581155BE920220AF57C5C090983123A0812F6E7CC94EE16A2750BBD602286C21",
+        "size": 43093,
+        "sha256": "303EBBFDD0AF5509A91942D7EC4CDF68AA64A9F70FA593E16B75B9B770493C85",
         "mode": "0o644"
       }
     },
@@ -26171,7 +26633,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/nativeNpcService.js",
       "old": {
         "path": "server/src/space/npc/nativeNpcService.js",
@@ -26183,13 +26645,13 @@
       "new": {
         "path": "server/src/space/npc/nativeNpcService.js",
         "type": "file",
-        "size": 84346,
-        "sha256": "0E3AA95EA7CDA856847901467F38C5DC865727113CB34FEA49194B2395103943",
+        "size": 85073,
+        "sha256": "AEF1A6F6FE3713CE9A26571B5C20E0733BCFD2E194A93491D5834F1E490388F4",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/nativeNpcStore.js",
       "old": {
         "path": "server/src/space/npc/nativeNpcStore.js",
@@ -26201,13 +26663,13 @@
       "new": {
         "path": "server/src/space/npc/nativeNpcStore.js",
         "type": "file",
-        "size": 32647,
-        "sha256": "5F33004D7511A6BC71BA92C72D2968821C4EA0D066FB065916A951E2F97035A1",
+        "size": 34085,
+        "sha256": "DFF5918BC2507B26BFA9ECFF8F3E620B70B792AEDF53DDCC019F98A18E036750",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/nativeNpcWreckService.js",
       "old": {
         "path": "server/src/space/npc/nativeNpcWreckService.js",
@@ -26219,8 +26681,8 @@
       "new": {
         "path": "server/src/space/npc/nativeNpcWreckService.js",
         "type": "file",
-        "size": 28766,
-        "sha256": "2B2CECC50158B6DF0D189E1850FC2387A50C20B95915F0FD8F14311559E187D6",
+        "size": 36626,
+        "sha256": "35D6448F2AA4629053E0E53DCDC1290C4471202C9CBCEEB8477A5CF72D9943B5",
         "mode": "0o644"
       }
     },
@@ -26495,6 +26957,18 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/src/space/npc/npcHullDamageability.js",
+      "old": null,
+      "new": {
+        "path": "server/src/space/npc/npcHullDamageability.js",
+        "type": "file",
+        "size": 2865,
+        "sha256": "CED8F41D2DE06D249CA2E7AF0A58904B9EBE6E030B6B7DBB26A051792D7B625E",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "UNCHANGED",
       "path": "server/src/space/npc/npcLoot.js",
       "old": {
@@ -26567,7 +27041,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/npcSceneActivity.js",
       "old": {
         "path": "server/src/space/npc/npcSceneActivity.js",
@@ -26579,13 +27053,13 @@
       "new": {
         "path": "server/src/space/npc/npcSceneActivity.js",
         "type": "file",
-        "size": 12383,
-        "sha256": "3714B094246E571300BA300E2EAB6B449BE674C91234CE23C72C756E3C47A268",
+        "size": 13067,
+        "sha256": "47E9854AEFB1405FAA26911964BBB07072EB7D44FC6983E80FC2FCCEC98DEED3",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/npcSelection.js",
       "old": {
         "path": "server/src/space/npc/npcSelection.js",
@@ -26597,8 +27071,20 @@
       "new": {
         "path": "server/src/space/npc/npcSelection.js",
         "type": "file",
-        "size": 15995,
-        "sha256": "1CD979123AF0B6B02F423FED0CD688A5CDFBCF25613DDDA823FB40760DBE5304",
+        "size": 17372,
+        "sha256": "6AA5D7850AF0BA4ECCAA45A7F8CEB53D3987C56D169A646C6FA90847FF930BA7",
+        "mode": "0o644"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "server/src/space/npc/npcSentryPolicy.js",
+      "old": null,
+      "new": {
+        "path": "server/src/space/npc/npcSentryPolicy.js",
+        "type": "file",
+        "size": 6169,
+        "sha256": "FA92B78957DE820FD39B07AE21BBF1D75760C64CD3BA37A65ADDCB997EF8377D",
         "mode": "0o644"
       }
     },
@@ -26662,27 +27148,33 @@
       "old": {
         "path": "server/src/space/npc/pirateFactionPolicy.js",
         "type": "file",
-        "size": 10748,
-        "sha256": "63B3434A03ED4AAA6A376C1C326F04A9392EE93094C759FA13C619DD65C83DAD",
+        "size": 12676,
+        "sha256": "3A36F9BDD58EC280E71A25A824EF7326E7E8F93D0C540088D565C23E0C6EF8A4",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/space/npc/pirateFactionPolicy.js",
         "type": "file",
-        "size": 12676,
-        "sha256": "3A36F9BDD58EC280E71A25A824EF7326E7E8F93D0C540088D565C23E0C6EF8A4",
+        "size": 12945,
+        "sha256": "41ADECF0B8592AB5B7DD9F53F827D29CE6FE5CECB5BEE046B5A7CDF27BD3C67E",
         "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "server/src/space/npc/pirateHullProfiles.js",
-      "old": null,
-      "new": {
+      "old": {
         "path": "server/src/space/npc/pirateHullProfiles.js",
         "type": "file",
         "size": 6793,
         "sha256": "CEB2EB2400D6F23C7F458CF96740410B34B5161BEF8E83DCC3A11C40B53BD018",
+        "mode": "0o644"
+      },
+      "new": {
+        "path": "server/src/space/npc/pirateHullProfiles.js",
+        "type": "file",
+        "size": 7158,
+        "sha256": "E778C0BB38C4C8BF79BA42141C74142E58A2468746D67C151325E09AB513FB6D",
         "mode": "0o644"
       }
     },
@@ -26737,25 +27229,37 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "server/src/space/pochvenPolicy.js",
+      "old": null,
+      "new": {
+        "path": "server/src/space/pochvenPolicy.js",
+        "type": "file",
+        "size": 767,
+        "sha256": "815C83B02E4F2680487F681B5CB402EF062C0D2C0E975E7D895A17F839612FE5",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "MODIFIED",
       "path": "server/src/space/runtime.js",
       "old": {
         "path": "server/src/space/runtime.js",
         "type": "file",
-        "size": 1891645,
-        "sha256": "C6AEA1E3CA23E20E14C139AFE7C12B2D61A0E8E11B8EC5DB872D81A2A4A82551",
+        "size": 1891777,
+        "sha256": "BF8F695A0C9D4111690FAE6607A51D79451074B0EF11E33BF7088C28DC47F166",
         "mode": "0o644"
       },
       "new": {
         "path": "server/src/space/runtime.js",
         "type": "file",
-        "size": 1891777,
-        "sha256": "BF8F695A0C9D4111690FAE6607A51D79451074B0EF11E33BF7088C28DC47F166",
+        "size": 1940331,
+        "sha256": "36E17E65463EE9A547757B31526AA084FEED5B8529ECE1C00BAFB75414596368",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/shipDestruction.js",
       "old": {
         "path": "server/src/space/shipDestruction.js",
@@ -26767,8 +27271,8 @@
       "new": {
         "path": "server/src/space/shipDestruction.js",
         "type": "file",
-        "size": 56843,
-        "sha256": "D0136376E3986E86EE3825793D4A6F1A4448B1B34A06583C539102651F6C21B3",
+        "size": 56982,
+        "sha256": "DCB5EFF6E06C7E78B929BAAACCCBE6EFDA0E72F32C923820743812A6D34BE49D",
         "mode": "0o644"
       }
     },
@@ -26881,7 +27385,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/transitions.js",
       "old": {
         "path": "server/src/space/transitions.js",
@@ -26893,13 +27397,13 @@
       "new": {
         "path": "server/src/space/transitions.js",
         "type": "file",
-        "size": 159970,
-        "sha256": "3B7ED841A2EDF68BF207E310FC5531E4B2098C2E1154C109A9183C21EBE9687F",
+        "size": 166025,
+        "sha256": "EAA2F96B50B3823F20348F5D811FC0254BC229B93C2A9F90BB44339FC1382FD6",
         "mode": "0o644"
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "server/src/space/worldData.js",
       "old": {
         "path": "server/src/space/worldData.js",
@@ -26911,8 +27415,8 @@
       "new": {
         "path": "server/src/space/worldData.js",
         "type": "file",
-        "size": 7078,
-        "sha256": "AB78A01D2C3A0DB24E5F090620798DF3A1F006AC50E7C8C9A5A23C1BE89319C5",
+        "size": 8942,
+        "sha256": "4202BE130CCCD8873106B889EF0CD82BB912260B6E8BB0252AD3B3065264FADA",
         "mode": "0o644"
       }
     },
@@ -27135,14 +27639,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ClientCodeGrabber/StartCodeGrabber.bat",
       "old": {
         "path": "tools/ClientCodeGrabber/StartCodeGrabber.bat",
         "type": "file",
         "size": 993,
         "sha256": "F1389762932705257610EE9F932ECE1A92258124E9B54C7FA081402C72AD7F4B",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ClientCodeGrabber/StartCodeGrabber.bat",
@@ -27221,14 +27725,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ClientSETUP/PatchBlueDllGui.bat",
       "old": {
         "path": "tools/ClientSETUP/PatchBlueDllGui.bat",
         "type": "file",
         "size": 535,
         "sha256": "2458906B608E3FF64225E692E457C95B70949BABDB4B7B77683805A958D7AAB0",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ClientSETUP/PatchBlueDllGui.bat",
@@ -27239,14 +27743,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ClientSETUP/StartClientSetup.bat",
       "old": {
         "path": "tools/ClientSETUP/StartClientSetup.bat",
         "type": "file",
         "size": 546,
         "sha256": "EE1C51E4F8FA0E140C85824BF3824073AF685CC07FE9646714A8F1A889032A19",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ClientSETUP/StartClientSetup.bat",
@@ -27325,14 +27829,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ClientSETUP/legacy-python/PatchBlueDllGui.bat",
       "old": {
         "path": "tools/ClientSETUP/legacy-python/PatchBlueDllGui.bat",
         "type": "file",
         "size": 535,
         "sha256": "2458906B608E3FF64225E692E457C95B70949BABDB4B7B77683805A958D7AAB0",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ClientSETUP/legacy-python/PatchBlueDllGui.bat",
@@ -27411,14 +27915,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ClientSETUP/scripts/EvEJSConfig.example.bat",
       "old": {
         "path": "tools/ClientSETUP/scripts/EvEJSConfig.example.bat",
         "type": "file",
         "size": 683,
         "sha256": "C841F7687EEC0CA9E4CED516645190377B00141303E3D35ECF1CBA1C94D3824F",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ClientSETUP/scripts/EvEJSConfig.example.bat",
@@ -27447,14 +27951,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ClientSETUP/scripts/InstallCerts.bat",
       "old": {
         "path": "tools/ClientSETUP/scripts/InstallCerts.bat",
         "type": "file",
         "size": 769,
         "sha256": "37DD1AAFCE9F41D38C414CB216FB15C04D7D0F1B6EB172C5F450B0A9A261FAED",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ClientSETUP/scripts/InstallCerts.bat",
@@ -27533,14 +28037,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ConfigEditor/OpenServerConfig.bat",
       "old": {
         "path": "tools/ConfigEditor/OpenServerConfig.bat",
         "type": "file",
         "size": 5556,
         "sha256": "91600C5A2DEA3E15FCD016668590A8F9C29EF941AE179F715330BDB493446E51",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ConfigEditor/OpenServerConfig.bat",
@@ -27696,15 +28200,15 @@
       "old": {
         "path": "tools/ContentPacks/README.md",
         "type": "file",
-        "size": 2120,
-        "sha256": "DC7FB4E572E9C5D4C347A2F1AB8148BCFA051BFB4F6B238155C2062FBF82030E",
+        "size": 4929,
+        "sha256": "57161A729EF03A78E28E60B21998A6605A24D1D01F207E230A56A20D78EB9E91",
         "mode": "0o644"
       },
       "new": {
         "path": "tools/ContentPacks/README.md",
         "type": "file",
-        "size": 4929,
-        "sha256": "57161A729EF03A78E28E60B21998A6605A24D1D01F207E230A56A20D78EB9E91",
+        "size": 6918,
+        "sha256": "4906D3DEE3730F06982C0D08CED7AF61E24F5897D695F9846B10091E302D551F",
         "mode": "0o644"
       }
     },
@@ -27714,15 +28218,15 @@
       "old": {
         "path": "tools/ContentPacks/index.js",
         "type": "file",
-        "size": 7721,
-        "sha256": "8C3B378671C425E3829DF5819C965B670DBC1736CD48BBEAAEEE42FA80A7E66C",
+        "size": 12387,
+        "sha256": "77315312C052F2EE2F762988FE765C0A65BF740CB6DFB3AFF7108BD144BF5771",
         "mode": "0o644"
       },
       "new": {
         "path": "tools/ContentPacks/index.js",
         "type": "file",
-        "size": 12387,
-        "sha256": "77315312C052F2EE2F762988FE765C0A65BF740CB6DFB3AFF7108BD144BF5771",
+        "size": 12524,
+        "sha256": "4006BB4285EB123E5DCD12977AAD341CDA000514AE745B5910AAFC20F3E27394",
         "mode": "0o644"
       }
     },
@@ -27741,14 +28245,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/CreateDatabase.bat",
       "old": {
         "path": "tools/DatabaseCreator/CreateDatabase.bat",
         "type": "file",
         "size": 2784,
         "sha256": "2BE8F5AA7E683851B78A751C775A2347E4A77C1AB803884851B9C2CF6DE32A02",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/DatabaseCreator/CreateDatabase.bat",
@@ -27759,14 +28263,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/ResetLocalDatabases.bat",
       "old": {
         "path": "tools/DatabaseCreator/ResetLocalDatabases.bat",
         "type": "file",
         "size": 1742,
         "sha256": "52F66F6269B99ED7F48BFCCE129948C87F75339E4CB74B5DEF93096093ECF32D",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/DatabaseCreator/ResetLocalDatabases.bat",
@@ -27795,9 +28299,15 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/build-research-field-authority.js",
-      "old": null,
+      "old": {
+        "path": "tools/DatabaseCreator/build-research-field-authority.js",
+        "type": "file",
+        "size": 5768,
+        "sha256": "776DF02A7F98CD96D34C4F188C1F931384F648DFD545CC4B7165E1231F0C7927",
+        "mode": "0o644"
+      },
       "new": {
         "path": "tools/DatabaseCreator/build-research-field-authority.js",
         "type": "file",
@@ -27830,15 +28340,15 @@
       "old": {
         "path": "tools/DatabaseCreator/database-creator.js",
         "type": "file",
-        "size": 112933,
-        "sha256": "B88370F41857766828D99A4DFD7B4338BBC7A3BB544AAF3EA36797ED8110C774",
+        "size": 112961,
+        "sha256": "AE78145AB18930E17BD353A9B3355868CA71DB7ACEF74FF7AFF0ECA2F7472177",
         "mode": "0o644"
       },
       "new": {
         "path": "tools/DatabaseCreator/database-creator.js",
         "type": "file",
-        "size": 112961,
-        "sha256": "AE78145AB18930E17BD353A9B3355868CA71DB7ACEF74FF7AFF0ECA2F7472177",
+        "size": 113420,
+        "sha256": "8751D4F632AA0C71BF4438160E37C43DE0F5DF0969A4B40865B2D0BAB76323CF",
         "mode": "0o644"
       }
     },
@@ -28040,15 +28550,15 @@
       "old": {
         "path": "tools/DatabaseCreator/staticTables/dungeonAuthority/data.json",
         "type": "file",
-        "size": 77294218,
-        "sha256": "61DEF7943C255B893B0921048F7CA8DEEAA184C6CD22AF75A76BE14412A5E0B4",
+        "size": 73236453,
+        "sha256": "D45D908C80B1BA7D592E8187D7F00FA10D66E2F5E2F3F1226B12C8D7023C4AF1",
         "mode": "0o644"
       },
       "new": {
         "path": "tools/DatabaseCreator/staticTables/dungeonAuthority/data.json",
         "type": "file",
-        "size": 73236453,
-        "sha256": "D45D908C80B1BA7D592E8187D7F00FA10D66E2F5E2F3F1226B12C8D7023C4AF1",
+        "size": 69245387,
+        "sha256": "0DFCE6975FE47245251B6638F7547B74E5D681ACD01EA63C6C33D95E5EAB9664",
         "mode": "0o644"
       }
     },
@@ -28067,7 +28577,7 @@
       }
     },
     {
-      "status": "UNCHANGED",
+      "status": "MODIFIED",
       "path": "tools/DatabaseCreator/staticTables/dungeonClientContent/data.json",
       "old": {
         "path": "tools/DatabaseCreator/staticTables/dungeonClientContent/data.json",
@@ -28079,8 +28589,8 @@
       "new": {
         "path": "tools/DatabaseCreator/staticTables/dungeonClientContent/data.json",
         "type": "file",
-        "size": 18331854,
-        "sha256": "265FB4432CA5963E74B64A7D777E588AF2843DB8A47A032126FB50774F5967FB",
+        "size": 4721615,
+        "sha256": "2820971303589F0C4C53434638473F69147B455F2E3D9B43BB0F12FDCA431F16",
         "mode": "0o644"
       }
     },
@@ -28295,6 +28805,28 @@
       }
     },
     {
+      "status": "ADDED",
+      "path": "tools/DatabaseCreator/staticTables/moonMiningPoints",
+      "old": null,
+      "new": {
+        "path": "tools/DatabaseCreator/staticTables/moonMiningPoints",
+        "type": "dir",
+        "mode": "0o755"
+      }
+    },
+    {
+      "status": "ADDED",
+      "path": "tools/DatabaseCreator/staticTables/moonMiningPoints/data.json",
+      "old": null,
+      "new": {
+        "path": "tools/DatabaseCreator/staticTables/moonMiningPoints/data.json",
+        "type": "file",
+        "size": 27721554,
+        "sha256": "5998816BAD570F70563EA6B2E10D1761A753154F0C38FF53C31C0358103ADA6E",
+        "mode": "0o644"
+      }
+    },
+    {
       "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/newEdenStore",
       "old": {
@@ -28341,13 +28873,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/npcBehaviorProfiles/data.json",
       "old": {
         "path": "tools/DatabaseCreator/staticTables/npcBehaviorProfiles/data.json",
         "type": "file",
-        "size": 7008950,
-        "sha256": "880E166C357BEC7D55C898ADD9CBE35FBA78C80DF5773DC45C977E31738F1242",
+        "size": 6862861,
+        "sha256": "7C2BB3AB57E48DCDCD436B5395D1509B82FC9B697CC2595C7588A4D79BC2B414",
         "mode": "0o644"
       },
       "new": {
@@ -28437,13 +28969,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/npcLootTables/data.json",
       "old": {
         "path": "tools/DatabaseCreator/staticTables/npcLootTables/data.json",
         "type": "file",
-        "size": 64111,
-        "sha256": "9910F49E2B8B6FAC444B234184885241017C00FCCE8FA4A1B7B0957C9BC500DF",
+        "size": 65749,
+        "sha256": "E5C9697565FEFF85B8A4B2BCAD459FDB6A6C72AC4909028B834CC83F40D71906",
         "mode": "0o644"
       },
       "new": {
@@ -28469,13 +29001,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/npcProfiles/data.json",
       "old": {
         "path": "tools/DatabaseCreator/staticTables/npcProfiles/data.json",
         "type": "file",
-        "size": 5391611,
-        "sha256": "CAC40C2386A4C4BBA3D8A8DA796B654200546F2539BF1FB05CCF531658EF53DA",
+        "size": 5424997,
+        "sha256": "B408355846BBB256A5711E32AF0EB365066A7953627A90C4BB9ACCB255F71F29",
         "mode": "0o644"
       },
       "new": {
@@ -28533,13 +29065,13 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/npcSpawnPools/data.json",
       "old": {
         "path": "tools/DatabaseCreator/staticTables/npcSpawnPools/data.json",
         "type": "file",
-        "size": 856468,
-        "sha256": "7A56A4635CA568A333C498C6298D45C8A668A2CC64264127FDEF57AE4EA1A120",
+        "size": 835601,
+        "sha256": "72DBC0D09030A5C9A9447845ED3B9C4077361FC5C889B5E2096DA751F3AC7506",
         "mode": "0o644"
       },
       "new": {
@@ -28647,9 +29179,13 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/researchFieldAuthority",
-      "old": null,
+      "old": {
+        "path": "tools/DatabaseCreator/staticTables/researchFieldAuthority",
+        "type": "dir",
+        "mode": "0o755"
+      },
       "new": {
         "path": "tools/DatabaseCreator/staticTables/researchFieldAuthority",
         "type": "dir",
@@ -28657,9 +29193,15 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "tools/DatabaseCreator/staticTables/researchFieldAuthority/data.json",
-      "old": null,
+      "old": {
+        "path": "tools/DatabaseCreator/staticTables/researchFieldAuthority/data.json",
+        "type": "file",
+        "size": 23580,
+        "sha256": "A74AF856C1C812CEB07981AED466F6DC83FCEFB97225C66536E858028C1E8E4A",
+        "mode": "0o644"
+      },
       "new": {
         "path": "tools/DatabaseCreator/staticTables/researchFieldAuthority/data.json",
         "type": "file",
@@ -28939,14 +29481,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/ErrorReport/ErrorReport.bat",
       "old": {
         "path": "tools/ErrorReport/ErrorReport.bat",
         "type": "file",
         "size": 133,
         "sha256": "CB569E9712B56BB521021725936EAD61A1B2921D89EF5360CB09389F1480E565",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/ErrorReport/ErrorReport.bat",
@@ -29011,14 +29553,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/InstallRustForMarket.bat",
       "old": {
         "path": "tools/InstallRustForMarket.bat",
         "type": "file",
         "size": 25807,
         "sha256": "0F092DA675625783FDAC9FD08C2C944BA1CDFA72F01B5971F0D3359677317D46",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/InstallRustForMarket.bat",
@@ -29061,14 +29603,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/Maintenance/ResetMissions.bat",
       "old": {
         "path": "tools/Maintenance/ResetMissions.bat",
         "type": "file",
         "size": 689,
         "sha256": "8DC9D4110879B06C25C5EC1EDE52B230E43E8E86CE2ECB0142EF8A553E62E38F",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/Maintenance/ResetMissions.bat",
@@ -29111,14 +29653,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/NewEdenStoreEditor/StartStoreEditor.bat",
       "old": {
         "path": "tools/NewEdenStoreEditor/StartStoreEditor.bat",
         "type": "file",
         "size": 500,
         "sha256": "E3A5EB522CDA4CDBE7A42BF7B2EC53368951E0EE161159CFB4586953D31C0A52",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/NewEdenStoreEditor/StartStoreEditor.bat",
@@ -29306,22 +29848,26 @@
       "old": {
         "path": "tools/Setup/Setup-EvEJS.ps1",
         "type": "file",
-        "size": 43019,
-        "sha256": "2EDB92512656F6AB3869542C39F69D279D06A2CC5EC4448BD270160E80120AD2",
+        "size": 49164,
+        "sha256": "AACAB819507342C7268B903B2BC7EA6FADF7F87FF126EB9F15D94E75FD80F088",
         "mode": "0o644"
       },
       "new": {
         "path": "tools/Setup/Setup-EvEJS.ps1",
         "type": "file",
-        "size": 49164,
-        "sha256": "AACAB819507342C7268B903B2BC7EA6FADF7F87FF126EB9F15D94E75FD80F088",
+        "size": 43453,
+        "sha256": "0C8591D2350D01BFE8C66DDFA14882B5A3BD16B4A6F2F6C4A376BB65B810B5D5",
         "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "tools/Updater",
-      "old": null,
+      "old": {
+        "path": "tools/Updater",
+        "type": "dir",
+        "mode": "0o755"
+      },
       "new": {
         "path": "tools/Updater",
         "type": "dir",
@@ -29329,33 +29875,51 @@
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "tools/Updater/README.md",
-      "old": null,
-      "new": {
+      "old": {
         "path": "tools/Updater/README.md",
         "type": "file",
         "size": 4924,
         "sha256": "EA1069C28E2200624F83E6BB685EF3CF804E069EC3ED233CE9678711CCFEECE5",
         "mode": "0o644"
+      },
+      "new": {
+        "path": "tools/Updater/README.md",
+        "type": "file",
+        "size": 5325,
+        "sha256": "43CF1135612D5096D21D17A04DB1D202A965F5EDEFD732E6E7F28D9119864EC1",
+        "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "MODIFIED",
       "path": "tools/Updater/Update-EvEJS.ps1",
-      "old": null,
-      "new": {
+      "old": {
         "path": "tools/Updater/Update-EvEJS.ps1",
         "type": "file",
         "size": 88483,
         "sha256": "4A282EAFDF6940B963193FE84D682EC56ECA22EAAF3D9554E0437D8BAFB9293B",
         "mode": "0o644"
+      },
+      "new": {
+        "path": "tools/Updater/Update-EvEJS.ps1",
+        "type": "file",
+        "size": 82015,
+        "sha256": "195C8AD4814D1FA2698324CE85FE795B61CB4FBF26ADBA0B6877C34652E5B0D4",
+        "mode": "0o644"
       }
     },
     {
-      "status": "ADDED",
+      "status": "UNCHANGED",
       "path": "tools/Updater/update-policy.json",
-      "old": null,
+      "old": {
+        "path": "tools/Updater/update-policy.json",
+        "type": "file",
+        "size": 3291,
+        "sha256": "38949575F5A17E0B31DAE5B7015130407287BF90170F75D1BA674A0F55E21904",
+        "mode": "0o644"
+      },
       "new": {
         "path": "tools/Updater/update-policy.json",
         "type": "file",
@@ -29397,14 +29961,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/market-seed/BuildMarketSeed.bat",
       "old": {
         "path": "tools/market-seed/BuildMarketSeed.bat",
         "type": "file",
         "size": 16730,
         "sha256": "0FAF6C23104F5D860F068ECCEA629FF835477ADD1E0BCB630CBBFB63BC73DCE2",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/market-seed/BuildMarketSeed.bat",
@@ -29415,14 +29979,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/market-seed/BuildMarketSeedGui.bat",
       "old": {
         "path": "tools/market-seed/BuildMarketSeedGui.bat",
         "type": "file",
         "size": 152,
         "sha256": "EBD00C7B149D73FD0FAAAB8F147FB15FCACBFCA01412ABC3034AD38A2B7C09B9",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/market-seed/BuildMarketSeedGui.bat",
@@ -29637,14 +30201,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/market-seederv2/BuildMarketSeedV2.bat",
       "old": {
         "path": "tools/market-seederv2/BuildMarketSeedV2.bat",
         "type": "file",
         "size": 10772,
         "sha256": "63B2CAB85F4984AF918A827875D01B732671E3A0EDE891D6ABA8AE3F998CFDBB",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/market-seederv2/BuildMarketSeedV2.bat",
@@ -29805,14 +30369,14 @@
       }
     },
     {
-      "status": "MODIFIED",
+      "status": "UNCHANGED",
       "path": "tools/market-seederv3/BuildMarketSeedV3.bat",
       "old": {
         "path": "tools/market-seederv3/BuildMarketSeedV3.bat",
         "type": "file",
         "size": 15828,
         "sha256": "C420B90891913416C23C7BB8B4B4FDE2911AF30B0D77A5E3D5B7D76D021CE0E7",
-        "mode": "0o755"
+        "mode": "0o644"
       },
       "new": {
         "path": "tools/market-seederv3/BuildMarketSeedV3.bat",

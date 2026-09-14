@@ -1,9 +1,9 @@
 {
   "schema": "evejs-linux-market-build-inputs/1",
   "kind": "stock",
-  "evejsVersion": "0.12.7.1",
-  "generatedFrom": "uploaded EveJS-v0.12.7.1.zip SHA-256 9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0",
-  "sourceDigest": "5CD44206D164E9189E1ED74A1949B0814E858431C7125F4085ECB3B6D129CBB5",
+  "evejsVersion": "0.12.8",
+  "generatedFrom": "EveJS-v0.12.8.zip SHA-256 8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd",
+  "sourceDigest": "643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746",
   "files": [
     {
       "path": "Cargo.lock",
@@ -37,13 +37,13 @@
     },
     {
       "path": "src/rpc.rs",
-      "size": 11388,
-      "sha256": "49BAB7A7A5DF24BFF9334747ED5AB1EDD6468C8E167DD1C46FF213296AE918A0"
+      "size": 12244,
+      "sha256": "91875B95694132E3F9D35E6EC48D9C7B0FE4EF99A7E9FCC6BD66FD038A414FB3"
     },
     {
       "path": "src/state.rs",
-      "size": 145453,
-      "sha256": "9E567233F91FC0F944C883461B49A4127B1D4243E56FAB5DB62DF2308526187A"
+      "size": 148617,
+      "sha256": "BB1B221DFD74A366552757D192AEEF446AFFCA1C15B387BF7CE22CDACD7C13C5"
     },
     {
       "path": "src/state/order_book_tests.rs",
@@ -52,8 +52,8 @@
     },
     {
       "path": "src/state/transaction_tests.rs",
-      "size": 24545,
-      "sha256": "0837D04854C9B13D675A38DF6FF15EE02BD50D8540F5FC4E65C6A9CAB595598A"
+      "size": 24560,
+      "sha256": "284D338170F8697AC02D4A40C91F6D6B67C3D7E26F080BCA1EFDCA82560CCCE3"
     }
   ]
 }

@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "source_version": "0.12.7",
-  "target_version": "0.12.7.1",
+  "source_version": "0.12.7.1",
+  "target_version": "0.12.8",
   "supported_build": 3396210,
   "installation_family": "EveJS Universal Linux Setup",
   "source_audit": {
-    "v0.12.7_zip_sha256": "7cfb30b4c38b71293e6b83268509fd610794fb29b46aa4f1368b843c1fddf33b",
     "v0.12.7.1_zip_sha256": "9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0",
-    "stock_market_source_digest": "5CD44206D164E9189E1ED74A1949B0814E858431C7125F4085ECB3B6D129CBB5"
+    "v0.12.8_zip_sha256": "8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd",
+    "stock_market_source_digest": "643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746"
   },
   "preserve": {
     "_local_entire_tree": true,
@@ -39,5 +39,5 @@
     "merge_unknown_lu_source": true
   },
   "config_merge": "three-way-old-default-vs-user-vs-new-default",
-  "runtime_migration_note": "EveJS v0.12.7.1 seeds safe newly shipped static tables into an existing game store at first server start via server/src/gameStore/seedStaticTables.js; updater preserves _local/gameStore unchanged during staging."
+  "runtime_migration_note": "The updater preserves _local/gameStore unchanged during staging. On first v0.12.8 server start, server/src/gameStore/syncStaticTables.js adds missing shipped tables and refreshes only changed engine-owned static tables while retaining operator/runtime-owned data; server/src/contentPacks/autoInstallContentPacks.js then reconciles the shipped v0.12.8 content-pack set."
 }

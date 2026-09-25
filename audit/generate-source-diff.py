@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the complete EveJS release-tree comparison shipped with Setup v1.13."""
+"""Generate the complete EveJS release-tree comparison shipped with Setup v1.14."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ def write_outputs(rows: list[dict], counts: dict[str, int], output_prefix: Path)
 
     text_path = Path(str(output_prefix) + ".txt")
     lines = [
-        "EveJS v0.12.7.1 -> v0.12.8 complete tree comparison",
+        "EveJS v0.12.8 -> v0.12.9 complete tree comparison",
         json.dumps(counts, indent=2),
         "",
     ]

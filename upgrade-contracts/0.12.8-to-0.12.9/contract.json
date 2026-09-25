@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "source_version": "0.12.7.1",
-  "target_version": "0.12.8",
+  "source_version": "0.12.8",
+  "target_version": "0.12.9",
   "supported_build": 3396210,
   "installation_family": "EveJS Universal Linux Setup",
   "source_audit": {
-    "v0.12.7.1_zip_sha256": "9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0",
     "v0.12.8_zip_sha256": "8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd",
+    "v0.12.9_zip_sha256": "4a1204c733847f91b6d1a32128896a0e42a6c3c8c4413173b4855ad3af14e07c",
     "stock_market_source_digest": "643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746"
   },
   "preserve": {
@@ -35,9 +35,9 @@
     "market_reseed": true,
     "fresh_player_database": true,
     "fresh_proton_prefix": true,
-    "repatch_same_build_eve_client": true,
+    "repatch_blue_dll_for_same_build": true,
     "merge_unknown_lu_source": true
   },
   "config_merge": "three-way-old-default-vs-user-vs-new-default",
-  "runtime_migration_note": "The updater preserves _local/gameStore unchanged during staging. On first v0.12.8 server start, server/src/gameStore/syncStaticTables.js adds missing shipped tables and refreshes only changed engine-owned static tables while retaining operator/runtime-owned data; server/src/contentPacks/autoInstallContentPacks.js then reconciles the shipped v0.12.8 content-pack set."
+  "runtime_migration_note": "The updater preserves _local/gameStore unchanged during staging. On first v0.12.9 launcher start, the Linux gate rotates an older unconstrained CA when required, installs the constrained CA into every client bundle, and exact-hash patches the supported client's LaunchDarkly and crash-upload endpoints. On first server start, syncStaticTables.js and autoInstallContentPacks.js reconcile engine-owned static data and the shipped content-pack set without rebuilding the world."
 }

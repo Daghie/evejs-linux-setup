@@ -14,15 +14,15 @@ import subprocess
 import sys
 import tempfile
 
-TARGET_VERSION = "0.12.8"
+TARGET_VERSION = "0.12.9"
 TARGET_BUILD = 3396210
 XPATCH_VERSION = "0.3.2"
-SETUP_VERSION = "v1.13"
+SETUP_VERSION = "v1.14"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
-STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.8.json"
-INTEGRATED_MARKET_MANIFEST = COMPAT_DIR / "market-integrated-lu-v0.12.8.json"
+STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.9.json"
+INTEGRATED_MARKET_MANIFEST = COMPAT_DIR / "market-integrated-lu-v0.12.9.json"
 INTEGRATED_LU_DIR = SCRIPT_DIR / "integrated-lu"
 INTEGRATED_LU_MANIFEST = INTEGRATED_LU_DIR / "manifest.json"
 INTEGRATED_LU_INSTALL = Path("_local/evejs-linux-integrated-lu/install.json")
@@ -183,7 +183,7 @@ def classify(repo: Path) -> dict:
     if integrated_present:
         raise CompatError(
             "Installer-managed Integrated Living Universe state is present, but this is the Stock-only Setup.\n"
-            "Nothing was changed. Use a Living-Universe edition compatible with EveJS v0.12.8 to verify/migrate that installation, "
+            "Nothing was changed. Use a Living-Universe edition compatible with EveJS v0.12.9 to verify/migrate that installation, "
             "or uninstall LU with the matching authority before using Stock-only."
         )
     if xpatch_state_present:
@@ -203,16 +203,16 @@ def classify(repo: Path) -> dict:
 
     market_root = repo / "externalservices/market-server"
     actual_records = build_input_records(market_root)
-    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.8")
+    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.9")
     loader_digest = tree_digest(repo / LOADER_LU_ROOT) if mod_lu_present else ""
     if mod_lu_present:
         mode = "stock-loader-lu-disabled"
-        label = "Stock EveJS 0.12.8 (older loader Living Universe preserved but disabled)"
+        label = "Stock EveJS 0.12.9 (older loader Living Universe preserved but disabled)"
     else:
         mode = "stock"
-        label = "Stock EveJS 0.12.8"
+        label = "Stock EveJS 0.12.9"
     return {
-        "repo": str(repo), "mode": mode, "marketProfile": "stock-v0.12.8-market",
+        "repo": str(repo), "mode": mode, "marketProfile": "stock-v0.12.9-market",
         "label": label, "sourceDigest": digest, "marketInputCount": len(actual_records),
         "modLivingUniverseActive": False, "modLivingUniversePresent": mod_lu_present,
         "loaderLivingUniverseEnabled": False, "loaderLivingUniverseDigest": loader_digest,
@@ -445,7 +445,7 @@ def self_test():
     print("PASS stock-only compatibility helper self-test")
 
 def main():
-    ap = argparse.ArgumentParser(description="EveJS v0.12.8 Stock-only runtime compatibility authority")
+    ap = argparse.ArgumentParser(description="EveJS v0.12.9 Stock-only runtime compatibility authority")
     sub = ap.add_subparsers(dest="command", required=True)
 
     for name in ("detect", "verify-runtime"):

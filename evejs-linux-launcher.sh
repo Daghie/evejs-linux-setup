@@ -1,26 +1,28 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.13 — v0.12.8 Stock-Only Edition
+# EveJS Portable Linux Launcher v1.14 — v0.12.9 Stock-Only Edition
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
 # Startup order:
-#   1. Make localhost port 443 available to the normal user process if needed.
-#   2. Reconcile the selected copied EVE client's EveJS CA bundles.
-#   3. Start standalone market server; wait for HTTP 40110 + RPC 40111.
-#   4. Start game server LAST among servers; wait for process-owned:
+#   1. Migrate/verify constrained local TLS and exact-hash offline client patches.
+#   2. Make localhost port 443 available to the normal user process if needed.
+#   3. Reconcile the selected copied EVE client's EveJS CA bundles.
+#   4. Start standalone market server; wait for HTTP 40110 + RPC 40111.
+#   5. Start game server LAST among servers; wait for process-owned:
 #        HTTPS/CDN 443, XMPP 5222, game 26000, image 26001,
 #        gateway 26002/26003, and Redshift 26400.
-#   5. Initialize the selected Steam Proton prefix if needed.
-#   6. Launch EVE only after all backend/TLS checks pass.
+#   6. Initialize the selected Steam Proton prefix if needed.
+#   7. Launch EVE only after all backend/TLS checks pass.
 #
 # Audited runtime policy:
-#   * Stock EveJS v0.12.8 is supported.
+#   * Stock EveJS v0.12.9 is supported.
 #   * Living Universe is intentionally not supported by this Stock-only edition.
 #   * Any Living Universe/X-Patch/unknown integrated source state is fail-closed.
 #   * Older X-Patch source overlays remain rejected by the compatibility authority.
 #
-# The launcher is runtime-only and never installs/updates/repairs EveJS or Living Universe.
+# The launcher never installs/updates/repairs EveJS or Living Universe. It may perform the
+# mandatory v0.12.9 CA/client migration, limited by exact certificate and binary identities.
 # Market binaries are verified external runtime builds matched to installed source.
 # ==============================================================================
 
@@ -43,6 +45,8 @@ MARKET_BIN=""
 MARKET_HTTP="http://127.0.0.1:40110"
 COMPAT_HELPER="$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py"
 [[ -f "$COMPAT_HELPER" ]] || COMPAT_HELPER="$EVEJS_REPO/evejs-linux-lu-compat.py"
+CLIENT_PREFLIGHT_HELPER="$EVEJS_REPO/.evejs-linux-tools/evejs-linux-client-preflight.py"
+[[ -f "$CLIENT_PREFLIGHT_HELPER" ]] || CLIENT_PREFLIGHT_HELPER="$EVEJS_REPO/evejs-linux-client-preflight.py"
 EVEJS_RUNTIME_MODE=""
 EVEJS_RUNTIME_LABEL=""
 EVEJS_MARKET_PROFILE=""
@@ -75,9 +79,16 @@ if [[ -f "$EVEJS_REPO/config/server.json" ]]; then
     PROXY_URL="${PROXY_URL%/}"
 fi
 
-CA_CERT="$EVEJS_REPO/server/certs/xmpp-ca-cert.pem"
-XMPP_CERT="$EVEJS_REPO/server/certs/xmpp-dev-cert.pem"
-GATEWAY_CERT="$EVEJS_REPO/server/src/_secondary/express/certs/gateway-dev-cert.pem"
+CERT_DIR="$EVEJS_REPO/_local/certs"
+CA_CERT="$CERT_DIR/xmpp-ca-cert.pem"
+CA_KEY="$CERT_DIR/xmpp-ca-key.pem"
+XMPP_CERT="$CERT_DIR/xmpp-dev-cert.pem"
+XMPP_KEY="$CERT_DIR/xmpp-dev-key.pem"
+GATEWAY_CERT="$CERT_DIR/gateway-dev-cert.pem"
+GATEWAY_KEY="$CERT_DIR/gateway-dev-key.pem"
+GATEWAY_DNS_CERT="$CERT_DIR/gateway-dns-cert.pem"
+GATEWAY_DNS_KEY="$CERT_DIR/gateway-dns-key.pem"
+TLS_DNS_NAMES="app.launchdarkly.com,clientstream.launchdarkly.com,clientsdk.launchdarkly.com,dev-public-gateway.evetech.net,events.launchdarkly.com,mobile.launchdarkly.com,public-gateway.evetech.net,sdk.launchdarkly.com,sentry.io,stream.launchdarkly.com,localhost"
 
 LOG_DIR="$EVEJS_REPO/logs/launcher-linux"
 ARCHIVE_DIR="$LOG_DIR/archive"
@@ -555,8 +566,8 @@ detect_mods() {
 
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
-        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.8"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.13 edition)"
+        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.9"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.14 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -683,6 +694,50 @@ print(f"  ✓ Client CA bundles reconciled: {len(bundles)}")
 PY
 }
 
+ensure_local_tls_material() {
+    local builder="$EVEJS_REPO/tools/ClientSETUP/scripts/build-gateway-cert.js"
+    [[ -f "$builder" ]] || { echo "[ERROR] Missing EveJS TLS builder: $builder" >&2; return 1; }
+    mkdir -p "$CERT_DIR"
+
+    # v0.12.9 refuses the older unconstrained CA. --rotate-ca replaces it only
+    # when it is missing/invalid; an already-valid constrained CA is retained.
+    "$NODE_BIN" "$builder" \
+        --ca-only --ensure-ca --rotate-ca \
+        --ca-cert "$CA_CERT" --ca-key "$CA_KEY" || return 1
+
+    if ! "$NODE_BIN" "$builder" --check-only \
+        --ca-cert "$CA_CERT" --ca-key "$CA_KEY" \
+        --dns "localhost" --ip "127.0.0.1" \
+        --out-cert "$XMPP_CERT" --out-key "$XMPP_KEY" >/dev/null 2>&1; then
+        "$NODE_BIN" "$builder" \
+            --ca-cert "$CA_CERT" --ca-key "$CA_KEY" \
+            --dns "localhost" --ip "127.0.0.1" \
+            --out-cert "$XMPP_CERT" --out-key "$XMPP_KEY" || return 1
+    fi
+
+    if ! "$NODE_BIN" "$builder" --check-only \
+        --ca-cert "$CA_CERT" --ca-key "$CA_KEY" \
+        --dns "$TLS_DNS_NAMES" --ip "127.0.0.1" \
+        --out-cert "$GATEWAY_CERT" --out-key "$GATEWAY_KEY" >/dev/null 2>&1; then
+        "$NODE_BIN" "$builder" \
+            --ca-cert "$CA_CERT" --ca-key "$CA_KEY" \
+            --dns "$TLS_DNS_NAMES" --ip "127.0.0.1" \
+            --out-cert "$GATEWAY_CERT" --out-key "$GATEWAY_KEY" || return 1
+    fi
+
+    if ! "$NODE_BIN" "$builder" --check-only \
+        --ca-cert "$CA_CERT" --ca-key "$CA_KEY" --dns-only \
+        --dns "$TLS_DNS_NAMES" \
+        --out-cert "$GATEWAY_DNS_CERT" --out-key "$GATEWAY_DNS_KEY" >/dev/null 2>&1; then
+        "$NODE_BIN" "$builder" \
+            --ca-cert "$CA_CERT" --ca-key "$CA_KEY" --dns-only \
+            --dns "$TLS_DNS_NAMES" \
+            --out-cert "$GATEWAY_DNS_CERT" --out-key "$GATEWAY_DNS_KEY" || return 1
+    fi
+
+    echo "  ✓ Constrained CA and XMPP/numeric/DNS TLS leaves verified in _local/certs"
+}
+
 verify_tls_endpoint() {
     local host="$1" port="$2" sni="$3" label="$4" output
     output="$(
@@ -747,9 +802,14 @@ done
 [[ -x "$PROTON_BIN" || -f "$PROTON_BIN" ]] || { echo "[ERROR] Proton missing: $PROTON_BIN" >&2; exit 1; }
 [[ -s "$MARKET_DB" ]] || { echo "[ERROR] Market database missing." >&2; exit 1; }
 [[ -f "$COMPAT_HELPER" ]] || { echo "[ERROR] LU compatibility helper missing. Run Installer → Prepare/Verify Runtime Compatibility." >&2; exit 1; }
+[[ -f "$CLIENT_PREFLIGHT_HELPER" ]] || { echo "[ERROR] Client preflight helper missing. Run Installer → Prepare/Verify Runtime Compatibility." >&2; exit 1; }
 [[ -f "$EVEJS_REPO/_local/gameStore/manifest.json" ]] || { echo "[ERROR] EveJS game database missing." >&2; exit 1; }
-[[ -f "$CA_CERT" && -f "$XMPP_CERT" && -f "$GATEWAY_CERT" ]] || { echo "[ERROR] EveJS TLS certificates missing." >&2; exit 1; }
 [[ -f "$TQ_PATH/bin64/exefile.exe" ]] || { echo "[ERROR] EVE client missing." >&2; exit 1; }
+
+ensure_local_tls_material || exit 1
+[[ -f "$CA_CERT" && -f "$XMPP_CERT" && -f "$GATEWAY_CERT" && -f "$GATEWAY_DNS_CERT" ]] || {
+    echo "[ERROR] EveJS v0.12.9 TLS certificate set is incomplete." >&2; exit 1;
+}
 
 CLIENT_BUILD="$(awk -F= 'tolower($1) ~ /^[[:space:]]*build[[:space:]]*$/ {gsub(/[[:space:]]/, "", $2); print $2; exit}' "$TQ_PATH/start.ini")"
 [[ "$CLIENT_BUILD" == "$SUPPORTED_BUILD" ]] || { echo "[ERROR] EVE client build changed: $CLIENT_BUILD (expected $SUPPORTED_BUILD)." >&2; exit 1; }
@@ -760,6 +820,9 @@ grep -Eiq '^[[:space:]]*cryptopack[[:space:]]*=[[:space:]]*Placebo[[:space:]]*$'
 grep -Eiq '^[[:space:]]*(server|serverip)[[:space:]]*=[[:space:]]*127\.0\.0\.1[[:space:]]*$' "$TQ_PATH/start.ini" || {
     echo "[ERROR] start.ini no longer targets 127.0.0.1." >&2; exit 1;
 }
+
+python3 "$CLIENT_PREFLIGHT_HELPER" apply \
+    --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD" || exit 1
 
 detect_terminal
 repair_client_ca_bundles || exit 1
@@ -1019,7 +1082,8 @@ export ALL_PROXY=$(printf '%q' "$PROXY_URL")
 export no_proxy="127.0.0.1,localhost,::1"
 export NO_PROXY="\$no_proxy"
 
-export EVE_CLIENT_SENTRY_DSN=""
+export EVE_CLIENT_SENTRY_DSN="http://evejs@127.0.0.1:26002/1"
+export EVEJS_RESOURCE_SERVER="http://127.0.0.1:26002/resfiles/"
 export SSL_CERT_FILE=$(printf '%q' "$ca_win")
 export REQUESTS_CA_BUNDLE=$(printf '%q' "$ca_win")
 export CURL_CA_BUNDLE=$(printf '%q' "$ca_win")
@@ -1120,7 +1184,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.8 Linux Launcher — v1.13 Stock Only           ║"
+echo "║  EveJS v0.12.9 Linux Launcher — v1.14 Stock Only           ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

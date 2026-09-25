@@ -12,17 +12,20 @@ import py_compile
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import zipfile
 
+sys.dont_write_bytecode = True
 
-TARGET_VERSION = "0.12.8"
-SOURCE_VERSION = "0.12.7.1"
+
+TARGET_VERSION = "0.12.9"
+SOURCE_VERSION = "0.12.8"
 TARGET_BUILD = 3396210
-TARGET_ZIP_SHA256 = "8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd"
-SOURCE_ZIP_SHA256 = "9301531769a31b730ea17439251bc777c1a37e63c7f8d9fdd971f12d148ef1e0"
+TARGET_ZIP_SHA256 = "4a1204c733847f91b6d1a32128896a0e42a6c3c8c4413173b4855ad3af14e07c"
+SOURCE_ZIP_SHA256 = "8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd"
 MARKET_DIGEST = "643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746"
-DIFF_COUNTS = {"ADDED": 39, "REMOVED": 7, "MODIFIED": 183, "UNCHANGED": 1547}
+DIFF_COUNTS = {"ADDED": 578, "REMOVED": 36, "MODIFIED": 1496, "UNCHANGED": 237}
 
 
 def sha256(path: Path) -> str:
@@ -102,7 +105,7 @@ def main():
     assert sha256(args.source_zip) == TARGET_ZIP_SHA256
     assert sha256(args.previous_zip) == SOURCE_ZIP_SHA256
 
-    with tempfile.TemporaryDirectory(prefix="evejs-v0128-fast-verify-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="evejs-v0129-fast-verify-") as temporary:
         temporary = Path(temporary)
         old_extract = temporary / "old"
         new_extract = temporary / "new"
@@ -116,9 +119,14 @@ def main():
         assert new_root is not None and maintenance.read_version(new_root) == TARGET_VERSION
         assert maintenance.read_supported_build(new_root) == TARGET_BUILD
 
-        old_defaults = package_root / "upgrade-contracts/0.12.7.1-to-0.12.8/old-defaults/config"
+        old_defaults = package_root / "upgrade-contracts/0.12.8-to-0.12.9/old-defaults/config"
         for old_config in sorted((old_root / "config").glob("*.json")):
             assert old_config.read_bytes() == (old_defaults / old_config.name).read_bytes(), old_config.name
+
+        old_server = json.loads((old_defaults / "server.json").read_text())
+        new_server = json.loads((new_root / "config/server.json").read_text())
+        merge_report = {"target": [], "user": [], "conflicts": []}
+        assert maintenance.json_merge(old_server, old_server, new_server, "server.json", merge_report) == new_server
 
         classification = compat.classify(new_root)
         assert classification["mode"] == "stock"
@@ -137,14 +145,32 @@ def main():
 
         rows, counts = diff_tool.compare(old_root, new_root)
         assert counts == DIFF_COUNTS, counts
-        audited = json.loads((package_root / "audit/full-tree-diff-0.12.7.1-to-0.12.8.json").read_text())
+        audited = json.loads((package_root / "audit/full-tree-diff-0.12.8-to-0.12.9.json").read_text())
         assert audited == {"counts": counts, "rows": rows}
+
+        subprocess.run([
+            str(package_root / "evejs-linux-client-preflight.py"),
+            "validate-recipes", "--repo", str(new_root), "--build", str(TARGET_BUILD),
+        ], check=True)
+        subprocess.run([
+            str(package_root / "evejs-linux-client-preflight.py"), "self-test",
+        ], check=True)
+
+        for script_name in ("install-evejs-linux.sh", "evejs-linux-launcher.sh"):
+            script = (package_root / script_name).read_text()
+            assert "_local/certs" in script, script_name
+            assert "evejs-linux-client-preflight.py" in script, script_name
+            for required_name in ("gateway-dev-cert.pem", "gateway-dns-cert.pem", "xmpp-dev-cert.pem"):
+                assert required_name in script, (script_name, required_name)
+
+        assert not (package_root / "integrated-lu").exists()
 
         compile_root = temporary / "pyc"
         compile_root.mkdir()
         for source in (
             package_root / "evejs-linux-maintenance.py",
             package_root / "evejs-linux-lu-compat.py",
+            package_root / "evejs-linux-client-preflight.py",
             package_root / "audit/generate-source-diff.py",
             package_root / "audit/verify-package.py",
         ):
@@ -153,7 +179,7 @@ def main():
     for shell_script in (
         package_root / "install-evejs-linux.sh",
         package_root / "evejs-linux-launcher.sh",
-        package_root / "evejs-v0.12.8-stale-processes.sh",
+        package_root / "evejs-v0.12.9-stale-processes.sh",
     ):
         subprocess.run(["bash", "-n", str(shell_script)], check=True)
 

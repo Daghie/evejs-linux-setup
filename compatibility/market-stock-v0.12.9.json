@@ -1,8 +1,8 @@
 {
   "schema": "evejs-linux-market-build-inputs/1",
   "kind": "stock",
-  "evejsVersion": "0.12.8",
-  "generatedFrom": "EveJS-v0.12.8.zip SHA-256 8b0893a44fd1a880c183e6fa00fa3d0e4e6ae4dab6661f9a013157fd97e0b7dd",
+  "evejsVersion": "0.12.9",
+  "generatedFrom": "EveJS-v0.12.9.zip SHA-256 4a1204c733847f91b6d1a32128896a0e42a6c3c8c4413173b4855ad3af14e07c",
   "sourceDigest": "643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746",
   "files": [
     {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.13 — v0.12.8 Stock-Only Edition
-# Target: EveJS v0.12.8 / EVE build 3396210
+# EveJS Universal Linux Setup v1.14 — v0.12.9 Stock-Only Edition
+# Target: EveJS v0.12.9 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
 # Goals:
@@ -29,15 +29,16 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-INSTALLER_TARGET_VERSION="0.12.8"
+INSTALLER_TARGET_VERSION="0.12.9"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.13 v0.12.8 Stock-Only Edition"
+INSTALLER_CANDIDATE_NAME="v1.14 v0.12.9 Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
-STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.8-stale-processes.sh"
+STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-v0.12.9-stale-processes.sh"
 MAINTENANCE_SOURCE="$SCRIPT_DIR/evejs-linux-maintenance.py"
 COMPAT_SOURCE="$SCRIPT_DIR/evejs-linux-lu-compat.py"
+CLIENT_PREFLIGHT_SOURCE="$SCRIPT_DIR/evejs-linux-client-preflight.py"
 COMPAT_DATA_SOURCE="$SCRIPT_DIR/compatibility"
 
 FORCE_TEXT=0
@@ -76,7 +77,7 @@ Options:
   --client PATH       EVE tq directory or copied shared-cache root.
   --dest PATH         Destination for clean EveJS installation.
   --proton PATH       Proton directory or proton executable.
-  --market PROFILE    v0.12.8 market profile: v1, v2, or v3.
+  --market PROFILE    v0.12.9 market profile: v1, v2, or v3.
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
   --mode MODE         install, update, compat, restore, or backups.
@@ -233,8 +234,8 @@ ui_choose_market() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="Choose EveJS v0.12.8 market" --width=960 --height=390 \
-                --text="Choose one v0.12.8 market seed strategy. v1 is recommended for the first Linux acceptance run because it is deterministic, offline, and removes live market downloads as an extra variable." \
+                --title="Choose EveJS v0.12.9 market" --width=960 --height=390 \
+                --text="Choose one v0.12.9 market seed strategy. v1 is recommended for the first Linux acceptance run because it is deterministic, offline, and removes live market downloads as an extra variable." \
                 --column="Use" --column="Profile" --column="Description" \
                 TRUE  "v1" "Synthetic Jita + New Caldari — deterministic, offline, recommended first test" \
                 FALSE "v2" "Live Tranquility snapshot — Jita live market + NPC catalog; downloads current snapshot" \
@@ -243,7 +244,7 @@ ui_choose_market() {
             ;;
         kdialog)
             local pick
-            pick="$(kdialog --title "Choose EveJS v0.12.8 market" --menu \
+            pick="$(kdialog --title "Choose EveJS v0.12.9 market" --menu \
                 "Choose one market seed strategy. v1 is recommended for the first Linux acceptance run." \
                 v1 "Synthetic Jita + New Caldari — deterministic/offline" \
                 v2 "Live TQ snapshot — Jita + NPC catalog" \
@@ -252,7 +253,7 @@ ui_choose_market() {
             ;;
         *)
             local pick
-            printf '\nChoose EveJS v0.12.8 market profile:\n' >&2
+            printf '\nChoose EveJS v0.12.9 market profile:\n' >&2
             printf '  [1] v1 — Synthetic Jita + New Caldari (recommended first test)\n' >&2
             printf '  [2] v2 — Live TQ snapshot, Jita + NPC catalog\n' >&2
             printf '  [3] v3 — Cost-priced Jita 4-4 + authentic NPC catalog\n' >&2
@@ -273,11 +274,11 @@ ui_choose_setup_action() {
         zenity)
             zenity --list --radiolist \
                 --title="EveJS Universal Linux Setup — Stock Only" --width=940 --height=470 \
-                --text="Install or update clean EveJS v0.12.8. This Stock-only edition does not install Living Universe." \
+                --text="Install or update clean EveJS v0.12.9. This Stock-only edition does not install Living Universe." \
                 --column="Use" --column="Action" --column="Description" \
-                TRUE  "install"  "Install clean EveJS v0.12.8 into an existing empty folder" \
-                FALSE "update"   "Update an existing clean Universal Linux v0.12.7.1 installation to v0.12.8" \
-                FALSE "compat"   "Prepare/verify clean v0.12.8 runtime compatibility" \
+                TRUE  "install"  "Install clean EveJS v0.12.9 into an existing empty folder" \
+                FALSE "update"   "Update an existing clean Universal Linux v0.12.8 installation to v0.12.9" \
+                FALSE "compat"   "Prepare/verify clean v0.12.9 runtime compatibility" \
                 FALSE "restore"  "Restore a previous transactional EveJS upgrade backup" \
                 FALSE "backups"  "Inspect or delete EveJS upgrade backups" \
                 --print-column=2
@@ -285,8 +286,8 @@ ui_choose_setup_action() {
         kdialog)
             kdialog --title "EveJS Universal Linux Setup — Stock Only" --menu \
                 "Choose what you want to do:" \
-                install "Install clean EveJS v0.12.8 into an empty folder" \
-                update "Update clean EveJS v0.12.7.1 to v0.12.8" \
+                install "Install clean EveJS v0.12.9 into an empty folder" \
+                update "Update clean EveJS v0.12.8 to v0.12.9" \
                 compat "Prepare/verify clean runtime compatibility" \
                 restore "Restore an upgrade backup" \
                 backups "Inspect or delete upgrade backups"
@@ -294,8 +295,8 @@ ui_choose_setup_action() {
         *)
             local pick
             printf '\nEveJS Universal Linux Setup — Stock Only\n' >&2
-            printf '  [1] Install clean EveJS v0.12.8\n' >&2
-            printf '  [2] Update clean EveJS v0.12.7.1 → v0.12.8\n' >&2
+            printf '  [1] Install clean EveJS v0.12.9\n' >&2
+            printf '  [2] Update clean EveJS v0.12.8 → v0.12.9\n' >&2
             printf '  [3] Prepare/verify clean runtime compatibility\n' >&2
             printf '  [4] Restore an upgrade backup\n' >&2
             printf '  [5] Manage upgrade backups\n' >&2
@@ -920,7 +921,7 @@ ensure_node() {
         version="$(node --version 2>/dev/null || true)"
     fi
 
-    # EveJS v0.12.8 README specifies Node.js 24 LTS.
+    # EveJS v0.12.9 README specifies Node.js 24 LTS.
     if [[ "$major" == "24" ]] && command -v npm >/dev/null 2>&1; then
         NODE_BIN="$(command -v node)"
         NPM_BIN="$(command -v npm)"
@@ -928,13 +929,13 @@ ensure_node() {
         return 0
     fi
 
-    # v0.12.8 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
+    # v0.12.9 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
     # compatible with Node 20 and 22-26, but not Node 21.
     if [[ "$major" =~ ^(20|22|23|25|26)$ ]] && command -v npm >/dev/null 2>&1; then
         if ui_yesno "Use compatible Node $version?" \
-"EveJS v0.12.8 recommends Node.js 24 LTS.
+"EveJS v0.12.9 recommends Node.js 24 LTS.
 
-The detected $version is within the compatibility range documented by the v0.12.8 non-Docker setup audit, but it is not the recommended Node 24 target.
+The detected $version is within the compatibility range documented by the v0.12.9 non-Docker setup audit, but it is not the recommended Node 24 target.
 
 Use this existing Node installation?
 
@@ -946,14 +947,14 @@ Choose No to install a private Node 24.x runtime for EveJS."; then
         fi
     elif [[ "$major" == "21" ]]; then
         ui_warn "Unsupported Node 21 detected" \
-"EveJS v0.12.8's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
+"EveJS v0.12.9's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
 
 The installer will offer Node 24 LTS instead."
     elif [[ "$major" =~ ^[0-9]+$ ]] && (( major > 0 )); then
         ui_warn "Unvalidated Node version" \
 "Detected $version.
 
-EveJS v0.12.8 recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
+EveJS v0.12.9 recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
     fi
 
     local arch
@@ -964,7 +965,7 @@ EveJS v0.12.8 recommends Node 24 LTS. The installer will offer a private Node 24
     esac
 
     if ! ui_yesno "Install Node.js 24 LTS?" \
-"EveJS v0.12.8 recommends Node.js 24 LTS.
+"EveJS v0.12.9 recommends Node.js 24 LTS.
 
 Install the newest Node 24.x binary in your user account under:
 
@@ -1009,7 +1010,7 @@ ensure_rust() {
         return 0
     fi
 
-    if ! ui_yesno "Install Rust?" "EveJS v0.12.8 includes a Rust standalone market daemon.
+    if ! ui_yesno "Install Rust?" "EveJS v0.12.9 includes a Rust standalone market daemon.
 
 Rust/Cargo was not found. Install the official rustup toolchain in your user account under ~/.cargo and ~/.rustup?"; then
         die "Rust/Cargo is required for the standalone market server."
@@ -1174,7 +1175,7 @@ unzip_evejs_release() {
     unzip -q "$zip" -d "$dest" || rc=$?
     # Info-ZIP can return 1 for a warning when older Windows-created EveJS
     # archives use backslashes as path separators. Extraction is accepted only
-    # after the explicit path-safety gate above; v0.12.8 itself is a flat,
+    # after the explicit path-safety gate above; v0.12.9 itself is a flat,
     # forward-slash archive.
     if (( rc > 1 )); then
         return "$rc"
@@ -1193,7 +1194,7 @@ resolve_archive_root() {
 
     # Older releases used a top-level version directory. Search a shallow
     # bounded depth so those archives and future packaging wrappers remain
-    # unambiguous; v0.12.8 is handled by the flat-layout branch above.
+    # unambiguous; v0.12.9 is handled by the flat-layout branch above.
     local config_file candidate
     mapfile -t version_files < <(
         find "$root" -mindepth 2 -maxdepth 5 -type f -path '*/config/version.json' -print 2>/dev/null | sort
@@ -1566,7 +1567,7 @@ PY
 choose_valid_evejs_zip() {
     local selected=""
     while true; do
-        selected="$(ui_file "Select the EveJS v0.12.8 release ZIP" "$SCRIPT_DIR")" || return 1
+        selected="$(ui_file "Select the EveJS v0.12.9 release ZIP" "$SCRIPT_DIR")" || return 1
         [[ -n "$selected" ]] || continue
 
         if [[ ! -f "$selected" ]]; then
@@ -1575,7 +1576,7 @@ choose_valid_evejs_zip() {
 
 $selected
 
-Please select the EveJS v0.12.8 ZIP."
+Please select the EveJS v0.12.9 ZIP."
             continue
         fi
 
@@ -1591,7 +1592,7 @@ Please select the EveJS v0.12.8 ZIP."
 
 $selected
 
-Please select the EveJS v0.12.8 release ZIP."
+Please select the EveJS v0.12.9 release ZIP."
             continue
         fi
 
@@ -1601,7 +1602,7 @@ Please select the EveJS v0.12.8 release ZIP."
             ui_warn "Wrong ZIP selected" \
 "The selected ZIP does not contain a recognizable EveJS repository.
 
-Please select the EveJS v0.12.8 release ZIP."
+Please select the EveJS v0.12.9 release ZIP."
             continue
         fi
 
@@ -1709,7 +1710,7 @@ Please select a complete copied EVE shared-cache/client."
 choose_existing_empty_destination() {
     local selected
     while true; do
-        selected="$(ui_dir "Select an existing EMPTY folder for EveJS v0.12.8" "$HOME")" || return 1
+        selected="$(ui_dir "Select an existing EMPTY folder for EveJS v0.12.9" "$HOME")" || return 1
         [[ -n "$selected" ]] || continue
         selected="$(readlink -f "$selected" 2>/dev/null || true)"
 
@@ -1732,7 +1733,7 @@ _local/runtime-performance/
 
 This is not something the installer creates before installation. It strongly suggests an older EveJS process is/was still writing telemetry to this path and recreated the folder after it had been removed.
 
-Run evejs-v0.12.8-stale-processes.sh, remove the leftover folder after the process is stopped, then select the empty folder again.
+Run evejs-v0.12.9-stale-processes.sh, remove the leftover folder after the process is stopped, then select the empty folder again.
 
 The installer will not delete this data automatically."
             else
@@ -1795,8 +1796,9 @@ install_runtime_compatibility_files() {
     rm -rf "$tools/integrated-lu"
     rm -f "$tools/evejs-linux-integrated-lu.py"
     cp -a "$COMPAT_SOURCE" "$tools/evejs-linux-lu-compat.py"
+    cp -a "$CLIENT_PREFLIGHT_SOURCE" "$tools/evejs-linux-client-preflight.py"
     cp -a "$COMPAT_DATA_SOURCE"/. "$tools/compatibility/"
-    chmod +x "$tools/evejs-linux-lu-compat.py"
+    chmod +x "$tools/evejs-linux-lu-compat.py" "$tools/evejs-linux-client-preflight.py"
     cp -a "$LAUNCHER_SOURCE" "$repo/evejs-linux-launcher.sh"
     cp -a "$STALE_CLEANUP_SOURCE" "$repo/evejs-stale-process-cleanup.sh"
     chmod +x "$repo/evejs-linux-launcher.sh" "$repo/evejs-stale-process-cleanup.sh"
@@ -1804,14 +1806,14 @@ install_runtime_compatibility_files() {
 
 
 
-choose_existing_v0127_repo() {
+choose_existing_v0129_repo() {
     local chosen version configured
     while true; do
         if [[ -n "$ARG_EXISTING" ]]; then
             chosen="$(readlink -f "$ARG_EXISTING" 2>/dev/null || true)"
             ARG_EXISTING=""
         else
-            chosen="$(ui_dir "Select existing clean EveJS v0.12.8 installation" "$HOME")" || return 1
+            chosen="$(ui_dir "Select existing clean EveJS v0.12.9 installation" "$HOME")" || return 1
         fi
         [[ -d "$chosen" && -f "$chosen/config/version.json" && -f "$chosen/server/index.js" ]] || {
             ui_warn "Not an EveJS installation" "The selected folder is not a recognizable EveJS installation.\n\n$chosen"
@@ -1824,8 +1826,8 @@ try:
 except Exception: print('')
 PY2
 )"
-        [[ "$version" == "0.12.8" ]] || {
-            ui_warn "Wrong EveJS version" "Runtime compatibility v1.13 Stock-only is audited for EveJS v0.12.8.\n\nSelected version: ${version:-unknown}"
+        [[ "$version" == "0.12.9" ]] || {
+            ui_warn "Wrong EveJS version" "Runtime compatibility v1.14 Stock-only is audited for EveJS v0.12.9.\n\nSelected version: ${version:-unknown}"
             continue
         }
         [[ -f "$chosen/.evejs-linux.conf" ]] || {
@@ -1844,14 +1846,14 @@ PY2
 
 prepare_existing_runtime_compatibility() {
     local repo version detection
-    repo="$(choose_existing_v0127_repo)" || return 1
+    repo="$(choose_existing_v0129_repo)" || return 1
     version="$(python3 - "$repo/config/version.json" <<'PYV'
 import json,sys
 try: print(json.load(open(sys.argv[1])).get("evejsVersion", ""))
 except Exception: print("")
 PYV
 )"
-    [[ "$version" == "$INSTALLER_TARGET_VERSION" ]] || die "Runtime compatibility v1.13 Stock-only is audited only for EveJS v0.12.8. Selected version: ${version:-unknown}"
+    [[ "$version" == "$INSTALLER_TARGET_VERSION" ]] || die "Runtime compatibility v1.14 Stock-only is audited only for EveJS v0.12.9. Selected version: ${version:-unknown}"
     if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':(443|5222|26000|26001|26002|26003|26400|40110|40111)$'; then
         die "EveJS/Market listeners are active. Stop the EVE client, Game server and Market server before preparing runtime compatibility. No files were changed."
     fi
@@ -1862,7 +1864,7 @@ PYV
         || die "Runtime compatibility preparation failed."
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The clean EveJS v0.12.8 installation is ready for the v1.13 Stock-only Launcher.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The clean EveJS v0.12.9 installation is ready for the v1.14 Stock-only Launcher.\n\n$repo\n\n$detection"
     exit 0
 }
 
@@ -1931,17 +1933,18 @@ ensure_rust
 [[ -f "$STALE_CLEANUP_SOURCE" ]] || die "Stale-process cleanup tool is missing beside the installer: $STALE_CLEANUP_SOURCE"
 [[ -f "$MAINTENANCE_SOURCE" ]] || die "Updater/backup engine is missing beside the installer: $MAINTENANCE_SOURCE"
 [[ -f "$COMPAT_SOURCE" ]] || die "Runtime compatibility helper is missing beside the installer: $COMPAT_SOURCE"
+[[ -f "$CLIENT_PREFLIGHT_SOURCE" ]] || die "Client preflight helper is missing beside the installer: $CLIENT_PREFLIGHT_SOURCE"
 [[ -d "$COMPAT_DATA_SOURCE" ]] || die "Runtime compatibility data is missing beside the installer: $COMPAT_DATA_SOURCE"
 
 preflight_existing_evejs_processes
 
 ui_info "EveJS Universal Linux Setup" \
-"This Stock-only edition installs a clean EveJS v0.12.8 baseline and prepares a copied EVE client for local play.
+"This Stock-only edition installs a clean EveJS v0.12.9 baseline and prepares a copied EVE client for local play.
 
 It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS installations with minimized development files.
 
 The installer:
-• installs clean EveJS v0.12.8 only;
+• installs clean EveJS v0.12.9 only;
 • deliberately does not offer Living Universe installation;
 • creates a fresh database and certificates;
 • prepares the standalone market;
@@ -1990,8 +1993,8 @@ PY
         if (( probe_ok )); then
             SOURCE_ZIP="$candidate"
         else
-            ui_warn "Detected ZIP is not EveJS v0.12.8" \
-"The ZIP beside the installer is not the required EveJS v0.12.8 release.
+            ui_warn "Detected ZIP is not EveJS v0.12.9" \
+"The ZIP beside the installer is not the required EveJS v0.12.9 release.
 
 Please select the correct file."
             SOURCE_ZIP="$(choose_valid_evejs_zip)" || exit 1
@@ -2031,7 +2034,7 @@ fi
 resolve_proton "$SELECTED_PROTON" "$PROTON_RECORDS"
 ok "Selected Proton: $(basename "$PROTON_DIR")"
 
-# v0.12.8 market profile
+# v0.12.9 market profile
 if [[ -n "$ARG_MARKET" ]]; then
     MARKET_PROFILE="${ARG_MARKET,,}"
 else
@@ -2072,7 +2075,7 @@ ok "Resource cache: $CACHE_ROOT/ResFiles"
 # Destination
 # v1.2 deliberately NEVER creates the destination root. The researcher creates
 # and selects an existing empty folder. This avoids leaving behind an automatic
-# EveJS-v0.12.8-Clean directory that then interferes with their own naming.
+# EveJS-v0.12.9-Clean directory that then interferes with their own naming.
 if [[ -n "$ARG_DEST" ]]; then
     EVEJS_REPO="$(readlink -f "$ARG_DEST" 2>/dev/null || true)"
     [[ -d "$EVEJS_REPO" ]] || die "Destination must already exist as a directory: $ARG_DEST"
@@ -2143,18 +2146,22 @@ ok "Root dependencies installed."
 
 stage "Generating fresh EveJS local certificates"
 CERT_BUILDER="$EVEJS_REPO/tools/ClientSETUP/scripts/build-gateway-cert.js"
-CA_CERT="$EVEJS_REPO/server/certs/xmpp-ca-cert.pem"
-CA_KEY="$EVEJS_REPO/server/certs/xmpp-ca-key.pem"
-XMPP_CERT="$EVEJS_REPO/server/certs/xmpp-dev-cert.pem"
-XMPP_KEY="$EVEJS_REPO/server/certs/xmpp-dev-key.pem"
-GW_CERT="$EVEJS_REPO/server/src/_secondary/express/certs/gateway-dev-cert.pem"
-GW_KEY="$EVEJS_REPO/server/src/_secondary/express/certs/gateway-dev-key.pem"
+CERT_DIR="$EVEJS_REPO/_local/certs"
+CA_CERT="$CERT_DIR/xmpp-ca-cert.pem"
+CA_KEY="$CERT_DIR/xmpp-ca-key.pem"
+XMPP_CERT="$CERT_DIR/xmpp-dev-cert.pem"
+XMPP_KEY="$CERT_DIR/xmpp-dev-key.pem"
+GW_CERT="$CERT_DIR/gateway-dev-cert.pem"
+GW_KEY="$CERT_DIR/gateway-dev-key.pem"
+GW_DNS_CERT="$CERT_DIR/gateway-dns-cert.pem"
+GW_DNS_KEY="$CERT_DIR/gateway-dns-key.pem"
+TLS_DNS_NAMES="app.launchdarkly.com,clientstream.launchdarkly.com,clientsdk.launchdarkly.com,dev-public-gateway.evetech.net,events.launchdarkly.com,mobile.launchdarkly.com,public-gateway.evetech.net,sdk.launchdarkly.com,sentry.io,stream.launchdarkly.com,localhost"
+mkdir -p "$CERT_DIR"
 
 node "$CERT_BUILDER" \
     --ensure-ca \
     --ca-cert "$CA_CERT" \
     --ca-key "$CA_KEY" \
-    --common-name "localhost" \
     --dns "localhost" \
     --ip "127.0.0.1" \
     --out-cert "$XMPP_CERT" \
@@ -2163,15 +2170,23 @@ node "$CERT_BUILDER" \
 node "$CERT_BUILDER" \
     --ca-cert "$CA_CERT" \
     --ca-key "$CA_KEY" \
-    --common-name "dev-public-gateway.evetech.net" \
-    --dns "app.launchdarkly.com,clientstream.launchdarkly.com,clientsdk.launchdarkly.com,dev-public-gateway.evetech.net,events.launchdarkly.com,public-gateway.evetech.net,stream.launchdarkly.com,localhost" \
+    --dns "$TLS_DNS_NAMES" \
     --ip "127.0.0.1" \
     --out-cert "$GW_CERT" \
     --out-key "$GW_KEY"
 
+node "$CERT_BUILDER" \
+    --ca-cert "$CA_CERT" \
+    --ca-key "$CA_KEY" \
+    --dns-only \
+    --dns "$TLS_DNS_NAMES" \
+    --out-cert "$GW_DNS_CERT" \
+    --out-key "$GW_DNS_KEY"
+
 verify_leaf_against_ca "XMPP" "$XMPP_CERT" "$CA_CERT"
-verify_leaf_against_ca "Gateway" "$GW_CERT" "$CA_CERT"
-ok "Fresh local CA, XMPP and gateway certificates created."
+verify_leaf_against_ca "Gateway numeric" "$GW_CERT" "$CA_CERT"
+verify_leaf_against_ca "Gateway DNS" "$GW_DNS_CERT" "$CA_CERT"
+ok "Fresh constrained local CA, XMPP and dual gateway certificates created under _local/certs."
 
 stage "Installing EveJS server dependencies"
 (
@@ -2222,7 +2237,7 @@ case "$MARKET_PROFILE" in
         ;;
     v2)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv2"
-        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.8 market-seederv2 is missing."
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.9 market-seederv2 is missing."
         (
             cd "$MARKET_SEED_DIR"
             cargo run --release -- \
@@ -2232,7 +2247,7 @@ case "$MARKET_PROFILE" in
         ;;
     v3)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv3"
-        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.8 market-seederv3 is missing."
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.9 market-seederv3 is missing."
         (
             cd "$MARKET_SEED_DIR"
 
@@ -2247,7 +2262,7 @@ case "$MARKET_PROFILE" in
                 --config config/market-seederv3.local.toml \
                 snapshot-info --download --reuse-download
 
-            # The v0.12.8 seeder contract keeps the pump audit as the meaningful build
+            # The v0.12.9 seeder contract keeps the pump audit as the meaningful build
             # gate and should be run before every direct seeder build.
             cargo run --release -- \
                 --config config/market-seederv3.local.toml \
@@ -2277,8 +2292,9 @@ ok "Standalone market '$MARKET_PROFILE' seeded, built and validated."
 stage "Preparing the copied EVE client"
 patch_blue_dll "$TQ_PATH" "$EVEJS_REPO/tools/ClientSETUP/blue_patch_recipe.json"
 patch_start_ini "$TQ_PATH"
+python3 "$CLIENT_PREFLIGHT_SOURCE" apply --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD"
 repair_client_ca_bundles "$TQ_PATH" "$CA_CERT"
-ok "EVE client is configured for local EveJS and trusts the current clean CA."
+ok "EVE client is configured for local EveJS, exact-hash offline patched, and trusts the constrained CA."
 
 # ── Write portable launcher config ─────────────────────────────────────────────
 stage "Installing portable Linux launcher"
@@ -2317,7 +2333,7 @@ stage "Preparing source-matched stock Market runtime"
 python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare \
     --repo "$EVEJS_REPO" --cargo "$CARGO_BIN" --candidate-binary "$MARKET_BIN" \
     || die "Could not prepare the verified stock external Market runtime."
-ok "Stock EveJS v0.12.8 external Market runtime prepared from the audited source identity."
+ok "Stock EveJS v0.12.9 external Market runtime prepared from the audited source identity."
 python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$EVEJS_REPO" \
     || die "Final source-matched Market runtime verification failed."
 

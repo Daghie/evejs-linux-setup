@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-EveJS Linux Installer Maintenance Engine v1.13
-Target release: EveJS v0.12.8 / EVE client build 3396210
+EveJS Linux Installer Maintenance Engine v1.14
+Target release: EveJS v0.12.9 / EVE client build 3396210
 
 This file is an internal companion to install-evejs-linux.sh.
 The Installer is the user-facing entry point for:
@@ -31,16 +31,17 @@ import uuid
 import zipfile
 import stat
 
-TARGET_VERSION = "0.12.8"
+TARGET_VERSION = "0.12.9"
 TARGET_BUILD = 3396210
-SUPPORTED_UPDATE_SOURCES = {"0.12.7.1"}
+SUPPORTED_UPDATE_SOURCES = {"0.12.8"}
 REQUIRED_PORTS = (443, 5222, 26000, 26001, 26002, 26003, 26400, 40110, 40111)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.7.1-to-0.12.8"
+CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.8-to-0.12.9"
 LAUNCHER_SOURCE = SCRIPT_DIR / "evejs-linux-launcher.sh"
-CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.8-stale-processes.sh"
+CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.9-stale-processes.sh"
 COMPAT_SOURCE = SCRIPT_DIR / "evejs-linux-lu-compat.py"
+CLIENT_PREFLIGHT_SOURCE = SCRIPT_DIR / "evejs-linux-client-preflight.py"
 COMPAT_DATA_SOURCE = SCRIPT_DIR / "compatibility"
 
 
@@ -447,8 +448,8 @@ def ensure_services_stopped(ui: UI, root: Path):
 def ensure_no_xpatch_overlay_for_update(ui: UI, root: Path):
     integrated = root / "_local/evejs-linux-integrated-lu/install.json"
     if integrated.is_file():
-        die(ui, "Installer-managed Living Universe is present. This is the Stock-only v1.13 build.\n\n"
-                "Use a Living-Universe edition compatible with EveJS v0.12.8, or uninstall it with the matching older authority first.")
+        die(ui, "Installer-managed Living Universe is present. This is the Stock-only v1.14 build.\n\n"
+                "Use a Living-Universe edition compatible with EveJS v0.12.9, or uninstall it with the matching older authority first.")
     state = root / "_local/x-eve-patch/install.json"
     signatures = [root/"config/xeve.json", root/"evejs.config.x-eve.json", root/"server/src/services/xEve/xEveRuntime.js"]
     present=[str(x.relative_to(root)) for x in signatures if x.exists()]
@@ -491,7 +492,7 @@ def overlay_dir(src: Path, dst: Path):
 
 
 def copy_preserved_update_state(existing: Path, stage: Path):
-    """Preserve user/world state named by EveJS v0.12.8's upstream updater policy."""
+    """Preserve user/world state named by EveJS v0.12.9's upstream updater policy."""
     if (existing / "_local").is_dir():
         overlay_dir(existing / "_local", stage / "_local")
 
@@ -814,7 +815,7 @@ def validate_stage_runtime(ui: UI, stage: Path, node: Path, cargo: Path,
     market_dir = stage / "externalservices" / "market-server"
     market_bin = market_dir / "target" / "release" / "market-server"
     if not market_bin.is_file():
-        die(ui, "The v0.12.8 Market server binary was not built.")
+        die(ui, "The v0.12.9 Market server binary was not built.")
     run([str(market_bin), "--config", "config/market-server.local.toml", "doctor"], cwd=market_dir)
 
 
@@ -897,9 +898,9 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
         npm = Path(found)
     env = os.environ.copy(); env["PATH"] = f"{node.parent}:{cargo.parent}:{env.get('PATH','')}"
 
-    print("\n==> Installing v0.12.8 root dependencies in the staging tree")
+    print("\n==> Installing v0.12.9 root dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage, env=env)
-    print("\n==> Installing v0.12.8 server dependencies in the staging tree")
+    print("\n==> Installing v0.12.9 server dependencies in the staging tree")
     run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage / "server", env=env)
     run([str(node), "-e", "const DB=require('better-sqlite3');const db=new DB(':memory:');db.exec('CREATE TABLE t(x INTEGER)');db.close();require('protobufjs');console.log('EveJS native Node dependency smoke test PASS');"], cwd=stage / "server", env=env)
 
@@ -910,7 +911,7 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
         run([str(npm), "run", "images:migrate", "--", "--quiet"], cwd=stage / "server", env=env)
 
 
-    print("\n==> Building the v0.12.8 Market daemon without reseeding")
+    print("\n==> Building the v0.12.9 Market daemon without reseeding")
     market_dir = stage / "externalservices/market-server"
     run([str(cargo), "build", "--release"], cwd=market_dir, env=env)
 
@@ -918,10 +919,11 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
     shutil.copy2(CLEANUP_SOURCE, stage / "evejs-stale-process-cleanup.sh")
     tools_dir = stage / ".evejs-linux-tools"; (tools_dir / "compatibility").mkdir(parents=True, exist_ok=True)
     shutil.copy2(COMPAT_SOURCE, tools_dir / "evejs-linux-lu-compat.py")
+    shutil.copy2(CLIENT_PREFLIGHT_SOURCE, tools_dir / "evejs-linux-client-preflight.py")
     for compat_file in COMPAT_DATA_SOURCE.iterdir():
         if compat_file.is_file(): shutil.copy2(compat_file, tools_dir / "compatibility" / compat_file.name)
 
-    (stage / "evejs-linux-launcher.sh").chmod(0o755); (stage / "evejs-stale-process-cleanup.sh").chmod(0o755); (tools_dir / "evejs-linux-lu-compat.py").chmod(0o755)
+    (stage / "evejs-linux-launcher.sh").chmod(0o755); (stage / "evejs-stale-process-cleanup.sh").chmod(0o755); (tools_dir / "evejs-linux-lu-compat.py").chmod(0o755); (tools_dir / "evejs-linux-client-preflight.py").chmod(0o755)
 
     updated_conf=dict(conf); updated_conf.update({"EVEJS_REPO":str(existing),"EVEJS_VERSION":TARGET_VERSION,"SUPPORTED_BUILD":str(TARGET_BUILD),"NODE_BIN":str(node),"NODE_BIN_DIR":str(node.parent),"CARGO_BIN":str(cargo)})
     write_linux_conf(stage / ".evejs-linux.conf", updated_conf)
@@ -930,8 +932,9 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
         f"From: {conf.get('EVEJS_VERSION','unknown')}\nTo:   {TARGET_VERSION}\n"
         "Market reseeded: NO\nPlayer/world database preserved: YES (entire _local tree)\n"
         "Market data preserved: YES\nMods preserved: YES\nCertificates/local config preserved: YES\n"
+        "First v0.12.9 launcher start: constrained-CA migration and exact-hash offline client patch gate\n"
         "Generated static game data rebuilt during update: NO\n"
-        "First v0.12.8 server start reconciles missing/changed engine-owned static tables and shipped content packs.\n"
+        "First v0.12.9 server start reconciles missing/changed engine-owned static tables and shipped content packs.\n"
         "Configuration: three-way merged\n" + "Living Universe migration: NOT AVAILABLE in Stock-only edition\n"
     )
     validate_stage_runtime(ui, stage, node, cargo, game_hash, market_hash)
@@ -953,8 +956,8 @@ def do_update(ui: UI, args):
             "This update path has not been audited.\n\n"
             f"Existing installation: EveJS v{old_version or 'unknown'}\n"
             f"Target installer:      EveJS v{TARGET_VERSION}\n\n"
-            "v1.13 currently supports only:\n"
-            "  v0.12.7.1 → v0.12.8\n\n"
+            "v1.14 currently supports only:\n"
+            "  v0.12.8 → v0.12.9\n\n"
             "The updater will not guess across unaudited versions.",
         )
 
@@ -975,7 +978,7 @@ def do_update(ui: UI, args):
         die(
             ui,
             f"The existing copied EVE client is missing or no longer build {TARGET_BUILD}:\n{tq}\n\n"
-            "This audited update does not replace the client because v0.12.7.1 and v0.12.8 use the same directly verified build 3396210 contract.",
+            "This audited update does not replace the client because v0.12.8 and v0.12.9 use the same directly verified build 3396210 contract.",
         )
 
     zip_path = Path(args.zip).expanduser().resolve() if args.zip else None

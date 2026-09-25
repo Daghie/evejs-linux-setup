@@ -1,0 +1,37 @@
+EveJS v0.12.9 Universal Linux Setup v1.14 Stock-Only — Verification
+========================================================================
+Date: 2026-09-25
+Status: PRE-RELEASE STATIC VERIFICATION
+
+PASS v0.12.8 and v0.12.9 input SHA-256, CRC and path-safety audit
+PASS full v0.12.8 -> v0.12.9 tree inventory/diff (578 added, 36 removed, 1496 modified, 237 unchanged)
+PASS EVE client build 3396210 contract
+PASS ClientSETUP delta audit (9 added, 5 modified, 11 unchanged)
+PASS unchanged blue.dll patch recipe identity
+PASS exact-hash LaunchDarkly/original-upgrade/final and crash-upload recipe validation
+PASS exact-hash PE patch engine synthetic publication/backup/idempotence self-test
+PASS stock Market 10-file source manifest/digest 643633B3CE290ADBC5A85D936C3977512D4C3CB0CF4414BF86300F830D08F746
+PASS Bash syntax: Installer / Launcher / stale cleanup
+PASS Python compile: compatibility / maintenance / client-preflight / audit tools
+PASS stock compatibility and maintenance self-tests
+PASS compatibility classification against actual clean v0.12.9 source
+PASS Stock-only helper rejects installer-managed integrated source state
+PASS Stock-only Installer contains no Living Universe installation path or payload
+PASS flat v0.12.9 ZIP extraction and target-version/build validation
+PASS exact v0.12.8 old-default config contract for three-way merge
+PASS per-file folder SHA-256 manifest
+
+Pending live acceptance
+-----------------------
+- Fresh Node/Rust dependency installation and native-module smoke
+- Build-3396210 SDE database generation and selected Market seed/build/doctor
+- Real v0.12.9 backend boot and all 10 shipped content packs
+- Constrained-CA rotation/generation and dual gateway TLS behavior in the installed runtime
+- Exact-hash client patching against the physical copied build-3396210 EVE client
+- Full launcher-owned port/TLS startup and Proton/UI client launch
+- Transactional v0.12.8 -> v0.12.9 update, backup, rollback and restore
+- Graceful cleanup with no residual EveJS listeners/processes
+
+Packaging boundary
+------------------
+This deliverable is intentionally a folder. The distribution ZIP and ZIP identity checks remain deferred until the requested live verification is accepted.

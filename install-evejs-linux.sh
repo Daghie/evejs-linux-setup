@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.14 — v0.12.9 Stock-Only Edition
+# EveJS Universal Linux Setup v1.15 — v0.12.9 SteamOS Portable Stock-Only Edition
 # Target: EveJS v0.12.9 / EVE build 3396210
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -15,7 +15,7 @@
 #   * Support removable mods through mods/*/loader.js.
 #   * Reproduce the Linux fixes validated during Bazzite testing:
 #       - market daemon starts before the main game server
-#       - local port 443 permission handled without running EveJS as root
+#       - SteamOS uses an unprivileged localhost port without sudo/system changes
 #       - XMPP advertises 127.0.0.1 rather than localhost
 #       - stale EveJS CAs removed from client cacert.pem bundles
 #       - live TLS verification for XMPP 5222 and gateway 26003
@@ -31,7 +31,7 @@ IFS=$'\n\t'
 
 INSTALLER_TARGET_VERSION="0.12.9"
 INSTALLER_TARGET_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.14 v0.12.9 Stock-Only Edition"
+INSTALLER_CANDIDATE_NAME="v1.15 v0.12.9 SteamOS Portable Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -40,6 +40,11 @@ MAINTENANCE_SOURCE="$SCRIPT_DIR/evejs-linux-maintenance.py"
 COMPAT_SOURCE="$SCRIPT_DIR/evejs-linux-lu-compat.py"
 CLIENT_PREFLIGHT_SOURCE="$SCRIPT_DIR/evejs-linux-client-preflight.py"
 COMPAT_DATA_SOURCE="$SCRIPT_DIR/compatibility"
+PORTABLE_PAYLOAD_DIR="$SCRIPT_DIR/portable/steamos-x86_64"
+PORTABLE_PAYLOAD_MANIFEST="$PORTABLE_PAYLOAD_DIR/manifest.json"
+PORTABLE_PAYLOAD_ARCHIVE="$PORTABLE_PAYLOAD_DIR/payload.tar.xz"
+PLATFORM_MODE="standard-linux"
+CDN_PORT="443"
 
 FORCE_TEXT=0
 ARG_ZIP=""
@@ -91,7 +96,7 @@ EOF
 done
 
 if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
-    echo "Do not run this installer as root. It uses sudo only for narrowly scoped system operations." >&2
+    echo "Do not run this installer as root. Conventional Linux may request sudo only for its established prerequisite/port path; SteamOS portable mode never does." >&2
     exit 1
 fi
 
@@ -361,6 +366,23 @@ is_steamos() {
         || [[ "$like" == *"steamos"* ]] \
         || [[ "$name" == *"SteamOS"* ]] \
         || command -v steamos-unminimize >/dev/null 2>&1
+}
+
+configure_platform_mode() {
+    PLATFORM_MODE="standard-linux"
+    CDN_PORT="443"
+    if is_steamos; then
+        [[ "$(uname -m)" == "x86_64" ]] \
+            || die "The bundled SteamOS portable runtime currently supports x86_64 Steam Deck/SteamOS systems only. Detected: $(uname -m)"
+        [[ -f "$PORTABLE_PAYLOAD_MANIFEST" && -f "$PORTABLE_PAYLOAD_ARCHIVE" ]] \
+            || die "The verified SteamOS portable runtime is missing beside this installer."
+        PLATFORM_MODE="steamos-portable"
+        CDN_PORT="8443"
+    fi
+}
+
+is_steamos_portable() {
+    [[ "$PLATFORM_MODE" == "steamos-portable" ]]
 }
 
 native_toolchain_report() {
@@ -776,6 +798,11 @@ $NATIVE_CPP_LAST_ERROR"
 }
 
 ensure_native_build_environment() {
+    if is_steamos_portable; then
+        HOST_TOOLCHAIN_REPORT=""
+        ok "SteamOS portable mode: no host C/C++ compiler is required."
+        return 0
+    fi
     HOST_TOOLCHAIN_REPORT="$(mktemp)"
     native_toolchain_report "$HOST_TOOLCHAIN_REPORT"
 
@@ -787,9 +814,7 @@ ensure_native_build_environment() {
     local first_error="$NATIVE_BUILD_LAST_ERROR"
 
     if is_steamos; then
-        repair_steamos_native_build_environment
-        native_toolchain_report "$HOST_TOOLCHAIN_REPORT"
-        return 0
+        die "SteamOS safety guard: the installer refused to enter the conventional native-build repair path. No operating-system change was attempted."
     fi
 
     local family install_cmd
@@ -854,9 +879,31 @@ steamos_package_for_command() {
     esac
 }
 
+# v1.15 hard safety overrides. The preceding repair helpers are retained only
+# as historical context from v1.14; no v1.15 path may mutate SteamOS.
+steamos_reinstall_exact_package() {
+    die "SteamOS package repair is disabled in v1.15 portable mode. No operating-system change was attempted."
+}
+
+repair_steamos_native_build_environment() {
+    die "SteamOS native-toolchain repair is disabled in v1.15 portable mode. No operating-system change was attempted."
+}
+
 check_system_tools() {
     local missing=()
     local cmd
+    if is_steamos_portable; then
+        for cmd in python3 curl unzip openssl tar xz ss sha256sum awk grep sed find timeout pgrep; do
+            command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+        done
+        if ((${#missing[@]} > 0)); then
+            die "This SteamOS installation is missing standard runtime command(s): ${missing[*]}
+
+The portable path will not unlock SteamOS, run Pacman, or modify the operating system. Update SteamOS normally and rerun the installer."
+        fi
+        ok "SteamOS portable prerequisites passed; no compiler, Cargo, sudo, Pacman, or read-only change is required."
+        return 0
+    fi
     for cmd in python3 curl unzip openssl tar xz ss sysctl sudo sha256sum awk grep sed find make cc c++; do
         command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
     done
@@ -865,20 +912,7 @@ check_system_tools() {
     fi
 
     if is_steamos; then
-        warn "SteamOS is missing required command(s): ${missing[*]}"
-        local pkg
-        for cmd in "${missing[@]}"; do
-            pkg="$(steamos_package_for_command "$cmd" 2>/dev/null || true)"
-            [[ -n "$pkg" ]] || die "No approved minimal SteamOS package mapping exists for missing command '$cmd'."
-
-            steamos_reinstall_exact_package \
-                "$pkg" \
-                "restore the missing '$cmd' command required by the EveJS installer"
-
-            command -v "$cmd" >/dev/null 2>&1 \
-                || die "Reinstalling '$pkg' did not restore required command '$cmd'."
-        done
-        return 0
+        die "SteamOS safety guard: the installer refused to enter the conventional package-repair path. No operating-system change was attempted."
     fi
 
     local install_cmd
@@ -931,7 +965,7 @@ ensure_node() {
 
     # v0.12.9 doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
     # compatible with Node 20 and 22-26, but not Node 21.
-    if [[ "$major" =~ ^(20|22|23|25|26)$ ]] && command -v npm >/dev/null 2>&1; then
+    if ! is_steamos_portable && [[ "$major" =~ ^(20|22|23|25|26)$ ]] && command -v npm >/dev/null 2>&1; then
         if ui_yesno "Use compatible Node $version?" \
 "EveJS v0.12.9 recommends Node.js 24 LTS.
 
@@ -1003,6 +1037,11 @@ No system Node packages will be replaced."; then
 }
 
 ensure_rust() {
+    if is_steamos_portable; then
+        CARGO_BIN=""
+        ok "SteamOS portable mode: using bundled static Rust executables."
+        return 0
+    fi
     [[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
     if command -v cargo >/dev/null 2>&1 && command -v rustc >/dev/null 2>&1; then
         CARGO_BIN="$(command -v cargo)"
@@ -1027,6 +1066,84 @@ Rust/Cargo was not found. Install the official rustup toolchain in your user acc
     command -v cargo >/dev/null 2>&1 || die "Rustup finished but cargo is still unavailable."
     CARGO_BIN="$(command -v cargo)"
     ok "Installed $(cargo --version)"
+}
+
+install_steamos_portable_payload() {
+    local repo="$1"
+    python3 - "$PORTABLE_PAYLOAD_MANIFEST" "$PORTABLE_PAYLOAD_ARCHIVE" "$repo" <<'PY'
+import hashlib, json, os, pathlib, posixpath, sys, tarfile
+
+manifest_path, archive_path, repo = map(pathlib.Path, sys.argv[1:])
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+payload = manifest.get("payload") or {}
+
+def digest(path):
+    h = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(block)
+    return h.hexdigest()
+
+if archive_path.stat().st_size != int(payload.get("size", -1)):
+    raise SystemExit("SteamOS portable payload size does not match its bundled manifest.")
+if digest(archive_path) != str(payload.get("sha256", "")).lower():
+    raise SystemExit("SteamOS portable payload SHA-256 does not match its manifest.")
+
+for relative, expected in (manifest.get("lockfiles") or {}).items():
+    path = repo / relative
+    if not path.is_file() or digest(path) != str(expected).lower():
+        raise SystemExit(f"Portable payload/source lock mismatch: {relative}")
+
+allowed = {"node_modules", "server", "externalservices", "tools"}
+with tarfile.open(archive_path, "r:xz") as archive:
+    for member in archive.getmembers():
+        name = member.name.removeprefix("./")
+        pure = pathlib.PurePosixPath(name)
+        if name in ("", ".") and member.isdir():
+            continue
+        if not name or pure.is_absolute() or ".." in pure.parts or not pure.parts or pure.parts[0] not in allowed:
+            raise SystemExit(f"Unsafe SteamOS payload member: {member.name}")
+        if member.issym() or member.islnk():
+            target = posixpath.normpath(posixpath.join(posixpath.dirname(name), member.linkname))
+            if target == ".." or target.startswith("../") or target.startswith("/"):
+                raise SystemExit(f"Unsafe SteamOS payload link: {member.name} -> {member.linkname}")
+print("SteamOS portable payload identity and path-safety checks PASS")
+PY
+
+    tar --no-same-owner -xJf "$PORTABLE_PAYLOAD_ARCHIVE" -C "$repo"
+
+    python3 - "$PORTABLE_PAYLOAD_MANIFEST" "$repo" <<'PY'
+import hashlib, json, os, pathlib, sys
+manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+repo = pathlib.Path(sys.argv[2])
+for artifact in manifest.get("artifacts") or []:
+    path = repo / artifact["path"]
+    if not path.is_file() or path.stat().st_size != int(artifact["size"]):
+        raise SystemExit(f"Missing/changed portable artifact: {artifact['path']}")
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if actual != artifact["sha256"]:
+        raise SystemExit(f"Portable artifact SHA-256 mismatch: {artifact['path']}")
+    if artifact["path"].endswith(("market-server", "market-seed", "market-seederv2", "market-seederv3")):
+        path.chmod(path.stat().st_mode | 0o111)
+print("SteamOS portable artifact verification PASS")
+PY
+
+    (
+        cd "$repo/server"
+        "$NODE_BIN" -e "const DB=require('better-sqlite3');const db=new DB(':memory:');db.exec('CREATE TABLE t(x INTEGER)');db.close();require('protobufjs');console.log('SteamOS portable Node dependency smoke test PASS')"
+    )
+}
+
+run_market_tool() {
+    local directory="$1" binary_name="$2"
+    shift 2
+    if is_steamos_portable; then
+        local binary="$directory/target/release/$binary_name"
+        [[ -x "$binary" ]] || die "Bundled SteamOS executable is missing: $binary"
+        (cd "$directory" && "$binary" "$@")
+    else
+        (cd "$directory" && "$CARGO_BIN" run --release -- "$@")
+    fi
 }
 
 # ── Steam + Proton discovery ──────────────────────────────────────────────────
@@ -1757,7 +1874,7 @@ The installer will not create, rename, delete, or replace the destination folder
 
 
 preflight_existing_evejs_processes() {
-    local ports_re=':(443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)'
+    local ports_re=":(${CDN_PORT}|443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)"
     local listeners
     listeners="$(ss -H -ltnp 2>/dev/null | grep -E "$ports_re" || true)"
     [[ -n "$listeners" ]] || return 0
@@ -1804,6 +1921,30 @@ install_runtime_compatibility_files() {
     chmod +x "$repo/evejs-linux-launcher.sh" "$repo/evejs-stale-process-cleanup.sh"
 }
 
+write_platform_config() {
+    local config="$1/.evejs-linux.conf"
+    [[ -f "$config" ]] || die "Missing Linux launcher configuration: $config"
+    python3 - "$config" "$PLATFORM_MODE" "$CDN_PORT" <<'PY'
+from pathlib import Path
+import shlex, sys, tempfile, os
+path = Path(sys.argv[1])
+keys = ("EVEJS_PLATFORM_MODE=", "EVEJS_CDN_PORT=")
+lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.startswith(keys)]
+lines.extend([
+    f"EVEJS_PLATFORM_MODE={shlex.quote(sys.argv[2])}",
+    f"EVEJS_CDN_PORT={shlex.quote(sys.argv[3])}",
+])
+mode = path.stat().st_mode
+with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, prefix=f".{path.name}.", delete=False) as stream:
+    temporary = Path(stream.name)
+    stream.write("\n".join(lines) + "\n")
+    stream.flush()
+    os.fsync(stream.fileno())
+temporary.chmod(mode)
+os.replace(temporary, path)
+PY
+}
+
 
 
 choose_existing_v0129_repo() {
@@ -1827,7 +1968,7 @@ except Exception: print('')
 PY2
 )"
         [[ "$version" == "0.12.9" ]] || {
-            ui_warn "Wrong EveJS version" "Runtime compatibility v1.14 Stock-only is audited for EveJS v0.12.9.\n\nSelected version: ${version:-unknown}"
+            ui_warn "Wrong EveJS version" "Runtime compatibility v1.15 Stock-only is audited for EveJS v0.12.9.\n\nSelected version: ${version:-unknown}"
             continue
         }
         [[ -f "$chosen/.evejs-linux.conf" ]] || {
@@ -1853,24 +1994,41 @@ try: print(json.load(open(sys.argv[1])).get("evejsVersion", ""))
 except Exception: print("")
 PYV
 )"
-    [[ "$version" == "$INSTALLER_TARGET_VERSION" ]] || die "Runtime compatibility v1.14 Stock-only is audited only for EveJS v0.12.9. Selected version: ${version:-unknown}"
-    if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ':(443|5222|26000|26001|26002|26003|26400|40110|40111)$'; then
+    [[ "$version" == "$INSTALLER_TARGET_VERSION" ]] || die "Runtime compatibility v1.15 Stock-only is audited only for EveJS v0.12.9. Selected version: ${version:-unknown}"
+    if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":(${CDN_PORT}|443|5222|26000|26001|26002|26003|26400|40110|40111)$"; then
         die "EveJS/Market listeners are active. Stop the EVE client, Game server and Market server before preparing runtime compatibility. No files were changed."
     fi
     install_runtime_compatibility_files "$repo"
+    write_platform_config "$repo"
     detection="$(python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$repo" 2>&1)" || die "$detection\n\nThis Stock-only edition refuses Living Universe, X-Patch, and unknown/partial source states."
     stage "Preparing source-matched stock Market runtime"
-    python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare --repo "$repo" --cargo "$CARGO_BIN" \
-        || die "Runtime compatibility preparation failed."
+    if is_steamos_portable; then
+        install_steamos_portable_payload "$repo" \
+            || die "SteamOS portable runtime installation or verification failed."
+        python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare \
+            --repo "$repo" \
+            --candidate-binary "$repo/externalservices/market-server/target/release/market-server" \
+            || die "Runtime compatibility preparation failed."
+    else
+        python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare --repo "$repo" --cargo "$CARGO_BIN" \
+            || die "Runtime compatibility preparation failed."
+    fi
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The clean EveJS v0.12.9 installation is ready for the v1.14 Stock-only Launcher.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The clean EveJS v0.12.9 installation is ready for the v1.15 Stock-only Launcher.\n\n$repo\n\n$detection"
     exit 0
 }
 
 
 # ── Main wizard ───────────────────────────────────────────────────────────────
 trap '[[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"; [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "${HOST_TOOLCHAIN_REPORT:-}" ]] && rm -f "$HOST_TOOLCHAIN_REPORT"' EXIT
+
+configure_platform_mode
+if is_steamos_portable; then
+    ok "SteamOS detected: selecting the verified portable x86_64 path (localhost HTTPS port $CDN_PORT)."
+else
+    ok "Conventional Linux detected: preserving the established source-build path."
+fi
 
 SETUP_ACTION="${ARG_MODE,,}"
 if [[ -z "$SETUP_ACTION" ]]; then
@@ -1894,6 +2052,10 @@ case "$SETUP_ACTION" in
         ensure_rust
         export EVEJS_SETUP_NODE_BIN="$NODE_BIN"
         export EVEJS_SETUP_CARGO_BIN="$CARGO_BIN"
+        export EVEJS_SETUP_PLATFORM_MODE="$PLATFORM_MODE"
+        export EVEJS_SETUP_CDN_PORT="$CDN_PORT"
+        export EVEJS_SETUP_PORTABLE_MANIFEST="$PORTABLE_PAYLOAD_MANIFEST"
+        export EVEJS_SETUP_PORTABLE_ARCHIVE="$PORTABLE_PAYLOAD_ARCHIVE"
         maintenance_args=(--mode update)
         (( FORCE_TEXT )) && maintenance_args+=(--text)
         [[ -n "$ARG_ZIP" ]] && maintenance_args+=(--zip "$ARG_ZIP")
@@ -1941,7 +2103,7 @@ preflight_existing_evejs_processes
 ui_info "EveJS Universal Linux Setup" \
 "This Stock-only edition installs a clean EveJS v0.12.9 baseline and prepares a copied EVE client for local play.
 
-It is designed for mainstream x86_64 Linux distributions with Steam installed, including SteamOS installations with minimized development files.
+It is designed for mainstream x86_64 Linux distributions with Steam installed. SteamOS automatically uses a verified portable runtime and an unprivileged localhost HTTPS port.
 
 The installer:
 • installs clean EveJS v0.12.9 only;
@@ -1951,7 +2113,8 @@ The installer:
 • supports removable mods through mods/*/loader.js;
 • configures a Steam Proton launch environment;
 • copies the standalone stale-process cleanup tool into the completed EveJS folder;
-• compiles tiny C/C++ tests before installation and, on SteamOS, can repair only the exact already-installed package proven missing.
+• preserves the established source-build path on conventional Linux;
+• requires no compiler, Cargo, sudo, Pacman, read-only toggle, or system networking change on SteamOS.
 
 For the EveJS destination, create/select an existing EMPTY folder. The installer
 will not create the destination folder for you.
@@ -2107,6 +2270,12 @@ Steam Proton:
 Market:
   $MARKET_LABEL
 
+Linux runtime mode:
+  $PLATFORM_MODE
+
+Local HTTPS/CDN port:
+  $CDN_PORT
+
 Steam root:
   $STEAM_ROOT
 
@@ -2137,12 +2306,19 @@ ok "Clean repository extracted."
 
 export PATH="$(dirname "$NODE_BIN"):$HOME/.cargo/bin:$PATH"
 
-stage "Installing EveJS root dependencies"
-(
-    cd "$EVEJS_REPO"
-    npm ci --no-audit --no-fund
-)
-ok "Root dependencies installed."
+if is_steamos_portable; then
+    stage "Installing verified SteamOS portable runtime"
+    install_steamos_portable_payload "$EVEJS_REPO" \
+        || die "SteamOS portable runtime installation or verification failed."
+    ok "Verified SteamOS portable Node modules and static Rust executables installed."
+else
+    stage "Installing EveJS root dependencies"
+    (
+        cd "$EVEJS_REPO"
+        npm ci --no-audit --no-fund
+    )
+    ok "Root dependencies installed."
+fi
 
 stage "Generating fresh EveJS local certificates"
 CERT_BUILDER="$EVEJS_REPO/tools/ClientSETUP/scripts/build-gateway-cert.js"
@@ -2188,11 +2364,13 @@ verify_leaf_against_ca "Gateway numeric" "$GW_CERT" "$CA_CERT"
 verify_leaf_against_ca "Gateway DNS" "$GW_DNS_CERT" "$CA_CERT"
 ok "Fresh constrained local CA, XMPP and dual gateway certificates created under _local/certs."
 
-stage "Installing EveJS server dependencies"
-(
-    cd "$EVEJS_REPO/server"
-    npm ci --no-audit --no-fund
-)
+if ! is_steamos_portable; then
+    stage "Installing EveJS server dependencies"
+    (
+        cd "$EVEJS_REPO/server"
+        npm ci --no-audit --no-fund
+    )
+fi
 [[ -f "$EVEJS_REPO/server/node_modules/express/package.json" ]] || die "Server dependency installation did not produce express."
 ok "Server dependencies installed."
 
@@ -2228,60 +2406,49 @@ mkdir -p "$(dirname "$MARKET_DB")"
 case "$MARKET_PROFILE" in
     v1)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seed"
-        (
-            cd "$MARKET_SEED_DIR"
-            cargo run --release -- \
-                --config config/market-seed.local.toml \
-                build --force --preset jita_new_caldari
-        )
+        run_market_tool "$MARKET_SEED_DIR" market-seed \
+            --config config/market-seed.local.toml \
+            build --force --preset jita_new_caldari
         ;;
     v2)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv2"
         [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.9 market-seederv2 is missing."
-        (
-            cd "$MARKET_SEED_DIR"
-            cargo run --release -- \
-                --config config/market-seederv2.local.toml \
-                build --yes --reuse-download
-        )
+        run_market_tool "$MARKET_SEED_DIR" market-seederv2 \
+            --config config/market-seederv2.local.toml \
+            build --yes --reuse-download
         ;;
     v3)
         MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv3"
         [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "v0.12.9 market-seederv3 is missing."
-        (
-            cd "$MARKET_SEED_DIR"
+        # Validate config/static data first.
+        run_market_tool "$MARKET_SEED_DIR" market-seederv3 \
+            --config config/market-seederv3.local.toml doctor
 
-            # Validate config/static data first.
-            cargo run --release -- \
-                --config config/market-seederv3.local.toml \
-                doctor
+        # v3 build never downloads. Explicitly cache/reuse the TQ snapshot
+        # needed for the authentic NPC catalog overlay.
+        run_market_tool "$MARKET_SEED_DIR" market-seederv3 \
+            --config config/market-seederv3.local.toml \
+            snapshot-info --download --reuse-download
 
-            # v3 build never downloads. Explicitly cache/reuse the TQ snapshot
-            # needed for the authentic NPC catalog overlay.
-            cargo run --release -- \
-                --config config/market-seederv3.local.toml \
-                snapshot-info --download --reuse-download
+        # The v0.12.9 seeder contract keeps the pump audit as the meaningful build
+        # gate and should be run before every direct seeder build.
+        run_market_tool "$MARKET_SEED_DIR" market-seederv3 \
+            --config config/market-seederv3.local.toml audit
 
-            # The v0.12.9 seeder contract keeps the pump audit as the meaningful build
-            # gate and should be run before every direct seeder build.
-            cargo run --release -- \
-                --config config/market-seederv3.local.toml \
-                audit
-
-            cargo run --release -- \
-                --config config/market-seederv3.local.toml \
-                build --yes
-        )
+        run_market_tool "$MARKET_SEED_DIR" market-seederv3 \
+            --config config/market-seederv3.local.toml build --yes
         ;;
 esac
 
 [[ -s "$MARKET_DB" ]] || die "Selected market seeder did not produce market.sqlite."
 
-(
-    cd "$MARKET_DIR"
-    cargo build --release
-)
 MARKET_BIN="$MARKET_DIR/target/release/market-server"
+if ! is_steamos_portable; then
+    (
+        cd "$MARKET_DIR"
+        "$CARGO_BIN" build --release
+    )
+fi
 [[ -x "$MARKET_BIN" ]] || die "Market server release binary was not created."
 (
     cd "$MARKET_DIR"
@@ -2292,7 +2459,8 @@ ok "Standalone market '$MARKET_PROFILE' seeded, built and validated."
 stage "Preparing the copied EVE client"
 patch_blue_dll "$TQ_PATH" "$EVEJS_REPO/tools/ClientSETUP/blue_patch_recipe.json"
 patch_start_ini "$TQ_PATH"
-python3 "$CLIENT_PREFLIGHT_SOURCE" apply --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD"
+python3 "$CLIENT_PREFLIGHT_SOURCE" apply \
+    --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD" --cdn-port "$CDN_PORT"
 repair_client_ca_bundles "$TQ_PATH" "$CA_CERT"
 ok "EVE client is configured for local EveJS, exact-hash offline patched, and trusts the constrained CA."
 
@@ -2320,6 +2488,8 @@ CONFIG="$EVEJS_REPO/.evejs-linux.conf"
     printf 'NODE_BIN=%q\n' "$NODE_BIN"
     printf 'NODE_BIN_DIR=%q\n' "$(dirname "$NODE_BIN")"
     printf 'CARGO_BIN=%q\n' "$CARGO_BIN"
+    printf 'EVEJS_PLATFORM_MODE=%q\n' "$PLATFORM_MODE"
+    printf 'EVEJS_CDN_PORT=%q\n' "$CDN_PORT"
     printf 'MARKET_PROFILE=%q\n' "$MARKET_PROFILE"
     printf 'MARKET_LABEL=%q\n' "$MARKET_LABEL"
 } > "$CONFIG"
@@ -2330,8 +2500,11 @@ FINAL_LU_MODE="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("mo
 FINAL_LU_DETECTION="$(python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" detect --repo "$EVEJS_REPO" 2>&1)" || die "$FINAL_LU_DETECTION"
 
 stage "Preparing source-matched stock Market runtime"
-python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" prepare \
-    --repo "$EVEJS_REPO" --cargo "$CARGO_BIN" --candidate-binary "$MARKET_BIN" \
+compat_prepare_args=(
+    prepare --repo "$EVEJS_REPO" --candidate-binary "$MARKET_BIN"
+)
+[[ -n "$CARGO_BIN" ]] && compat_prepare_args+=(--cargo "$CARGO_BIN")
+python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" "${compat_prepare_args[@]}" \
     || die "Could not prepare the verified stock external Market runtime."
 ok "Stock EveJS v0.12.9 external Market runtime prepared from the audited source identity."
 python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$EVEJS_REPO" \
@@ -2349,12 +2522,14 @@ Steam root:        $STEAM_ROOT
 Proton:            $PROTON_DIR
 Proton prefix:     $PROTON_PREFIX
 Market:            $MARKET_LABEL
+Platform mode:     $PLATFORM_MODE
+Local HTTPS/CDN:   127.0.0.1:$CDN_PORT
 Launcher:          $EVEJS_REPO/evejs-linux-launcher.sh
 Stale cleanup:     $EVEJS_REPO/evejs-stale-process-cleanup.sh
 Runtime helper:    $EVEJS_REPO/.evejs-linux-tools/evejs-linux-lu-compat.py (stock-state verifier)
 Runtime mode:      $FINAL_LU_DETECTION
-Host toolchain:    $EVEJS_REPO/LINUX-HOST-TOOLCHAIN.txt
-SteamOS repair:    $EVEJS_REPO/STEAMOS-MINIMAL-REPAIR.txt (only if a repair was needed)
+Host toolchain:    conventional Linux only
+SteamOS changes:   NONE (portable user-space runtime)
 Mods directory:    $EVEJS_REPO/mods
 
 Mod convention:
@@ -2410,8 +2585,9 @@ $FINAL_LU_DETECTION
 Mods:
 $EVEJS_REPO/mods/<mod-name>/loader.js
 
-The first launcher start may ask for your sudo password so the normal user
-process can bind EveJS's localhost HTTPS endpoint on port 443."
+On SteamOS the launcher uses unprivileged localhost port 8443 and never asks
+for sudo or changes the operating system. Conventional Linux retains the
+established port-443 behavior."
 
 ui_info "EveJS installation complete" "$FINAL"
 

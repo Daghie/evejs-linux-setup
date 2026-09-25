@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EveJS Linux Installer Maintenance Engine v1.14
+EveJS Linux Installer Maintenance Engine v1.15
 Target release: EveJS v0.12.9 / EVE client build 3396210
 
 This file is an internal companion to install-evejs-linux.sh.
@@ -19,6 +19,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import posixpath
 from pathlib import Path
 import re
 import shlex
@@ -27,6 +28,7 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+import tarfile
 import uuid
 import zipfile
 import stat
@@ -34,7 +36,17 @@ import stat
 TARGET_VERSION = "0.12.9"
 TARGET_BUILD = 3396210
 SUPPORTED_UPDATE_SOURCES = {"0.12.8"}
-REQUIRED_PORTS = (443, 5222, 26000, 26001, 26002, 26003, 26400, 40110, 40111)
+try:
+    _OS_RELEASE = Path("/etc/os-release").read_text(encoding="utf-8", errors="replace")
+except OSError:
+    _OS_RELEASE = ""
+_HOST_IS_STEAMOS = bool(re.search(r"^(?:ID|ID_LIKE|NAME)=.*steamos", _OS_RELEASE, re.I | re.M))
+PLATFORM_MODE = os.environ.get(
+    "EVEJS_SETUP_PLATFORM_MODE",
+    "steamos-portable" if _HOST_IS_STEAMOS else "standard-linux",
+)
+CDN_PORT = int(os.environ.get("EVEJS_SETUP_CDN_PORT", "8443" if PLATFORM_MODE == "steamos-portable" else "443"))
+REQUIRED_PORTS = tuple(dict.fromkeys((CDN_PORT, 443, 5222, 26000, 26001, 26002, 26003, 26400, 40110, 40111)))
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CONTRACT_ROOT = SCRIPT_DIR / "upgrade-contracts" / "0.12.8-to-0.12.9"
@@ -43,6 +55,14 @@ CLEANUP_SOURCE = SCRIPT_DIR / "evejs-v0.12.9-stale-processes.sh"
 COMPAT_SOURCE = SCRIPT_DIR / "evejs-linux-lu-compat.py"
 CLIENT_PREFLIGHT_SOURCE = SCRIPT_DIR / "evejs-linux-client-preflight.py"
 COMPAT_DATA_SOURCE = SCRIPT_DIR / "compatibility"
+PORTABLE_PAYLOAD_MANIFEST = Path(os.environ.get(
+    "EVEJS_SETUP_PORTABLE_MANIFEST",
+    str(SCRIPT_DIR / "portable" / "steamos-x86_64" / "manifest.json"),
+))
+PORTABLE_PAYLOAD_ARCHIVE = Path(os.environ.get(
+    "EVEJS_SETUP_PORTABLE_ARCHIVE",
+    str(SCRIPT_DIR / "portable" / "steamos-x86_64" / "payload.tar.xz"),
+))
 
 
 class UI:
@@ -371,7 +391,7 @@ def load_linux_conf(ui: UI, root: Path) -> dict[str, str]:
         "EVEJS_REPO", "EVEJS_VERSION", "SUPPORTED_BUILD", "EVE_CLIENT_SELECTED",
         "TQ_PATH", "CACHE_ROOT", "RESFILES", "STEAM_ROOT", "PROTON_DIR",
         "PROTON_BIN", "PROTON_PREFIX", "NODE_BIN", "NODE_BIN_DIR", "CARGO_BIN",
-        "MARKET_PROFILE", "MARKET_LABEL",
+        "MARKET_PROFILE", "MARKET_LABEL", "EVEJS_PLATFORM_MODE", "EVEJS_CDN_PORT",
     ]
     script = 'set -a; source "$1"; shift; for k in "$@"; do printf "%s\\0" "${!k-}"; done'
     cp = subprocess.run(
@@ -389,7 +409,7 @@ def write_linux_conf(path: Path, values: dict[str, str]):
         "EVEJS_REPO", "EVEJS_VERSION", "SUPPORTED_BUILD", "EVE_CLIENT_SELECTED",
         "TQ_PATH", "CACHE_ROOT", "RESFILES", "STEAM_ROOT", "PROTON_DIR",
         "PROTON_BIN", "PROTON_PREFIX", "NODE_BIN", "NODE_BIN_DIR", "CARGO_BIN",
-        "MARKET_PROFILE", "MARKET_LABEL",
+        "MARKET_PROFILE", "MARKET_LABEL", "EVEJS_PLATFORM_MODE", "EVEJS_CDN_PORT",
     ]
     lines = []
     for key in order:
@@ -448,7 +468,7 @@ def ensure_services_stopped(ui: UI, root: Path):
 def ensure_no_xpatch_overlay_for_update(ui: UI, root: Path):
     integrated = root / "_local/evejs-linux-integrated-lu/install.json"
     if integrated.is_file():
-        die(ui, "Installer-managed Living Universe is present. This is the Stock-only v1.14 build.\n\n"
+        die(ui, "Installer-managed Living Universe is present. This is the Stock-only v1.15 build.\n\n"
                 "Use a Living-Universe edition compatible with EveJS v0.12.9, or uninstall it with the matching older authority first.")
     state = root / "_local/x-eve-patch/install.json"
     signatures = [root/"config/xeve.json", root/"evejs.config.x-eve.json", root/"server/src/services/xEve/xEveRuntime.js"]
@@ -773,7 +793,7 @@ def validate_tool_identity(ui: UI, path: Path, kind: str):
     return output
 
 
-def validate_stage_runtime(ui: UI, stage: Path, node: Path, cargo: Path,
+def validate_stage_runtime(ui: UI, stage: Path, node: Path, cargo: Path | None,
                            expected_game_hash: str | None, expected_market_hash: str | None):
     if read_version(stage) != TARGET_VERSION:
         die(ui, "Staged EveJS version validation failed.")
@@ -877,8 +897,57 @@ def choose_existing_install(ui: UI, explicit: str | None) -> Path:
     return root
 
 
+def install_portable_payload(ui: UI, stage: Path):
+    if not PORTABLE_PAYLOAD_MANIFEST.is_file() or not PORTABLE_PAYLOAD_ARCHIVE.is_file():
+        die(ui, "The SteamOS portable payload is missing beside the installer.")
+    try:
+        manifest = json.loads(PORTABLE_PAYLOAD_MANIFEST.read_text(encoding="utf-8"))
+    except Exception as exc:
+        die(ui, f"Could not read the SteamOS portable manifest:\n{exc}")
+
+    payload = manifest.get("payload") or {}
+    if PORTABLE_PAYLOAD_ARCHIVE.stat().st_size != int(payload.get("size", -1)):
+        die(ui, "SteamOS portable payload size mismatch.")
+    if sha256(PORTABLE_PAYLOAD_ARCHIVE).lower() != str(payload.get("sha256", "")).lower():
+        die(ui, "SteamOS portable payload SHA-256 mismatch.")
+
+    for relative, expected in (manifest.get("lockfiles") or {}).items():
+        path = stage / relative
+        if not path.is_file() or sha256(path).lower() != str(expected).lower():
+            die(ui, f"Portable payload/source lock mismatch:\n{relative}")
+
+    allowed = {"node_modules", "server", "externalservices", "tools"}
+    try:
+        with tarfile.open(PORTABLE_PAYLOAD_ARCHIVE, "r:xz") as archive:
+            for member in archive.getmembers():
+                name = member.name.removeprefix("./")
+                pure = Path(name)
+                if name in ("", ".") and member.isdir():
+                    continue
+                if not name or pure.is_absolute() or ".." in pure.parts or not pure.parts or pure.parts[0] not in allowed:
+                    die(ui, f"Unsafe SteamOS payload member:\n{member.name}")
+                if member.issym() or member.islnk():
+                    target = posixpath.normpath(posixpath.join(posixpath.dirname(name), member.linkname))
+                    if target == ".." or target.startswith("../") or target.startswith("/"):
+                        die(ui, f"Unsafe SteamOS payload link:\n{member.name} -> {member.linkname}")
+    except (OSError, tarfile.TarError) as exc:
+        die(ui, f"Could not validate the SteamOS portable payload:\n{exc}")
+
+    run(["tar", "--no-same-owner", "-xJf", str(PORTABLE_PAYLOAD_ARCHIVE), "-C", str(stage)])
+
+    for artifact in manifest.get("artifacts") or []:
+        path = stage / artifact["path"]
+        if not path.is_file() or path.stat().st_size != int(artifact["size"]):
+            die(ui, f"Missing/changed portable artifact:\n{artifact['path']}")
+        if sha256(path).lower() != str(artifact["sha256"]).lower():
+            die(ui, f"Portable artifact SHA-256 mismatch:\n{artifact['path']}")
+        if artifact["path"].endswith(("market-server", "market-seed", "market-seederv2", "market-seederv3")):
+            path.chmod(path.stat().st_mode | 0o111)
+    print("    ✓ SteamOS portable payload identity, path safety, and artifacts verified")
+
+
 def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
-                  node: Path, cargo: Path, game_hash: str | None, market_hash: str | None) -> tuple[Path, dict]:
+                  node: Path, cargo: Path | None, game_hash: str | None, market_hash: str | None) -> tuple[Path, dict]:
     parent = existing.parent
     stage = parent / f".evejs-update-stage-{existing.name}-{uuid.uuid4().hex[:10]}"
     stage.mkdir(parents=False, exist_ok=False)
@@ -896,12 +965,21 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
         found = shutil.which("npm")
         if not found: die(ui, "npm could not be found for the selected Node.js runtime.")
         npm = Path(found)
-    env = os.environ.copy(); env["PATH"] = f"{node.parent}:{cargo.parent}:{env.get('PATH','')}"
+    env = os.environ.copy()
+    path_parts = [str(node.parent)]
+    if cargo is not None:
+        path_parts.append(str(cargo.parent))
+    path_parts.append(env.get("PATH", ""))
+    env["PATH"] = ":".join(path_parts)
 
-    print("\n==> Installing v0.12.9 root dependencies in the staging tree")
-    run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage, env=env)
-    print("\n==> Installing v0.12.9 server dependencies in the staging tree")
-    run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage / "server", env=env)
+    if PLATFORM_MODE == "steamos-portable":
+        print("\n==> Installing verified SteamOS portable dependencies in the staging tree")
+        install_portable_payload(ui, stage)
+    else:
+        print("\n==> Installing v0.12.9 root dependencies in the staging tree")
+        run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage, env=env)
+        print("\n==> Installing v0.12.9 server dependencies in the staging tree")
+        run([str(npm), "ci", "--no-audit", "--no-fund"], cwd=stage / "server", env=env)
     run([str(node), "-e", "const DB=require('better-sqlite3');const db=new DB(':memory:');db.exec('CREATE TABLE t(x INTEGER)');db.close();require('protobufjs');console.log('EveJS native Node dependency smoke test PASS');"], cwd=stage / "server", env=env)
 
     if (stage / "_local/newDatabase").exists():
@@ -913,7 +991,12 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
 
     print("\n==> Building the v0.12.9 Market daemon without reseeding")
     market_dir = stage / "externalservices/market-server"
-    run([str(cargo), "build", "--release"], cwd=market_dir, env=env)
+    if PLATFORM_MODE != "steamos-portable":
+        if cargo is None:
+            die(ui, "Cargo is required for the conventional Linux update path.")
+        run([str(cargo), "build", "--release"], cwd=market_dir, env=env)
+    else:
+        print("    ✓ Using the verified bundled static Market daemon")
 
     shutil.copy2(LAUNCHER_SOURCE, stage / "evejs-linux-launcher.sh")
     shutil.copy2(CLEANUP_SOURCE, stage / "evejs-stale-process-cleanup.sh")
@@ -925,7 +1008,16 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
 
     (stage / "evejs-linux-launcher.sh").chmod(0o755); (stage / "evejs-stale-process-cleanup.sh").chmod(0o755); (tools_dir / "evejs-linux-lu-compat.py").chmod(0o755); (tools_dir / "evejs-linux-client-preflight.py").chmod(0o755)
 
-    updated_conf=dict(conf); updated_conf.update({"EVEJS_REPO":str(existing),"EVEJS_VERSION":TARGET_VERSION,"SUPPORTED_BUILD":str(TARGET_BUILD),"NODE_BIN":str(node),"NODE_BIN_DIR":str(node.parent),"CARGO_BIN":str(cargo)})
+    updated_conf=dict(conf); updated_conf.update({
+        "EVEJS_REPO": str(existing),
+        "EVEJS_VERSION": TARGET_VERSION,
+        "SUPPORTED_BUILD": str(TARGET_BUILD),
+        "NODE_BIN": str(node),
+        "NODE_BIN_DIR": str(node.parent),
+        "CARGO_BIN": str(cargo) if cargo is not None else "",
+        "EVEJS_PLATFORM_MODE": PLATFORM_MODE,
+        "EVEJS_CDN_PORT": str(CDN_PORT),
+    })
     write_linux_conf(stage / ".evejs-linux.conf", updated_conf)
     (stage / "UPDATE-LINUX-SUMMARY.txt").write_text(
         "EveJS Linux transactional update\n================================\n"
@@ -935,7 +1027,9 @@ def prepare_stage(ui: UI, existing: Path, source_root: Path, conf: dict,
         "First v0.12.9 launcher start: constrained-CA migration and exact-hash offline client patch gate\n"
         "Generated static game data rebuilt during update: NO\n"
         "First v0.12.9 server start reconciles missing/changed engine-owned static tables and shipped content packs.\n"
-        "Configuration: three-way merged\n" + "Living Universe migration: NOT AVAILABLE in Stock-only edition\n"
+        "Configuration: three-way merged\n"
+        "Living Universe migration: NOT AVAILABLE in Stock-only edition\n"
+        f"Platform mode: {PLATFORM_MODE}\nLocal HTTPS/CDN port: {CDN_PORT}\n"
     )
     validate_stage_runtime(ui, stage, node, cargo, game_hash, market_hash)
     return stage, merge_report
@@ -956,7 +1050,7 @@ def do_update(ui: UI, args):
             "This update path has not been audited.\n\n"
             f"Existing installation: EveJS v{old_version or 'unknown'}\n"
             f"Target installer:      EveJS v{TARGET_VERSION}\n\n"
-            "v1.14 currently supports only:\n"
+            "v1.15 currently supports only:\n"
             "  v0.12.8 → v0.12.9\n\n"
             "The updater will not guess across unaudited versions.",
         )
@@ -1002,16 +1096,19 @@ def do_update(ui: UI, args):
             die(ui, f"Existing Market database is missing:\n{market_db}\n\nThe updater will not create/reseed one during an update.")
 
         node = current_tool_path(args, conf, "NODE_BIN", "node")
-        cargo = current_tool_path(args, conf, "CARGO_BIN", "cargo")
+        cargo = None if PLATFORM_MODE == "steamos-portable" else current_tool_path(args, conf, "CARGO_BIN", "cargo")
         if not node.is_file():
             die(ui, f"Node.js runtime not found:\n{node}\n\nRun the update through install-evejs-linux.sh so prerequisites can be prepared.")
-        if not cargo.is_file():
+        if cargo is not None and not cargo.is_file():
             die(ui, f"Cargo runtime not found:\n{cargo}\n\nRun the update through install-evejs-linux.sh so prerequisites can be prepared.")
 
         node_version = validate_tool_identity(ui, node, "Node.js")
-        cargo_version = validate_tool_identity(ui, cargo, "Cargo")
         print(f"    ✓ Updater Node executable: {node} ({node_version.splitlines()[0]})")
-        print(f"    ✓ Updater Cargo executable: {cargo} ({cargo_version.splitlines()[0]})")
+        if cargo is not None:
+            cargo_version = validate_tool_identity(ui, cargo, "Cargo")
+            print(f"    ✓ Updater Cargo executable: {cargo} ({cargo_version.splitlines()[0]})")
+        else:
+            print("    ✓ SteamOS portable updater: no Cargo/compiler required")
 
         stage = None
         stage_pattern = f".evejs-update-stage-{existing.name}-*"
@@ -1097,12 +1194,14 @@ def do_update(ui: UI, args):
                 validate_stage_runtime(ui, existing, node, cargo, game_hash, market_hash)
                 compat_helper = existing / ".evejs-linux-tools" / "evejs-linux-lu-compat.py"
                 candidate_market = existing / "externalservices" / "market-server" / "target" / "release" / "market-server"
-                run([
+                compat_args = [
                     sys.executable, str(compat_helper), "prepare",
                     "--repo", str(existing),
-                    "--cargo", str(cargo),
                     "--candidate-binary", str(candidate_market),
-                ])
+                ]
+                if cargo is not None:
+                    compat_args.extend(["--cargo", str(cargo)])
+                run(compat_args)
             except (Exception, SystemExit) as exc:
                 failed_target = record_dir / "failed-target"
                 rollback_error = None

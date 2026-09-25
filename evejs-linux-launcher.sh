@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.14 — v0.12.9 Stock-Only Edition
+# EveJS Portable Linux Launcher v1.15 — v0.12.9 SteamOS Portable Stock-Only Edition
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
 # Startup order:
 #   1. Migrate/verify constrained local TLS and exact-hash offline client patches.
-#   2. Make localhost port 443 available to the normal user process if needed.
+#   2. Select the configured localhost HTTPS/CDN port (8443 on SteamOS).
 #   3. Reconcile the selected copied EVE client's EveJS CA bundles.
 #   4. Start standalone market server; wait for HTTP 40110 + RPC 40111.
 #   5. Start game server LAST among servers; wait for process-owned:
-#        HTTPS/CDN 443, XMPP 5222, game 26000, image 26001,
+#        HTTPS/CDN, XMPP 5222, game 26000, image 26001,
 #        gateway 26002/26003, and Redshift 26400.
 #   6. Initialize the selected Steam Proton prefix if needed.
 #   7. Launch EVE only after all backend/TLS checks pass.
@@ -34,6 +34,15 @@ CONFIG="$SCRIPT_DIR/.evejs-linux.conf"
 [[ -f "$CONFIG" ]] || { echo "[ERROR] Missing launcher config: $CONFIG" >&2; exit 1; }
 # shellcheck disable=SC1090
 . "$CONFIG"
+
+PLATFORM_MODE="${EVEJS_PLATFORM_MODE:-standard-linux}"
+CDN_PORT="${EVEJS_CDN_PORT:-443}"
+if [[ -r /etc/os-release ]] && grep -Eiq '^(ID|ID_LIKE|NAME)=.*steamos' /etc/os-release; then
+    PLATFORM_MODE="steamos-portable"
+    CDN_PORT="8443"
+fi
+[[ "$CDN_PORT" == "443" || "$CDN_PORT" == "8443" ]] \
+    || { echo "[ERROR] Unsupported EveJS CDN port profile: $CDN_PORT" >&2; exit 1; }
 
 export PATH="$NODE_BIN_DIR:$HOME/.cargo/bin:$PATH"
 
@@ -380,7 +389,7 @@ reconcile_required_ports() {
     # owned exclusively by those trees are allowed. Everything else must either
     # be safely identified as stale EveJS or cause startup to stop.
     local -a allowed_roots=("$@")
-    local ports=(443 5222 26000 26001 26002 26003 26400 40110 40111)
+    local ports=("$CDN_PORT" 5222 26000 26001 26002 26003 26400 40110 40111)
     local port pid repo root
     local -a stale_roots=()
     local -a unknown_pids=()
@@ -418,7 +427,7 @@ reconcile_required_ports() {
         for pid in "${unknown_pids[@]}"; do describe_pid "$pid"; done
         echo
         echo "Current relevant listeners:"
-        ss -H -ltnp 2>/dev/null | grep -E ':(443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)' || true
+        ss -H -ltnp 2>/dev/null | grep -E ":(${CDN_PORT}|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)" || true
         return 1
     fi
 
@@ -567,7 +576,7 @@ detect_mods() {
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
         echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.9"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.14 edition)"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.15 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -610,24 +619,27 @@ market_process_binary_matches() {
 
 market_rpc_probe_integrated_lu() { return 0; }
 
-ensure_loopback_443_permission() {
+ensure_loopback_cdn_permission() {
     local current
-    current="$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo 1024)"
-    if port_listening 443; then
-        echo "[ERROR] TCP port 443 is already in use." >&2
+    if port_listening "$CDN_PORT"; then
+        echo "[ERROR] TCP port $CDN_PORT is already in use." >&2
         echo "Current owner information:" >&2
-        ss -H -ltnp 2>/dev/null | grep -E ':443([[:space:]]|$)' >&2 || true
+        ss -H -ltnp 2>/dev/null | grep -E ":${CDN_PORT}([[:space:]]|$)" >&2 || true
         return 1
     fi
-    if [[ "$current" =~ ^[0-9]+$ ]] && (( current > 443 )); then
+    if (( CDN_PORT >= 1024 )); then
+        return 0
+    fi
+    current="$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo 1024)"
+    if [[ "$current" =~ ^[0-9]+$ ]] && (( current > CDN_PORT )); then
         echo
-        echo "EveJS needs its localhost HTTPS/CDN responder on 127.0.0.1:443."
+        echo "EveJS needs its localhost HTTPS/CDN responder on 127.0.0.1:$CDN_PORT."
         echo "Linux currently protects ports below $current."
         echo "You may be asked for your sudo password."
-        sudo sysctl -w net.ipv4.ip_unprivileged_port_start=443 >/dev/null || return 1
+        sudo sysctl -w "net.ipv4.ip_unprivileged_port_start=$CDN_PORT" >/dev/null || return 1
         current="$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo 1024)"
     fi
-    [[ "$current" =~ ^[0-9]+$ ]] && (( current <= 443 ))
+    [[ "$current" =~ ^[0-9]+$ ]] && (( current <= CDN_PORT ))
 }
 
 repair_client_ca_bundles() {
@@ -794,7 +806,11 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # ── Preflight ─────────────────────────────────────────────────────────────────
-for cmd in "$NODE_BIN" python3 openssl curl ss sysctl sudo timeout pgrep; do
+required_commands=("$NODE_BIN" python3 openssl curl ss timeout pgrep)
+if (( CDN_PORT < 1024 )); then
+    required_commands+=(sysctl sudo)
+fi
+for cmd in "${required_commands[@]}"; do
     [[ -x "$cmd" ]] || command -v "$cmd" >/dev/null 2>&1 || { echo "[ERROR] Missing command: $cmd" >&2; exit 1; }
 done
 
@@ -822,7 +838,7 @@ grep -Eiq '^[[:space:]]*(server|serverip)[[:space:]]*=[[:space:]]*127\.0\.0\.1[[
 }
 
 python3 "$CLIENT_PREFLIGHT_HELPER" apply \
-    --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD" || exit 1
+    --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD" --cdn-port "$CDN_PORT" || exit 1
 
 detect_terminal
 repair_client_ca_bundles || exit 1
@@ -930,13 +946,14 @@ write_server_runner() {
         printf 'EVEJS_REPO=%q\n' "$EVEJS_REPO"
         printf 'SERVER_LOG=%q\n' "$SERVER_LOG"
         printf 'MOD_INFO=%q\n' "$mod_info"
+        printf 'CDN_PORT=%q\n' "$CDN_PORT"
         printf 'NODE_ARGS=('
         printf ' %q' "${node_args[@]}"
         echo ' )'
         cat <<'EOF'
 cd "$EVEJS_REPO/server" || exit 1
 export EVEJS_PROXY_LOCAL_INTERCEPT=1
-export EVEJS_PROXY_LOOPBACK_CDN_LISTEN_PORT=443
+export EVEJS_PROXY_LOOPBACK_CDN_LISTEN_PORT="$CDN_PORT"
 export EVEJS_XMPP_SERVER_BIND_HOST=127.0.0.1
 export EVEJS_XMPP_CONNECT_HOST=127.0.0.1
 export FORCE_COLOR=1
@@ -954,7 +971,7 @@ echo '════════════════════════�
 echo '  EveJS Game Server'
 echo "  $MOD_INFO"
 echo '  market RPC:      127.0.0.1:40111'
-echo '  HTTPS/CDN:       127.0.0.1:443'
+echo "  HTTPS/CDN:       127.0.0.1:$CDN_PORT"
 echo '  XMPP/TLS:        127.0.0.1:5222'
 echo '  XMPP advertised: 127.0.0.1'
 echo '══════════════════════════════════════════'
@@ -999,7 +1016,7 @@ launch_game_server() {
     for _ in $(seq 1 100); do
         cdn=0; gateway=0; game=0; image=0; redshift=0; xmpp=0; gtls=0
 
-        port_exclusively_owned_by_tree 443 "$SERVER_PID" && cdn=1
+        port_exclusively_owned_by_tree "$CDN_PORT" "$SERVER_PID" && cdn=1
 
         if port_exclusively_owned_by_tree 26002 "$SERVER_PID" \
             && curl -sf --max-time 2 "$PROXY_URL/health" >/dev/null 2>&1; then
@@ -1030,7 +1047,7 @@ launch_game_server() {
     done
 
     if (( ready )); then
-        echo "  ✓ HTTPS/CDN:       127.0.0.1:443   (owned by current game tree)"
+        echo "  ✓ HTTPS/CDN:       127.0.0.1:$CDN_PORT   (owned by current game tree)"
         echo "  ✓ Game listener:   127.0.0.1:$GAME_PORT (owned by current game tree)"
         echo "  ✓ ImageEdge:       127.0.0.1:$IMAGE_EDGE_PORT (owned by current game tree)"
         echo "  ✓ Gateway health:  $PROXY_URL/health (port owned by current game tree)"
@@ -1042,7 +1059,7 @@ launch_game_server() {
 
     echo "  ✗ Game server did not reach full readiness with correct process ownership."
     echo "    Expected game tree root PID: $SERVER_PID"
-    (( cdn )) || port_owner_report 443 "$SERVER_PID" "HTTPS/CDN"
+    (( cdn )) || port_owner_report "$CDN_PORT" "$SERVER_PID" "HTTPS/CDN"
     (( game )) || port_owner_report "$GAME_PORT" "$SERVER_PID" "Game"
     (( image )) || port_owner_report "$IMAGE_EDGE_PORT" "$SERVER_PID" "ImageEdge"
     (( gateway )) || port_owner_report 26002 "$SERVER_PID" "Gateway HTTP"
@@ -1125,8 +1142,8 @@ launch_client() {
         && port_exclusively_owned_by_tree 26002 "$SERVER_PID" \
         || { echo "Gateway is not healthy/owned by the current game tree; client blocked."; return 1; }
 
-    port_exclusively_owned_by_tree 443 "$SERVER_PID" \
-        || { echo "HTTPS/CDN port 443 is not owned by the current game tree; client blocked."; return 1; }
+    port_exclusively_owned_by_tree "$CDN_PORT" "$SERVER_PID" \
+        || { echo "HTTPS/CDN port $CDN_PORT is not owned by the current game tree; client blocked."; return 1; }
     port_exclusively_owned_by_tree "$GAME_PORT" "$SERVER_PID" \
         || { echo "Game listener is not owned by the current game tree; client blocked."; return 1; }
     port_exclusively_owned_by_tree "$IMAGE_EDGE_PORT" "$SERVER_PID" \
@@ -1160,7 +1177,7 @@ launch_client() {
 start_all() {
     refresh_runtime_compatibility || return 1
     reconcile_required_ports || return 1
-    ensure_loopback_443_permission || return 1
+    ensure_loopback_cdn_permission || return 1
     repair_client_ca_bundles || return 1
     launch_market_server || return 1
     launch_game_server || return 1
@@ -1171,7 +1188,7 @@ restart_game_and_client() {
     stop_pid "$CLIENT_PID" "EVE client" 10; CLIENT_PID=""
     stop_pid "$SERVER_PID" "game server" 30; SERVER_PID=""
     sleep 1
-    reconcile_required_ports "$MARKET_PID" && ensure_loopback_443_permission && launch_game_server && launch_client
+    reconcile_required_ports "$MARKET_PID" && ensure_loopback_cdn_permission && launch_game_server && launch_client
 }
 
 restart_all() {
@@ -1184,13 +1201,15 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.9 Linux Launcher — v1.14 Stock Only           ║"
+echo "║  EveJS v0.12.9 Linux Launcher — v1.15 Stock Only           ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"
 echo " EVE tq:  $TQ_PATH"
 echo " Proton:  $(basename "$PROTON_DIR")"
 echo " Market:  ${MARKET_LABEL:-${MARKET_PROFILE:-configured standalone market}}"
+echo " Platform:$PLATFORM_MODE"
+echo " CDN:     127.0.0.1:$CDN_PORT"
 echo " Terminal:${TERMINAL_KIND}"
 echo " Mods:    $MODS_DIR"
 echo
@@ -1273,7 +1292,7 @@ while true; do
                 stop_pid "$CLIENT_PID" "EVE client" 10; CLIENT_PID=""
                 stop_pid "$SERVER_PID" "game server" 30; SERVER_PID=""
             else
-                reconcile_required_ports "$MARKET_PID" && ensure_loopback_443_permission && launch_game_server
+                reconcile_required_ports "$MARKET_PID" && ensure_loopback_cdn_permission && launch_game_server
             fi
             ;;
         3)
@@ -1300,7 +1319,7 @@ while true; do
             echo
             port_owner_report 40110 "$MARKET_PID" "Market HTTP"
             port_owner_report 40111 "$MARKET_PID" "Market RPC"
-            port_owner_report 443 "$SERVER_PID" "HTTPS/CDN"
+            port_owner_report "$CDN_PORT" "$SERVER_PID" "HTTPS/CDN"
             port_owner_report 5222 "$SERVER_PID" "XMPP"
             port_owner_report 26000 "$SERVER_PID" "Game"
             port_owner_report 26001 "$SERVER_PID" "ImageEdge"
@@ -1318,6 +1337,8 @@ while true; do
             echo "Proton:        $PROTON_DIR"
             echo "Proton prefix: $PROTON_PREFIX"
             echo "Market:        ${MARKET_LABEL:-${MARKET_PROFILE:-configured standalone market}}"
+            echo "Platform:      $PLATFORM_MODE"
+            echo "HTTPS/CDN:     127.0.0.1:$CDN_PORT"
             echo "Runtime mode:  ${EVEJS_RUNTIME_LABEL:-unverified}"
             echo "Market binary: ${MARKET_BIN:-unverified}"
             echo "Market SHA256: ${EVEJS_MARKET_RUNTIME_SHA256:-unverified}"

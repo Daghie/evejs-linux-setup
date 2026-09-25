@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the complete EveJS release-tree comparison shipped with Setup v1.14."""
+"""Generate the complete EveJS release-tree comparison shipped with Setup v1.15."""
 
 from __future__ import annotations
 

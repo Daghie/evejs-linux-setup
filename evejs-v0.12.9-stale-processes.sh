@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Recovery helper for EveJS v0.12.9 Universal Linux Setup v1.14.
+# Recovery helper for EveJS v0.12.9 Universal Linux Setup v1.15.
 # It never kills an unidentified process.
 
 set -Eeuo pipefail
-ports=(443 5222 26000 26001 26002 26003 26400 40110 40111)
+ports=(443 8443 5222 26000 26001 26002 26003 26400 40110 40111)
 
 port_pids() {
     local port="$1"
@@ -112,7 +112,7 @@ evejs=()
 unknown=()
 
 echo "Relevant listeners before cleanup:"
-ss -H -ltnp 2>/dev/null | grep -E ':(443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)' || echo "  none"
+ss -H -ltnp 2>/dev/null | grep -E ':(443|8443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)' || echo "  none"
 echo
 
 for port in "${ports[@]}"; do
@@ -146,7 +146,7 @@ done
 if ((${#unknown[@]} > 0)); then
     echo "[STOP] At least one required port belongs to a process that is not safely identifiable as EveJS."
     echo "Nothing was killed. Close that application manually, or inspect it with:"
-    echo "  sudo ss -ltnp | grep -E ':(443|5222|26000|26001|26002|26003|26400|40110|40111)\\b'"
+    echo "  sudo ss -ltnp | grep -E ':(443|8443|5222|26000|26001|26002|26003|26400|40110|40111)\\b'"
     exit 1
 fi
 
@@ -166,4 +166,4 @@ done
 sleep 1
 echo
 echo "Relevant listeners after cleanup:"
-ss -H -ltnp 2>/dev/null | grep -E ':(443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)' || echo "  none"
+ss -H -ltnp 2>/dev/null | grep -E ':(443|8443|5222|26000|26001|26002|26003|26400|40110|40111)([[:space:]]|$)' || echo "  none"

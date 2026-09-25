@@ -17,7 +17,7 @@ import tempfile
 TARGET_VERSION = "0.12.9"
 TARGET_BUILD = 3396210
 XPATCH_VERSION = "0.3.2"
-SETUP_VERSION = "v1.14"
+SETUP_VERSION = "v1.15"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
@@ -310,7 +310,7 @@ def copy_build_inputs(repo: Path, destination: Path, records: list[dict]):
         shutil.copy2(src, dst, follow_symlinks=False)
 
 
-def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> dict:
+def prepare(repo: Path, cargo_arg: str | None, candidate_binary: str | None = None) -> dict:
     before = classify(repo)
     repo = Path(before["repo"])
     cache_dir = cache_dir_for(before)
@@ -323,8 +323,10 @@ def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> 
         except CompatError:
             pass
 
-    cargo = preserve_executable_path(cargo_arg)
-    cargo_version = validate_cargo(cargo)
+    cargo = preserve_executable_path(cargo_arg) if cargo_arg else None
+    cargo_version = validate_cargo(cargo) if cargo is not None else ""
+    if candidate_binary is None and cargo is None:
+        raise CompatError("Cargo is required when no verified candidate Market binary is supplied.")
     records = build_input_records(repo / "externalservices/market-server")
 
     runtime_root = runtime_root_for(repo)
@@ -345,6 +347,7 @@ def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> 
         else:
             env = os.environ.copy()
             env["CARGO_TARGET_DIR"] = str(stage_target)
+            assert cargo is not None
             env["PATH"] = f"{cargo.parent}:{env.get('PATH','')}"
             print(f"[LU-COMPAT] Building {before['label']} Market daemon from an external read-only source copy...", file=sys.stderr)
             cp = subprocess.run([str(cargo), "build", "--release", "--locked"], cwd=stage_source, env=env)
@@ -391,9 +394,13 @@ def prepare(repo: Path, cargo_arg: str, candidate_binary: str | None = None) -> 
             "sourceDigest": before["sourceDigest"],
             "binary": str(cache_dir / "market-server"),
             "binarySha256": binary_hash,
-            "cargo": str(cargo),
+            "cargo": str(cargo) if cargo is not None else "",
             "cargoVersion": cargo_version,
-            "sourcePolicy": "external-copy-build; installed source files not written",
+            "sourcePolicy": (
+                "verified-portable-candidate; installed source files not written"
+                if candidate_binary else
+                "external-copy-build; installed source files not written"
+            ),
         }
         (final_stage / "build.json").write_text(json.dumps(record, indent=2) + "\n")
         if cache_dir.exists():
@@ -456,7 +463,7 @@ def main():
 
     p = sub.add_parser("prepare")
     p.add_argument("--repo", required=True)
-    p.add_argument("--cargo", required=True)
+    p.add_argument("--cargo")
     p.add_argument("--candidate-binary")
     p.add_argument("--json", action="store_true")
     p.add_argument("--shell", action="store_true")

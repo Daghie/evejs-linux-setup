@@ -1,0 +1,60 @@
+{
+  "schema": "evejs-steamos-portable-payload/1",
+  "evejsVersion": "0.12.9",
+  "eveBuild": 3396210,
+  "platform": "linux-x86_64",
+  "installer": "v1.15 SteamOS Portable Stock-Only",
+  "sourceArchiveSha256": "4a1204c733847f91b6d1a32128896a0e42a6c3c8c4413173b4855ad3af14e07c",
+  "payload": {
+    "file": "payload.tar.xz",
+    "size": 15538584,
+    "sha256": "dfba0d1687ba90c5b4af616e7d565c0906adef3a4e8a5c3bc7272cdb308de823"
+  },
+  "buildEnvironment": {
+    "rustImage": "docker.io/library/rust:1.97-alpine",
+    "rustHost": "x86_64-unknown-linux-musl",
+    "rustc": "1.97.1",
+    "node": "24.18.0",
+    "npm": "11.16.0"
+  },
+  "lockfiles": {
+    "package-lock.json": "1f2c0b2dbd66627585c1d9fd968408df6dc6c32206c10a0f9e261d75cb0f91b3",
+    "server/package-lock.json": "aa8624d45b7f987b2e2d026864473bd626f94b46c46fdb9aacf6093636d89eec",
+    "externalservices/market-server/Cargo.lock": "5e377597076c16d313cf5483d49d7625d7190e5793a99efc9e8f762176b68507",
+    "tools/market-seed/Cargo.lock": "46e269048901e915abd8e485a909b8fa7356a1f8677e0a98cc01d3d0c8a76289",
+    "tools/market-seederv2/Cargo.lock": "d3684e9af7503ed8908d16c337480f86fae2e04bd386a85aca8f08221425aba3",
+    "tools/market-seederv3/Cargo.lock": "a72350d73f15ab846fa7e32d6002accbb599e9278e376269e14e208568026d14"
+  },
+  "artifacts": [
+    {
+      "path": "externalservices/market-server/target/release/market-server",
+      "size": 8531528,
+      "sha256": "96bfd40219990fe9c6ad2b5a97067b54456f95840ac86f540d587c02d638faa1",
+      "linkage": "static-pie-musl"
+    },
+    {
+      "path": "tools/market-seed/target/release/market-seed",
+      "size": 4939584,
+      "sha256": "c83d9ca418019a22f33aae7bb7bcdc8d7b536661e5628fd3c742ba884471dfba",
+      "linkage": "static-pie-musl"
+    },
+    {
+      "path": "tools/market-seederv2/target/release/market-seederv2",
+      "size": 8901152,
+      "sha256": "72846ea8bf22c254f363cb8997d806b924cf8bac046aadd6b63bfd8160f87a97",
+      "linkage": "static-pie-musl"
+    },
+    {
+      "path": "tools/market-seederv3/target/release/market-seederv3",
+      "size": 10283048,
+      "sha256": "508d355e2c1b5e2529e0fe4a96525ee9eb12ffb999006100f7af0e7c7ee50949",
+      "linkage": "static-pie-musl"
+    },
+    {
+      "path": "server/node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+      "size": 2122448,
+      "sha256": "45cb92a176fb758533db6d9a343acdfc73e4de27ac4c20a0cb2a6fb5be3e84f2",
+      "linkage": "official-linux-x64-prebuild-glibc-2.28"
+    }
+  ]
+}

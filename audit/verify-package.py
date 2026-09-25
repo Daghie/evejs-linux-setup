@@ -7,12 +7,14 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import py_compile
 import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import zipfile
 
@@ -90,6 +92,41 @@ def assert_package_zip(package_zip: Path, package_root: Path):
         assert set(files) == expected_files
 
 
+def assert_portable_payload(package_root: Path, source_root: Path, temporary: Path):
+    portable = package_root / "portable/steamos-x86_64"
+    manifest = json.loads((portable / "manifest.json").read_text())
+    payload = portable / manifest["payload"]["file"]
+    assert payload.stat().st_size == manifest["payload"]["size"]
+    assert sha256(payload) == manifest["payload"]["sha256"]
+    for relative, digest in manifest["lockfiles"].items():
+        assert sha256(source_root / relative) == digest, relative
+
+    extract = temporary / "portable-payload"
+    extract.mkdir()
+    allowed = {"node_modules", "server", "externalservices", "tools"}
+    with tarfile.open(payload, "r:xz") as archive:
+        for member in archive.getmembers():
+            name = member.name.removeprefix("./")
+            parts = Path(name).parts
+            if name in ("", ".") and member.isdir():
+                continue
+            assert name and not Path(name).is_absolute() and ".." not in parts
+            assert parts and parts[0] in allowed
+        archive.extractall(extract)
+
+    for artifact in manifest["artifacts"]:
+        path = extract / artifact["path"]
+        assert path.is_file() and path.stat().st_size == artifact["size"], artifact["path"]
+        assert sha256(path) == artifact["sha256"], artifact["path"]
+
+    executables = [extract / item["path"] for item in manifest["artifacts"] if item["linkage"] == "static-pie-musl"]
+    for executable in executables:
+        assert os.access(executable, os.X_OK), executable
+        output = subprocess.run(["file", str(executable)], check=True, text=True, capture_output=True).stdout
+        assert "static-pie linked" in output, output
+        subprocess.run([str(executable), "--help"], check=True, stdout=subprocess.DEVNULL)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-zip", type=Path, required=True)
@@ -153,6 +190,11 @@ def main():
             "validate-recipes", "--repo", str(new_root), "--build", str(TARGET_BUILD),
         ], check=True)
         subprocess.run([
+            str(package_root / "evejs-linux-client-preflight.py"),
+            "validate-recipes", "--repo", str(new_root), "--build", str(TARGET_BUILD),
+            "--cdn-port", "8443",
+        ], check=True)
+        subprocess.run([
             str(package_root / "evejs-linux-client-preflight.py"), "self-test",
         ], check=True)
 
@@ -163,7 +205,16 @@ def main():
             for required_name in ("gateway-dev-cert.pem", "gateway-dns-cert.pem", "xmpp-dev-cert.pem"):
                 assert required_name in script, (script_name, required_name)
 
+        installer_text = (package_root / "install-evejs-linux.sh").read_text()
+        launcher_text = (package_root / "evejs-linux-launcher.sh").read_text()
+        assert "SteamOS package repair is disabled in v1.15 portable mode" in installer_text
+        assert "no compiler, Cargo, sudo, Pacman, or read-only change is required" in installer_text
+        assert 'CDN_PORT="8443"' in launcher_text
+        assert 'required_commands+=(sysctl sudo)' in launcher_text
+        assert 'if (( CDN_PORT < 1024 )); then' in launcher_text
+
         assert not (package_root / "integrated-lu").exists()
+        assert_portable_payload(package_root, new_root, temporary)
 
         compile_root = temporary / "pyc"
         compile_root.mkdir()
@@ -196,6 +247,7 @@ def main():
         "targetBuild": TARGET_BUILD,
         "marketSourceDigest": MARKET_DIGEST,
         "diffCounts": DIFF_COUNTS,
+        "steamOSPortablePayloadChecked": True,
         "packageZipChecked": bool(args.package_zip),
     }, indent=2))
 

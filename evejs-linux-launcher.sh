@@ -14,6 +14,8 @@
 #        gateway 26002/26003, and Redshift 26400.
 #   6. Initialize the selected Steam Proton prefix if needed.
 #   7. Launch EVE only after all backend/TLS checks pass.
+#   8. Menu option [N] launches any number of additional EVE clients against
+#      the same running backend, each with its own PID file and log.
 #
 # Audited runtime policy:
 #   * Stock EveJS v0.12.9 is supported.
@@ -799,6 +801,8 @@ stop_pid() {
 cleanup() {
     echo
     echo "[eve.js] Stopping this launcher session..."
+    # Defined further down; an early preflight exit runs this trap before that.
+    declare -F stop_extra_clients >/dev/null && stop_extra_clients
     stop_pid "$CLIENT_PID" "EVE client" 10
     stop_pid "$SERVER_PID" "game server" 30
     stop_pid "$MARKET_PID" "market server" 10
@@ -837,8 +841,20 @@ grep -Eiq '^[[:space:]]*(server|serverip)[[:space:]]*=[[:space:]]*127\.0\.0\.1[[
     echo "[ERROR] start.ini no longer targets 127.0.0.1." >&2; exit 1;
 }
 
-python3 "$CLIENT_PREFLIGHT_HELPER" apply \
-    --repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD" --cdn-port "$CDN_PORT" || exit 1
+# A folder set up by v1.14 keeps its v1.14 helper, which has no --cdn-port option
+# and always uses the standard port-443 patch. Use it as-is on port 443.
+client_preflight_args=(--repo "$EVEJS_REPO" --tq "$TQ_PATH" --build "$SUPPORTED_BUILD")
+client_preflight_usage="$(python3 "$CLIENT_PREFLIGHT_HELPER" -h 2>/dev/null || true)"
+if [[ "$client_preflight_usage" == *--cdn-port* ]]; then
+    client_preflight_args+=(--cdn-port "$CDN_PORT")
+elif [[ "$CDN_PORT" != "443" ]]; then
+    echo "[ERROR] This folder's client preflight helper predates v1.15 and cannot use port $CDN_PORT. Run Installer → Prepare/Verify Runtime Compatibility." >&2
+    exit 1
+else
+    echo "  ! Older client preflight helper found (no --cdn-port); using its standard port-443 check."
+    echo "    Installer → Prepare/Verify Runtime Compatibility refreshes the helper files."
+fi
+python3 "$CLIENT_PREFLIGHT_HELPER" apply "${client_preflight_args[@]}" || exit 1
 
 detect_terminal
 repair_client_ca_bundles || exit 1
@@ -1071,7 +1087,10 @@ launch_game_server() {
 }
 
 write_client_runner() {
-    local runner="$RUNNER_DIR/run-client.sh" pidfile="$PID_DIR/client.pid"
+    # Optional arguments let additional clients use their own runner, PID file
+    # and log while sharing the same verified backend, prefix and client copy.
+    local runner="${1:-$RUNNER_DIR/run-client.sh}" pidfile="${2:-$PID_DIR/client.pid}"
+    local client_log="${3:-$CLIENT_LOG}" client_label="${4:-primary}"
     local ca_win
     ca_win="$(windows_z_path "$CA_CERT")"
 
@@ -1113,10 +1132,11 @@ export LD_SEND_EVENTS=false
 export EO_REMOTEFILECACHEFOLDER=$(printf '%q' "$RESFILES")
 
 cd $(printf '%q' "$TQ_PATH") || exit 1
-exec > >(tee -a $(printf '%q' "$CLIENT_LOG")) 2>&1
+exec > >(tee -a $(printf '%q' "$client_log")) 2>&1
 
 echo '══════════════════════════════════════════'
 echo '  EVE client via Steam Proton'
+echo '  Client:  $client_label'
 echo '  EveJS:   $EVEJS_VERSION'
 echo '  Build:   $SUPPORTED_BUILD'
 echo '  Proton:  $(basename "$PROTON_DIR")'
@@ -1131,8 +1151,7 @@ EOF
     printf '%s\n' "$runner"
 }
 
-launch_client() {
-    if is_pid_running "$CLIENT_PID"; then return 0; fi
+client_backend_ready() {
     curl -sf --max-time 2 "$MARKET_HTTP/health" >/dev/null 2>&1 \
         && port_exclusively_owned_by_tree 40110 "$MARKET_PID" \
         && port_exclusively_owned_by_tree "$MARKET_RPC_PORT" "$MARKET_PID" \
@@ -1159,6 +1178,11 @@ launch_client() {
     verify_tls_endpoint "$XMPP_BIND_HOST" "$XMPP_PORT" localhost XMPP || return 1
     verify_tls_endpoint "$GATEWAY_TLS_HOST" "$GATEWAY_TLS_PORT" "$GATEWAY_TLS_SNI" gateway || return 1
     ensure_proton_prefix || return 1
+}
+
+launch_client() {
+    if is_pid_running "$CLIENT_PID"; then return 0; fi
+    client_backend_ready || return 1
 
     rotate_one_log "$CLIENT_LOG" client
     rm -f "$PID_DIR/client.pid"
@@ -1174,6 +1198,67 @@ launch_client() {
     echo "  ✓ EVE client started through $(basename "$PROTON_DIR")"
 }
 
+# ── Additional clients ────────────────────────────────────────────────────────
+# Each additional client gets its own slot number (2, 3, ...), runner, PID file
+# and log. There is no upper limit; the lowest free slot is reused.
+extra_client_pidfiles() {
+    local f
+    shopt -s nullglob
+    for f in "$PID_DIR"/client-*.pid; do printf '%s\n' "$f"; done
+    shopt -u nullglob
+}
+
+extra_client_count() {
+    local f count=0
+    while read -r f; do
+        [[ -n "$f" ]] || continue
+        is_pid_running "$(read_pidfile "$f")" && count=$((count + 1))
+    done < <(extra_client_pidfiles)
+    printf '%s\n' "$count"
+}
+
+next_extra_client_slot() {
+    local slot=2
+    while is_pid_running "$(read_pidfile "$PID_DIR/client-$slot.pid")"; do
+        slot=$((slot + 1))
+    done
+    printf '%s\n' "$slot"
+}
+
+launch_extra_client() {
+    client_backend_ready || return 1
+
+    local slot pidfile log runner pid
+    slot="$(next_extra_client_slot)"
+    pidfile="$PID_DIR/client-$slot.pid"
+    log="$LOG_DIR/client-$slot-latest.log"
+
+    rotate_one_log "$log" "client-$slot"
+    rm -f "$pidfile"
+    runner="$(write_client_runner "$RUNNER_DIR/run-client-$slot.sh" "$pidfile" "$log" "additional #$slot")"
+    echo
+    echo "[CLIENT $slot] Backend and TLS checks passed — launching additional EVE client..."
+    open_terminal "EVE $SUPPORTED_BUILD — EveJS $EVEJS_VERSION — Client $slot" "$runner"
+    pid="$(wait_for_pidfile "$pidfile")" || {
+        echo "  ! Client $slot runner PID was not observed. Check: $log"
+        return 1
+    }
+    echo "  ✓ EVE client $slot started through $(basename "$PROTON_DIR") (PID $pid)"
+}
+
+stop_extra_clients() {
+    local f pid slot
+    local -a pidfiles=()
+    mapfile -t pidfiles < <(extra_client_pidfiles)
+    for f in "${pidfiles[@]}"; do
+        pid="$(read_pidfile "$f")"
+        slot="$(basename "$f" .pid)"
+        slot="${slot#client-}"
+        is_pid_running "$pid" && stop_pid "$pid" "EVE client $slot" 10
+        rm -f "$f"
+    done
+}
+
 start_all() {
     refresh_runtime_compatibility || return 1
     reconcile_required_ports || return 1
@@ -1185,6 +1270,7 @@ start_all() {
 }
 
 restart_game_and_client() {
+    stop_extra_clients
     stop_pid "$CLIENT_PID" "EVE client" 10; CLIENT_PID=""
     stop_pid "$SERVER_PID" "game server" 30; SERVER_PID=""
     sleep 1
@@ -1192,6 +1278,7 @@ restart_game_and_client() {
 }
 
 restart_all() {
+    stop_extra_clients
     stop_pid "$CLIENT_PID" "EVE client" 10; CLIENT_PID=""
     stop_pid "$SERVER_PID" "game server" 30; SERVER_PID=""
     stop_pid "$MARKET_PID" "market server" 10; MARKET_PID=""
@@ -1260,12 +1347,15 @@ while true; do
         echo -e "Redshift: \033[0;31m○ NOT LISTENING\033[0m"
     fi
     echo "Client: $(status_line "$CLIENT_PID")"
+    echo "Extra:  $(extra_client_count) additional client(s) running"
     echo "Mods:   $MOD_COUNT"
     echo "Mode:   ${EVEJS_RUNTIME_LABEL:-unverified}"
     echo
     echo "[1] Start/stop Market"
     echo "[2] Start/stop Game"
     echo "[3] Start/stop EVE client"
+    echo "[N] Launch another EVE client (no limit)"
+    echo "[X] Close all additional EVE clients"
     echo "[R] Restart Game + client"
     echo "[M] Reload mods (restart Game + client)"
     echo "[A] Full ordered reload (Market → Game → Client)"
@@ -1273,7 +1363,7 @@ while true; do
     echo "[D] Diagnose required ports"
     echo "[P] Show paths"
     echo "[Q] Quit"
-    read -r -p "Choose [1/2/3/R/M/A/S/D/P/Q]: " choice
+    read -r -p "Choose [1/2/3/N/X/R/M/A/S/D/P/Q]: " choice
 
     case "${choice,,}" in
         1)
@@ -1289,6 +1379,7 @@ while true; do
             ;;
         2)
             if is_pid_running "$SERVER_PID"; then
+                stop_extra_clients
                 stop_pid "$CLIENT_PID" "EVE client" 10; CLIENT_PID=""
                 stop_pid "$SERVER_PID" "game server" 30; SERVER_PID=""
             else
@@ -1300,6 +1391,14 @@ while true; do
                 stop_pid "$CLIENT_PID" "EVE client" 10; CLIENT_PID=""
             else
                 launch_client
+            fi
+            ;;
+        n) launch_extra_client ;;
+        x)
+            if (( $(extra_client_count) > 0 )); then
+                stop_extra_clients
+            else
+                echo "No additional EVE clients are running."
             fi
             ;;
         r) restart_game_and_client ;;
@@ -1352,6 +1451,7 @@ while true; do
             echo "Market log:    $MARKET_LOG"
             echo "Server log:    $SERVER_LOG"
             echo "Client log:    $CLIENT_LOG"
+            echo "Extra logs:    $LOG_DIR/client-<N>-latest.log"
             echo
             ;;
         q) exit 0 ;;

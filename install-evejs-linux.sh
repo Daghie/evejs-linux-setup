@@ -113,6 +113,13 @@ if (( ! FORCE_TEXT )) && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
     fi
 fi
 
+# Zenity 4 (libadwaita) prints an Adwaita-WARNING on every dialog when the desktop sets
+# the legacy gtk-application-prefer-dark-theme option (KDE writes it to
+# ~/.config/gtk-4.0/settings.ini). It is harmless; drop just that line, keep real errors.
+zenity() {
+    command zenity "$@" 2> >(grep -v -e 'Adwaita-WARNING' -e 'gtk-application-prefer-dark-theme' >&2)
+}
+
 ui_info() {
     # Messages may carry \n escapes; expand them once for every dialog backend.
     local title="$1" msg

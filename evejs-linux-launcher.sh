@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.15 — v0.12.9 SteamOS Portable Stock-Only Edition
+# EveJS Portable Linux Launcher v1.16 — Stock-Only Edition (standard Linux + SteamOS portable)
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -18,13 +18,14 @@
 #      the same running backend, each with its own PID file and log.
 #
 # Audited runtime policy:
-#   * Stock EveJS v0.12.9 is supported.
+#   * Stock EveJS releases installed or updated by this Setup are supported (an audited
+#     Market source, or the official release recorded by the installer/updater).
 #   * Living Universe is intentionally not supported by this Stock-only edition.
 #   * Any Living Universe/X-Patch/unknown integrated source state is fail-closed.
 #   * Older X-Patch source overlays remain rejected by the compatibility authority.
 #
 # The launcher never installs/updates/repairs EveJS or Living Universe. It may perform the
-# mandatory v0.12.9 CA/client migration, limited by exact certificate and binary identities.
+# mandatory EveJS CA/client migration, limited by exact certificate and binary identities.
 # Market binaries are verified external runtime builds matched to installed source.
 # ==============================================================================
 
@@ -577,8 +578,8 @@ detect_mods() {
 
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
-        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS v0.12.9"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.15 edition)"
+        echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS $EVEJS_VERSION"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.16 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -828,7 +829,7 @@ done
 
 ensure_local_tls_material || exit 1
 [[ -f "$CA_CERT" && -f "$XMPP_CERT" && -f "$GATEWAY_CERT" && -f "$GATEWAY_DNS_CERT" ]] || {
-    echo "[ERROR] EveJS v0.12.9 TLS certificate set is incomplete." >&2; exit 1;
+    echo "[ERROR] EveJS TLS certificate set is incomplete." >&2; exit 1;
 }
 
 CLIENT_BUILD="$(awk -F= 'tolower($1) ~ /^[[:space:]]*build[[:space:]]*$/ {gsub(/[[:space:]]/, "", $2); print $2; exit}' "$TQ_PATH/start.ini")"
@@ -1288,7 +1289,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  EveJS v0.12.9 Linux Launcher — v1.15 Stock Only           ║"
+printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.16 Stock Only"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

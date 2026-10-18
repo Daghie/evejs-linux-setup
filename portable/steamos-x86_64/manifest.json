@@ -1,60 +1,63 @@
 {
-  "schema": "evejs-steamos-portable-payload/1",
-  "evejsVersion": "0.12.9",
+  "schema": "evejs-steamos-portable-payload/2",
+  "builtFromEvejsVersion": "261018.1",
   "eveBuild": 3396210,
   "platform": "linux-x86_64",
-  "installer": "v1.15 SteamOS Portable Stock-Only",
-  "sourceArchiveSha256": "4a1204c733847f91b6d1a32128896a0e42a6c3c8c4413173b4855ad3af14e07c",
+  "sourceArchiveSha256": "2bd63d39b95308c7a383e39ec1d749ff82449b4591dcafa70e4e2414ba4aabeb",
   "payload": {
     "file": "payload.tar.xz",
-    "size": 15538584,
-    "sha256": "dfba0d1687ba90c5b4af616e7d565c0906adef3a4e8a5c3bc7272cdb308de823"
+    "size": 11544792,
+    "sha256": "aff8eb81a6313a0c29ccca4e38894bcad0f1ef23885e4d372e8a1d5f47c2c7dc"
   },
   "buildEnvironment": {
     "rustImage": "docker.io/library/rust:1.97-alpine",
-    "rustHost": "x86_64-unknown-linux-musl",
-    "rustc": "1.97.1",
-    "node": "24.18.0",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "nodeImage": "docker.io/library/node:24-bookworm-slim",
+    "node": "v24.18.0",
     "npm": "11.16.0"
   },
-  "lockfiles": {
-    "package-lock.json": "1f2c0b2dbd66627585c1d9fd968408df6dc6c32206c10a0f9e261d75cb0f91b3",
-    "server/package-lock.json": "aa8624d45b7f987b2e2d026864473bd626f94b46c46fdb9aacf6093636d89eec",
-    "externalservices/market-server/Cargo.lock": "5e377597076c16d313cf5483d49d7625d7190e5793a99efc9e8f762176b68507",
-    "tools/market-seed/Cargo.lock": "46e269048901e915abd8e485a909b8fa7356a1f8677e0a98cc01d3d0c8a76289",
-    "tools/market-seederv2/Cargo.lock": "d3684e9af7503ed8908d16c337480f86fae2e04bd386a85aca8f08221425aba3",
-    "tools/market-seederv3/Cargo.lock": "a72350d73f15ab846fa7e32d6002accbb599e9278e376269e14e208568026d14"
+  "dependencyFingerprints": {
+    "package-lock.json": "25db8bf0db7c206d4202d279926f2973e086cd340ccb6be3e8cabcebfbf8d84c",
+    "server/package-lock.json": "fd42ce60b204c9b0613dc4db3fbbe0efa7a0c1bb28cb5d68320effd876f4903c"
   },
   "artifacts": [
     {
       "path": "externalservices/market-server/target/release/market-server",
-      "size": 8531528,
-      "sha256": "96bfd40219990fe9c6ad2b5a97067b54456f95840ac86f540d587c02d638faa1",
-      "linkage": "static-pie-musl"
+      "size": 8579344,
+      "sha256": "7572f3036177504647f34915d821dc44a72f00793e541953f2b2190aa434c656",
+      "linkage": "static-pie-musl",
+      "crate": "externalservices/market-server",
+      "sourceDigest": "64FC2E44222B78EDB5FD585C5BCF67E124F060BCD2CB9495160177A17F7A2E34"
     },
     {
       "path": "tools/market-seed/target/release/market-seed",
-      "size": 4939584,
-      "sha256": "c83d9ca418019a22f33aae7bb7bcdc8d7b536661e5628fd3c742ba884471dfba",
-      "linkage": "static-pie-musl"
+      "size": 4939544,
+      "sha256": "8627a5604b51c11a80080e9f35f51e658bf5ff610b415ae9c8603e380367f9b4",
+      "linkage": "static-pie-musl",
+      "crate": "tools/market-seed",
+      "sourceDigest": "B2CA4CA850793DB3B83EE428A199459E147BF683B031AC905A773F53F8DAAD3C"
     },
     {
       "path": "tools/market-seederv2/target/release/market-seederv2",
-      "size": 8901152,
-      "sha256": "72846ea8bf22c254f363cb8997d806b924cf8bac046aadd6b63bfd8160f87a97",
-      "linkage": "static-pie-musl"
+      "size": 8897088,
+      "sha256": "d8639e1fffdd5a55a30c0bd71e62c54ad9547742f56576ce5bf0beb7eac70b44",
+      "linkage": "static-pie-musl",
+      "crate": "tools/market-seederv2",
+      "sourceDigest": "9BE31AFF42C12813B7C4878A197D933643B166EA2FBC3F35BD321B2A3AFA6958"
     },
     {
       "path": "tools/market-seederv3/target/release/market-seederv3",
-      "size": 10283048,
-      "sha256": "508d355e2c1b5e2529e0fe4a96525ee9eb12ffb999006100f7af0e7c7ee50949",
-      "linkage": "static-pie-musl"
+      "size": 10277056,
+      "sha256": "120833a17371ed5391ff72ef90311a41c6c5538120b9d37c5c3fcab9bfa3335b",
+      "linkage": "static-pie-musl",
+      "crate": "tools/market-seederv3",
+      "sourceDigest": "73FFE6837D6D3DAFA5385E6D4F828FACEE9455DA565C92CCE67EBDD60A3B5672"
     },
     {
       "path": "server/node_modules/better-sqlite3/build/Release/better_sqlite3.node",
       "size": 2122448,
       "sha256": "45cb92a176fb758533db6d9a343acdfc73e4de27ac4c20a0cb2a6fb5be3e84f2",
-      "linkage": "official-linux-x64-prebuild-glibc-2.28"
+      "linkage": "official-linux-x64-prebuild"
     }
   ]
 }

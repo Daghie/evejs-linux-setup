@@ -14,15 +14,16 @@ import subprocess
 import sys
 import tempfile
 
-TARGET_VERSION = "0.12.9"
-TARGET_BUILD = 3396210
 XPATCH_VERSION = "0.3.2"
-SETUP_VERSION = "v1.15"
+SETUP_VERSION = "v1.16"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
-STOCK_MANIFEST = COMPAT_DIR / "market-stock-v0.12.9.json"
-INTEGRATED_MARKET_MANIFEST = COMPAT_DIR / "market-integrated-lu-v0.12.9.json"
+STOCK_MANIFEST_GLOB = "market-stock-v*.json"
+# Written by the installer and tools/update-evejs-linux.sh from the official release
+# zip they installed. It is what lets an EveJS release newer than this Setup's audited
+# list run: the Market source must still be byte-for-byte what that zip shipped.
+RELEASE_RECEIPT = Path("_local/evejs-linux-setup/release.json")
 INTEGRATED_LU_DIR = SCRIPT_DIR / "integrated-lu"
 INTEGRATED_LU_MANIFEST = INTEGRATED_LU_DIR / "manifest.json"
 INTEGRATED_LU_INSTALL = Path("_local/evejs-linux-integrated-lu/install.json")
@@ -115,6 +116,28 @@ def build_input_records(market_root: Path) -> list[dict]:
     return records
 
 
+def dependency_fingerprint(path: Path) -> str:
+    """What a package-lock.json actually installs, ignoring the project's own version.
+
+    Mirrors the EveJS updater: every release bumps the root version, which must not
+    count as a dependency change."""
+    if not path.is_file():
+        return ""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return "unreadable:" + sha256_file(path).lower()
+    if isinstance(data.get("packages"), dict):
+        packages = dict(data["packages"])
+        root = dict(packages.get("", {}))
+        root.pop("version", None)
+        packages[""] = root
+        subject = packages
+    else:
+        subject = {k: data.get(k) for k in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies")}
+    return hashlib.sha256(json.dumps(subject, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
 def build_source_digest(records: list[dict]) -> str:
     payload = "\n".join(f"{r['path']} {r['sha256']}" for r in records).encode()
     return hashlib.sha256(payload).hexdigest().upper()
@@ -124,35 +147,68 @@ def manifest_by_path(records: list[dict]) -> dict[str, dict]:
     return {r["path"]: r for r in records}
 
 
-def verify_build_manifest(actual: list[dict], manifest_path: Path, label: str) -> tuple[str, dict]:
-    expected = load_json(manifest_path)
-    expected_records = expected.get("files") or []
-    a = manifest_by_path(actual)
-    e = manifest_by_path(expected_records)
-    missing = sorted(set(e) - set(a))
-    extra = sorted(set(a) - set(e))
-    changed = sorted(
-        p for p in set(a) & set(e)
-        if str(a[p].get("sha256", "")).upper() != str(e[p].get("sha256", "")).upper()
-        or int(a[p].get("size", -1)) != int(e[p].get("size", -2))
+def audited_stock_manifests() -> list[tuple[Path, dict]]:
+    return [(path, load_json(path)) for path in sorted(COMPAT_DIR.glob(STOCK_MANIFEST_GLOB))]
+
+
+def match_stock_identity(repo: Path, version: str, records: list[dict]) -> tuple[str, str]:
+    """Return (sourceDigest, how it was proven) for stock Market source, or raise."""
+    digest = build_source_digest(records)
+    for path, manifest in audited_stock_manifests():
+        if str(manifest.get("sourceDigest", "")).upper() == digest:
+            return digest, f"audited (EveJS {manifest.get('evejsVersion')})"
+    receipt_path = repo / RELEASE_RECEIPT
+    if receipt_path.is_file():
+        receipt = load_json(receipt_path)
+        if str(receipt.get("evejsVersion")) != version:
+            raise CompatError(
+                f"The recorded official release is EveJS {receipt.get('evejsVersion')}, but EveJS {version} is installed.\n"
+                "Update with tools/update-evejs-linux.sh (it records the release it installs)."
+            )
+        if str(receipt.get("marketSourceDigest", "")).upper() != digest:
+            raise CompatError(
+                "The Market server source differs from the official EveJS release recorded for this folder.\n"
+                f"Recorded: {receipt.get('marketSourceDigest')}\nActual:   {digest}\n"
+                "Launcher activation is blocked rather than guessing about source ownership."
+            )
+        return digest, f"official release zip {str(receipt.get('releaseZipSha256', ''))[:12]}"
+    raise CompatError(
+        f"EveJS {version} Market source is not in this Setup's audited list and no official release is recorded.\n"
+        "Re-apply the release with tools/update-evejs-linux.sh <EveJS release zip> (same version is allowed),\n"
+        "or update the EveJS Universal Linux Setup."
     )
-    if missing or extra or changed:
-        lines = [f"{label} Rust market source does not match its audited build-input manifest."]
-        if missing:
-            lines.append("Missing: " + ", ".join(missing))
-        if extra:
-            lines.append("Unexpected: " + ", ".join(extra))
-        if changed:
-            lines.append("Changed: " + ", ".join(changed))
-        raise CompatError("\n".join(lines))
-    digest = build_source_digest(actual)
-    expected_digest = str(expected.get("sourceDigest") or "").upper()
-    if digest != expected_digest:
-        raise CompatError(
-            f"{label} source digest mismatch after per-file verification.\n"
-            f"Expected: {expected_digest}\nActual:   {digest}"
-        )
-    return digest, expected
+
+
+def record_release(repo: Path, release_dir: Path, zip_path: Path | None) -> dict:
+    repo = repo.expanduser().absolute()
+    release_dir = release_dir.expanduser().absolute()
+    version = read_evejs_version(release_dir)
+    if read_evejs_version(repo) != version:
+        raise CompatError(f"Installed version {read_evejs_version(repo)!r} is not the release version {version!r}.")
+    release_records = build_input_records(release_dir / "externalservices/market-server")
+    installed_records = build_input_records(repo / "externalservices/market-server")
+    digest = build_source_digest(release_records)
+    if build_source_digest(installed_records) != digest:
+        raise CompatError("Installed Market source does not match the release it was installed from.")
+    receipt = {
+        "schema": "evejs-linux-setup-release/1",
+        "recordedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "setupVersion": SETUP_VERSION,
+        "evejsVersion": version,
+        "eveBuild": read_supported_build(release_dir),
+        "releaseZip": str(zip_path) if zip_path else "",
+        "releaseZipSha256": sha256_file(zip_path).lower() if zip_path else "",
+        "marketSourceDigest": digest,
+        "dependencyFingerprints": {
+            name: dependency_fingerprint(release_dir / name) for name in ("package-lock.json", "server/package-lock.json")
+        },
+    }
+    target = repo / RELEASE_RECEIPT
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + ".new")
+    temporary.write_text(json.dumps(receipt, indent=2) + "\n")
+    os.replace(temporary, target)
+    return receipt
 
 
 
@@ -171,11 +227,12 @@ def classify(repo: Path) -> dict:
     repo = repo.expanduser().absolute()
     if not repo.is_dir():
         raise CompatError(f"EveJS directory not found: {repo}")
-    if read_evejs_version(repo) != TARGET_VERSION:
-        raise CompatError(f"This Stock-only compatibility build requires EveJS {TARGET_VERSION}: {repo}")
+    version = read_evejs_version(repo)
+    if not version:
+        raise CompatError(f"config/version.json has no EveJS version: {repo}")
     build = read_supported_build(repo)
-    if build != TARGET_BUILD:
-        raise CompatError(f"Expected EVE client build contract {TARGET_BUILD}; found {build!r}.")
+    if build is None:
+        raise CompatError("tools/ClientSETUP/blue_patch_recipe.json names no supported EVE client build.")
 
     mod_lu_present = (repo / MOD_LU_PATH).is_file()
     xpatch_state_present = (repo / XPATCH_INSTALL).is_file()
@@ -183,7 +240,7 @@ def classify(repo: Path) -> dict:
     if integrated_present:
         raise CompatError(
             "Installer-managed Integrated Living Universe state is present, but this is the Stock-only Setup.\n"
-            "Nothing was changed. Use a Living-Universe edition compatible with EveJS v0.12.9 to verify/migrate that installation, "
+            "Nothing was changed. Use a Living-Universe edition compatible with this EveJS release to verify/migrate that installation, "
             "or uninstall LU with the matching authority before using Stock-only."
         )
     if xpatch_state_present:
@@ -203,16 +260,17 @@ def classify(repo: Path) -> dict:
 
     market_root = repo / "externalservices/market-server"
     actual_records = build_input_records(market_root)
-    digest, expected = verify_build_manifest(actual_records, STOCK_MANIFEST, "Stock EveJS 0.12.9")
+    digest, proof = match_stock_identity(repo, version, actual_records)
     loader_digest = tree_digest(repo / LOADER_LU_ROOT) if mod_lu_present else ""
     if mod_lu_present:
         mode = "stock-loader-lu-disabled"
-        label = "Stock EveJS 0.12.9 (older loader Living Universe preserved but disabled)"
+        label = f"Stock EveJS {version} (older loader Living Universe preserved but disabled)"
     else:
         mode = "stock"
-        label = "Stock EveJS 0.12.9"
+        label = f"Stock EveJS {version}"
     return {
-        "repo": str(repo), "mode": mode, "marketProfile": "stock-v0.12.9-market",
+        "repo": str(repo), "mode": mode, "marketProfile": f"stock-v{version}-market",
+        "evejsVersion": version, "eveBuild": build, "identityProof": proof,
         "label": label, "sourceDigest": digest, "marketInputCount": len(actual_records),
         "modLivingUniverseActive": False, "modLivingUniversePresent": mod_lu_present,
         "loaderLivingUniverseEnabled": False, "loaderLivingUniverseDigest": loader_digest,
@@ -387,7 +445,7 @@ def prepare(repo: Path, cargo_arg: str | None, candidate_binary: str | None = No
             "schema": "evejs-linux-market-runtime/1",
             "createdAtUtc": dt.datetime.now(dt.timezone.utc).isoformat(),
             "repo": before["repo"],
-            "evejsVersion": TARGET_VERSION,
+            "evejsVersion": before["evejsVersion"],
             "mode": before["mode"],
             "marketProfile": before["marketProfile"],
             "label": before["label"],
@@ -444,15 +502,17 @@ def emit(result: dict, as_shell: bool, as_json: bool):
 
 
 def self_test():
-    stock = load_json(STOCK_MANIFEST)
-    assert stock["evejsVersion"] == TARGET_VERSION
-    assert stock["kind"] == "stock"
-    assert len(stock.get("files") or []) >= 8
+    manifests = audited_stock_manifests()
+    assert manifests, "no audited stock Market manifests"
+    for path, stock in manifests:
+        assert stock["kind"] == "stock", path
+        assert len(stock.get("files") or []) >= 8, path
+        assert build_source_digest(stock["files"]) == str(stock["sourceDigest"]).upper(), path
     preserve_executable_path("~/.cargo/bin/cargo")
     print("PASS stock-only compatibility helper self-test")
 
 def main():
-    ap = argparse.ArgumentParser(description="EveJS v0.12.9 Stock-only runtime compatibility authority")
+    ap = argparse.ArgumentParser(description="EveJS Stock-only runtime compatibility authority")
     sub = ap.add_subparsers(dest="command", required=True)
 
     for name in ("detect", "verify-runtime"):
@@ -469,6 +529,12 @@ def main():
     p.add_argument("--shell", action="store_true")
 
 
+    p = sub.add_parser("record-release")
+    p.add_argument("--repo", required=True)
+    p.add_argument("--release-dir", required=True)
+    p.add_argument("--zip")
+    p.add_argument("--json", action="store_true")
+
     sub.add_parser("self-test")
     args = ap.parse_args()
 
@@ -478,6 +544,11 @@ def main():
             return
 
         repo = Path(args.repo)
+        if args.command == "record-release":
+            receipt = record_release(repo, Path(args.release_dir), Path(args.zip) if args.zip else None)
+            print(json.dumps(receipt, indent=2) if args.json else
+                  f"Recorded official EveJS {receipt['evejsVersion']} release (Market source {receipt['marketSourceDigest'][:16]}).")
+            return
         if args.command == "detect":
             result = classify(repo)
         elif args.command == "verify-runtime":

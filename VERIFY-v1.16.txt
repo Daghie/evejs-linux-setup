@@ -1,0 +1,52 @@
+EveJS Universal Linux Setup v1.16 Stock-Only — Verification
+==========================================================
+Date: 2026-10-18
+Host: Fedora-based standard Linux x86_64, Node 24.18.0, Cargo 1.97, Proton 11.0
+Inputs: see audit/INPUT-SHA256SUMS.txt (EveJS-261018.1.zip, EveJS-v0.12.9.zip)
+
+All runs used disposable folders and a disposable copy of the EVE client's tq folder
+(resource cache linked read-only). No EVE client was started. Server boots were headless,
+Market + game server only, with the HTTPS/CDN responder on 8443.
+
+PASS  Fresh install of EveJS 261018.1 (standard Linux, Market v1): exit 0; release and
+      installed-files records written; launcher runtime check and client pre-check pass.
+PASS  Boot of that install: all 9 listeners up (game, image, gateway x2, Redshift, XMPP,
+      CDN, Market HTTP/RPC), every one on 127.0.0.1, 0 errors in the server log; clean stop.
+PASS  Market reseed (v1) on that install: Market backed up, rebuilt, Market-server doctor
+      passed; restore of the reseed backup returned the previous market.sqlite byte for byte.
+PASS  Update 261018.1 -> 261018.1 (reinstall) with a booted world: settings kept, community
+      tool under tools/ left alone, local source edit moved to the backup, data snapshot
+      verified, sovereignty step reported already done, Market program reused.
+PASS  Restore of that update: program files and data back; pre-restore backup created.
+PASS  Real upgrade path: EveJS 0.12.9 installed with Setup v1.15, booted once (world
+      created), then updated to 261018.1 through the v1.16 installer's Update option:
+      exit 0; Market program rebuilt for the new Market source; launcher and tools
+      refreshed; mods/ and a community tool kept. Boot afterwards: 9 loopback listeners,
+      0 errors, sovereignty reset recorded.
+PASS  Undo of that upgrade through the installer's Restore option: EveJS 0.12.9 back,
+      world database hash identical to before the upgrade, runtime check passes on the
+      audited 0.12.9 Market source. Boot afterwards: 9 loopback listeners, 0 errors.
+PASS  Forced-SteamOS fresh install (steamos-unminimize stand-in, no Cargo on PATH):
+      portable bundle identity, binding and artifact checks pass, 0 crates compiled,
+      CDN port 8443. Boot: 9 loopback listeners, 0 errors. Reseed v1 with the bundled
+      static seeder: pass.
+PASS  SteamOS portable bundle rebuilt for 261018.1 with tools/build-steamos-payload.sh
+      (rust:1.97-alpine static-PIE musl; node:24 official better-sqlite3 prebuild); new
+      market-server for the changed Market source; seeders and Node packages unchanged.
+PASS  Earlier synthetic checks: updater preview/update/restore on a fake 0.12.9 tree
+      (restored program files identical to the original 0.12.9 release); v1.15 launcher
+      fix for v1.14 helper folders (both helpers, both ports).
+PASS  bash -n: installer, launcher, updater wrapper, payload builder, stale cleanup.
+PASS  python -m py_compile: compat helper, updater engine, client pre-check.
+PASS  Compat helper self-test (audited manifests 0.12.9 and 261018.1).
+
+Known limits / not verified
+---------------------------
+- No EVE client login or gameplay through the launcher (would open the game).
+- Not run on real SteamOS / Steam Deck hardware; SteamOS routing was forced on Fedora.
+- Market profiles v2 and v3 were not seeded (they download live Tranquility data); their
+  commands are the installer's existing ones.
+- A data restore does not delete files created after the backup (for example a new
+  config file); databases are restored together with their -wal/-shm state.
+- Update backups include installed content packs (about 330 MB per backup); use
+  "List or delete backups" / `prune` to keep the newest few.

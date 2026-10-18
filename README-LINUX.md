@@ -1,40 +1,86 @@
-# EveJS v0.12.9 Universal Linux Setup v1.15 — SteamOS Portable, Stock-Only
+# EveJS Universal Linux Setup v1.16 — Stock-Only
 
-This pre-release folder installs or transactionally updates **clean EveJS v0.12.9** on Linux. It intentionally has **no Living Universe installation option**.
+Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
+copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
 
-## Platform behavior
+## Platforms
 
-- **SteamOS x86_64:** automatically uses the bundled, checksum-verified portable runtime. It does not require `make`, `cc`, `c++`, Cargo, `sudo`, Pacman, `steamos-readonly`, `sysctl`, or system-package changes. Node is installed only under the user's `~/.local/share/evejs-linux` folder when Node 24 is not already available. The local HTTPS/CDN responder uses unprivileged port 8443.
-- **Other Linux distributions:** retain the established v1.14 behavior: npm installs the exact lockfiles, Rust components build locally, and the launcher uses its existing localhost port-443 path.
-
-The SteamOS payload contains Node modules locked to the official v0.12.9 lockfiles, the Linux x64 `better-sqlite3` prebuild, and static-musl Market/seeder executables. The payload and each important native artifact are verified before installation or update.
+- **Standard Linux (x86_64):** npm installs the release's exact lockfiles, the Rust Market
+  programs are built locally, and the local HTTPS/CDN responder uses port 443.
+- **SteamOS (x86_64):** uses the bundled portable runtime in `portable/steamos-x86_64/`
+  (Node packages plus static Market/seeder programs). No compiler, Cargo, sudo, Pacman or
+  read-only toggle is needed, and the local HTTPS/CDN responder uses port 8443.
 
 ## Installer menu
 
-1. Install clean EveJS v0.12.9
-2. Update clean EveJS v0.12.8 → v0.12.9
-3. Prepare/verify clean runtime compatibility
-4. Restore an upgrade backup
-5. Manage upgrade backups
-6. Exit
+Run `./install-evejs-linux.sh` and choose:
 
-Living Universe, X-Patch and unknown integrated source states fail closed. Ordinary `mods/*/loader.js` mods remain supported, except the legacy Living Universe loader, which remains disabled.
+1. **Install EveJS** into an existing empty folder.
+2. **Update an existing installation** from a newer EveJS release ZIP. Your world, Market,
+   settings and certificates stay in place (see *Updating* below).
+3. **Undo an update or reseed**: restore program files and/or data from a backup.
+4. **Reseed the Market** of an existing installation with one of the install-time seed
+   profiles (v1, v2 or v3).
+5. **Prepare/verify runtime compatibility**: re-checks an installation and refreshes the
+   launcher, client pre-check and `tools/update-evejs-linux.sh` to this Setup's versions.
+6. **List or delete backups.**
 
-## v0.12.9 Linux migration
+Non-interactive use: `./install-evejs-linux.sh --help`.
 
-EveJS v0.12.9 moves generated TLS material to `_local/certs` and requires a constrained local CA, separate DNS/numeric gateway leaves, and exact-hash offline patches for the supported EVE client.
+## Updating
 
-On SteamOS, the exact-hash LaunchDarkly patch targets `https://localhost:8443`; the standard Linux profile continues to target `https://localhost` on port 443. The patch gate accepts only audited build-3396210 originals or known earlier/final variants, supports exact migration between the two profiles, and fails closed for unexpected binaries. Original files and changed CA bundles receive backups.
-
-## Live verification
+Every installation gets `tools/update-evejs-linux.sh`, the Linux twin of EveJS's own
+`UpdateEveJS.bat`. Stop the launcher session (server, Market and clients) first.
 
 ```bash
-chmod +x install-evejs-linux.sh
-./install-evejs-linux.sh
+tools/update-evejs-linux.sh update ~/Downloads/EveJS-<version>.zip --preview   # what would change
+tools/update-evejs-linux.sh update ~/Downloads/EveJS-<version>.zip             # do it
+tools/update-evejs-linux.sh list                                               # backups
+tools/update-evejs-linux.sh restore                                            # undo the newest update
+tools/update-evejs-linux.sh restore <backup> --program-only | --data-only
+tools/update-evejs-linux.sh prune --keep 3
+tools/update-evejs-linux.sh reseed-market v1|v2|v3
 ```
 
-For a fresh installation, choose **1**, select the official `EveJS-v0.12.9.zip`, a separate copied EVE 24.01/build-3396210 client and resource cache, your normal official Steam Proton, and a new empty EveJS destination. Market v1 remains the recommended first profile.
+What an update does:
 
-For an existing v0.12.8 Universal Linux installation, choose **2**. The update preserves the complete `_local` tree, Market data, mods, certificates, configuration and logs; it does not rebuild the world or reseed the Market.
+- Follows the release's own `tools/Updater/update-policy.json`, exactly like the Windows
+  updater: settings files (`config/*.json`) are kept, `_local/`, the Market data, compiled
+  Market programs, `node_modules` and certificates are never touched, and files that are not
+  part of a release (your own tools, `mods/`, the Linux launcher) are left alone.
+- Moves the old program files to `_backup/pre-update-<version>-<stamp>/` and records what it
+  installed in `.evejs-installed-files.json`.
+- **Also copies your data** (world database, Market database, settings, certificates,
+  launcher config) into the same backup folder, verified byte for byte, because an update can
+  change the world on its first start. `restore` can therefore undo an update completely,
+  and keeps the state it replaces as a `pre-restore-…` backup, so a restore can be undone too.
+- Reinstalls Node packages only when the release changed them, runs the release's one-time
+  sovereignty step, records the official release for the launcher, and prepares a Market
+  server program for the new Market source (built with Cargo, or taken from the SteamOS bundle).
 
-Static/package and portable-artifact verification completed on 2026-09-25. Real SteamOS backend, Proton/client UI, update/rollback and cleanup acceptance remain pending live verification. This deliverable intentionally remains a folder; no distribution ZIP is produced until that verification is accepted.
+Reseeding replaces every Market order (including your own and what they hold); hangars,
+wallets and the rest of the world are untouched. The previous Market is backed up to
+`_backup/pre-reseed-<stamp>/` and `restore` puts it back.
+
+## Which EveJS releases the launcher accepts
+
+The launcher runs stock EveJS whose Market server source is either in this Setup's audited
+list (`compatibility/market-stock-v*.json`: 0.12.9 and 261018.1) or exactly what the official
+release ZIP recorded by the installer or updater shipped (`_local/evejs-linux-setup/release.json`).
+Living Universe, X-Patch and unknown source states fail closed.
+
+## SteamOS bundle for a new EveJS release
+
+The bundle is bound to the parts of a release it was built from (lockfile contents and each
+Rust program's source), so it keeps working across releases that leave them unchanged. When a
+release changes them, rebuild it on a Linux PC with podman or docker:
+
+```bash
+tools/build-steamos-payload.sh ~/Downloads/EveJS-<version>.zip
+```
+
+## Fresh installation
+
+Choose **1**, select the EveJS release ZIP, a separate copied EVE client (build named by the
+release, currently 3396210) with its resource cache, your normal official Steam Proton, and a
+new empty EveJS destination. Market v1 remains the recommended first profile.

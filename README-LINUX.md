@@ -1,4 +1,4 @@
-# EveJS Universal Linux Setup v1.16 — Stock-Only
+# EveJS Universal Linux Setup v1.17 — Stock-Only
 
 Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
 copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
@@ -24,8 +24,24 @@ Run `./install-evejs-linux.sh` and choose:
 5. **Prepare/verify runtime compatibility**: re-checks an installation and refreshes the
    launcher, client pre-check and `tools/update-evejs-linux.sh` to this Setup's versions.
 6. **List or delete backups.**
+7. **Use a shared Proton prefix** for an existing installation (see *Proton prefix* below).
 
 Non-interactive use: `./install-evejs-linux.sh --help`.
+
+## Proton prefix (EVE settings)
+
+The EVE client keeps its graphics and UI settings inside the Proton prefix. Earlier versions
+made a new prefix for every installation, so those settings started from scratch each time.
+
+From v1.17 a fresh installation looks in `~/.local/share/evejs-linux/prefixes/` for a prefix
+an EveJS launcher already used (Proton files, Z: drive and EVE settings present) and offers to
+reuse it, newest EVE use first; the prefix you reuse is remembered in
+`~/.local/share/evejs-linux/shared-prefix` and offered first next time. Choose
+**Create a new prefix** for a clean one. Prefixes last used by a newer Proton than the one
+you picked are not offered, because Proton would rebuild them.
+
+Menu option 7 points an existing installation at a shared prefix; its old prefix stays on disk
+until you delete it. Non-interactive: `--prefix reuse`, `--prefix new` or `--prefix <path>`.
 
 ## Updating
 

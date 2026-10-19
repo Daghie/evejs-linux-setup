@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.16 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Portable Linux Launcher v1.17 — Stock-Only Edition (standard Linux + SteamOS portable)
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -579,7 +579,7 @@ detect_mods() {
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
         echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS $EVEJS_VERSION"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.16 edition)"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.17 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -767,6 +767,16 @@ verify_tls_endpoint() {
 }
 
 ensure_proton_prefix() {
+    # Setup v1.17 lets installations share one prefix. An older Proton opening a prefix a
+    # newer Proton used rebuilds Proton's own files in it (EVE settings stay); say so.
+    local made_by wants
+    made_by="$(cat "$PROTON_PREFIX/version" 2>/dev/null || true)"
+    wants="$(sed -n 's/^CURRENT_PREFIX_VERSION="\([^"]*\)".*/\1/p' "$PROTON_BIN" 2>/dev/null | head -n1)"
+    if [[ -n "$made_by" && -n "$wants" && "${made_by%%-*}" != "${wants%%-*}" ]] \
+        && [[ "$(printf '%s\n%s\n' "${made_by%%-*}" "${wants%%-*}" | sort -V | tail -n1)" == "${made_by%%-*}" ]]; then
+        echo "  ! This Proton prefix was last used by a newer Proton ($made_by) than this installation's ($wants)."
+        echo "    Proton will rebuild its own files in it; EVE settings stay."
+    fi
     if [[ -e "$PROTON_PREFIX/pfx/dosdevices/z:" ]]; then
         return 0
     fi
@@ -1289,7 +1299,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.16 Stock Only"
+printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.17 Stock Only"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

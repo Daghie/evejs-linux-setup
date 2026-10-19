@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.16 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Universal Linux Setup v1.17 — Stock-Only Edition (standard Linux + SteamOS portable)
 # Target: EveJS 261018.1 and newer releases / EVE build named by each release's recipes
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -33,7 +33,7 @@ IFS=$'\n\t'
 # (tools/update-evejs-linux.sh) follows each release's own update policy.
 INSTALLER_MIN_VERSION="261018.1"
 INSTALLER_TESTED_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.16 Stock-Only Edition"
+INSTALLER_CANDIDATE_NAME="v1.17 Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -60,6 +60,7 @@ ARG_NO_DESKTOP=0
 ARG_MODE=""
 ARG_EXISTING=""
 ARG_BACKUP=""
+ARG_PREFIX=""
 
 while (($#)); do
     case "$1" in
@@ -74,6 +75,7 @@ while (($#)); do
         --mode) ARG_MODE="${2:-}"; shift 2 ;;
         --existing) ARG_EXISTING="${2:-}"; shift 2 ;;
         --backup) ARG_BACKUP="${2:-}"; shift 2 ;;
+        --prefix) ARG_PREFIX="${2:-}"; shift 2 ;;
         -h|--help)
             cat <<'EOF'
 Usage:
@@ -88,9 +90,11 @@ Options:
   --market PROFILE    Market seed profile: v1, v2, or v3.
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
-  --mode MODE         install, update, restore, reseed, compat, or backups.
+  --mode MODE         install, update, restore, reseed, compat, backups, or prefix.
   --existing PATH     Existing EveJS installation for update/restore/reseed/backups.
   --backup NAME       Backup folder name (under _backup/) for restore; default: newest.
+  --prefix CHOICE     Proton prefix: reuse (best existing EveJS prefix), new, or a prefix PATH.
+                      Default: ask when a reusable EveJS prefix exists.
 EOF
             exit 0
             ;;
@@ -296,7 +300,7 @@ ui_choose_setup_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="EveJS Universal Linux Setup v1.16 — Stock Only" --width=980 --height=500 \
+                --title="EveJS Universal Linux Setup v1.17 — Stock Only" --width=980 --height=500 \
                 --text="Install EveJS, update an existing installation, or look after one. This Stock-only edition does not install Living Universe." \
                 --column="Use" --column="Action" --column="Description" \
                 TRUE  "install"  "Install EveJS into an existing empty folder" \
@@ -305,29 +309,32 @@ ui_choose_setup_action() {
                 FALSE "reseed"   "Reseed the Market of an existing installation (v1, v2 or v3)" \
                 FALSE "compat"   "Prepare/verify runtime compatibility and refresh the launcher and tools" \
                 FALSE "backups"  "List or delete update/reseed backups" \
+                FALSE "prefix"   "Make an existing installation use a shared Proton prefix (keeps EVE settings)" \
                 --print-column=2
             ;;
         kdialog)
-            kdialog --title "EveJS Universal Linux Setup v1.16 — Stock Only" --menu \
+            kdialog --title "EveJS Universal Linux Setup v1.17 — Stock Only" --menu \
                 "Choose what you want to do:" \
                 install "Install EveJS into an empty folder" \
                 update "Update an existing installation (keeps your world)" \
                 restore "Undo an update or reseed from a backup" \
                 reseed "Reseed the Market of an existing installation" \
                 compat "Prepare/verify runtime compatibility, refresh launcher and tools" \
-                backups "List or delete backups"
+                backups "List or delete backups" \
+                prefix "Use a shared Proton prefix for an existing installation"
             ;;
         *)
             local pick
-            printf '\nEveJS Universal Linux Setup v1.16 — Stock Only\n' >&2
+            printf '\nEveJS Universal Linux Setup v1.17 — Stock Only\n' >&2
             printf '  [1] Install EveJS\n' >&2
             printf '  [2] Update an existing installation (keeps your world)\n' >&2
             printf '  [3] Undo an update or reseed from a backup\n' >&2
             printf '  [4] Reseed the Market of an existing installation\n' >&2
             printf '  [5] Prepare/verify runtime compatibility, refresh launcher and tools\n' >&2
             printf '  [6] List or delete backups\n' >&2
-            printf '  [7] Exit\n' >&2
-            read -r -p "Choose [1-7]: " pick
+            printf '  [7] Use a shared Proton prefix for an existing installation\n' >&2
+            printf '  [8] Exit\n' >&2
+            read -r -p "Choose [1-8]: " pick
             case "$pick" in
                 1) printf 'install\n' ;;
                 2) printf 'update\n' ;;
@@ -335,7 +342,8 @@ ui_choose_setup_action() {
                 4) printf 'reseed\n' ;;
                 5) printf 'compat\n' ;;
                 6) printf 'backups\n' ;;
-                7|'') printf 'exit\n' ;;
+                7) printf 'prefix\n' ;;
+                8|'') printf 'exit\n' ;;
                 *) return 1 ;;
             esac
             ;;
@@ -1971,19 +1979,18 @@ install_runtime_compatibility_files() {
     chmod +x "$repo/evejs-linux-launcher.sh" "$repo/evejs-stale-process-cleanup.sh"
 }
 
-write_platform_config() {
-    local config="$1/.evejs-linux.conf"
+# Rewrites KEY=VALUE lines of <repo>/.evejs-linux.conf atomically; other lines stay.
+set_launcher_config() {
+    local config="$1/.evejs-linux.conf"; shift
     [[ -f "$config" ]] || die "Missing Linux launcher configuration: $config"
-    python3 - "$config" "$PLATFORM_MODE" "$CDN_PORT" <<'PY'
+    python3 - "$config" "$@" <<'PY'
 from pathlib import Path
 import shlex, sys, tempfile, os
 path = Path(sys.argv[1])
-keys = ("EVEJS_PLATFORM_MODE=", "EVEJS_CDN_PORT=")
+pairs = [arg.split("=", 1) for arg in sys.argv[2:]]
+keys = tuple(key + "=" for key, _ in pairs)
 lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.startswith(keys)]
-lines.extend([
-    f"EVEJS_PLATFORM_MODE={shlex.quote(sys.argv[2])}",
-    f"EVEJS_CDN_PORT={shlex.quote(sys.argv[3])}",
-])
+lines.extend(f"{key}={shlex.quote(value)}" for key, value in pairs)
 mode = path.stat().st_mode
 with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, prefix=f".{path.name}.", delete=False) as stream:
     temporary = Path(stream.name)
@@ -1995,7 +2002,217 @@ os.replace(temporary, path)
 PY
 }
 
+write_platform_config() {
+    set_launcher_config "$1" "EVEJS_PLATFORM_MODE=$PLATFORM_MODE" "EVEJS_CDN_PORT=$CDN_PORT"
+}
 
+# ── Shared Proton prefix ──────────────────────────────────────────────────────
+# Every EveJS installation used to get its own prefix, so EVE graphics and UI settings
+# (stored inside the prefix) had to be redone after each install. Setup v1.17 offers to
+# reuse an existing EveJS prefix instead and remembers the choice in SHARED_PREFIX_MARKER.
+PREFIX_ROOT="$HOME/.local/share/evejs-linux/prefixes"
+SHARED_PREFIX_MARKER="$HOME/.local/share/evejs-linux/shared-prefix"
+
+# Prefix version ("11.0-100") a Proton build creates; empty when unknown.
+proton_prefix_version() {
+    sed -n 's/^CURRENT_PREFIX_VERSION="\([^"]*\)".*/\1/p' "$1" 2>/dev/null | head -n1
+}
+
+# Writes reusable EveJS prefixes to $1 as TSV, best first:
+#   path, name, last EVE use, EVE settings files, prefix version, pinned (1/0)
+# A prefix qualifies when it has the shape of a prefix the EveJS launcher initialized
+# (Proton version file, registry, drive_c, Z: drive) and holds EVE client settings.
+# Prefixes made by a newer Proton than $2 are left out: Proton deletes a prefix it
+# considers newer than itself. Extra candidate paths may follow (e.g. --prefix PATH).
+list_reusable_prefixes() {
+    local out="$1" proton_version="$2"; shift 2
+    python3 - "$out" "$PREFIX_ROOT" "$SHARED_PREFIX_MARKER" "$proton_version" "$@" <<'PY'
+import os, re, sys, time
+from pathlib import Path
+
+out, root, marker, proton_version = sys.argv[1:5]
+extra = sys.argv[5:]
+
+def version_key(text):
+    match = re.match(r"^(\d+)\.(\d+)-", text or "")
+    return (int(match[1]), int(match[2])) if match else None
+
+pinned = ""
+try:
+    if os.path.isfile(marker):
+        pinned = os.path.realpath(Path(marker).read_text(encoding="utf-8").strip())
+except OSError:
+    pinned = ""
+
+candidates = []
+if os.path.isdir(root):
+    candidates += [os.path.join(root, name) for name in sorted(os.listdir(root))]
+candidates += [path for path in [pinned, *extra] if path]
+
+current = version_key(proton_version)
+rows, seen = [], set()
+for candidate in candidates:
+    if os.path.islink(candidate) or not os.path.isdir(candidate):
+        continue
+    path = os.path.realpath(candidate)
+    if path in seen or "\t" in path or "\n" in path:
+        continue
+    seen.add(path)
+    try:
+        if os.stat(path).st_uid != os.getuid() or not os.access(path, os.W_OK):
+            continue
+        pfx = os.path.join(path, "pfx")
+        if not all(os.path.exists(os.path.join(*parts)) for parts in (
+                (path, "version"), (pfx, "system.reg"), (pfx, "user.reg"),
+                (pfx, "drive_c", "windows"))):
+            continue
+        if not os.path.islink(os.path.join(pfx, "dosdevices", "z:")):
+            continue
+        eve = os.path.join(pfx, "drive_c", "users", "steamuser", "AppData", "Local", "CCP", "EVE")
+        settings, newest = 0, 0.0
+        if os.path.isdir(eve):
+            for folder, _, files in os.walk(eve):
+                in_settings = any(part.startswith("settings") for part in folder[len(eve):].split("/"))
+                for name in files:
+                    newest = max(newest, os.lstat(os.path.join(folder, name)).st_mtime)
+                    settings += in_settings
+        if settings == 0:
+            continue
+        version = Path(path, "version").read_text(encoding="utf-8").strip()
+    except OSError:
+        continue
+    made_by = version_key(version)
+    if current is None or made_by is None or made_by > current:
+        print(f"    Skipping prefix {path}: made by Proton {version or 'unknown'}, "
+              f"the selected Proton is {proton_version or 'unknown'}.", file=sys.stderr)
+        continue
+    rows.append((path == pinned, newest, path, version, settings))
+
+rows.sort(key=lambda row: (row[0], row[1]), reverse=True)
+with open(out, "w", encoding="utf-8") as stream:
+    for is_pinned, newest, path, version, settings in rows:
+        when = time.strftime("%Y-%m-%d %H:%M", time.localtime(newest))
+        stream.write(f"{path}\t{os.path.basename(path)}\t{when}\t{settings}\t{version}\t{int(is_pinned)}\n")
+PY
+}
+
+# Prints the chosen prefix path, or "new". $1 = TSV from list_reusable_prefixes.
+ui_choose_prefix() {
+    local records="$1" path name when settings version pinned label
+    local intro="Your EVE graphics and UI settings live inside the Proton prefix. Reusing an existing EveJS prefix keeps them; a new prefix starts from EVE defaults."
+    case "$UI" in
+        zenity)
+            local rows=() first=TRUE
+            while IFS=$'\t' read -r path name when settings version pinned; do
+                label="$name"; (( pinned )) && label="$name (shared)"
+                rows+=("$first" "$label" "$when" "$settings" "$version" "$path"); first=FALSE
+            done < "$records"
+            zenity --list --radiolist \
+                --title="Choose the Proton prefix" --width=1100 --height=520 \
+                --text="$intro" \
+                --column="Use" --column="Prefix" --column="Last EVE use" --column="Settings files" \
+                --column="Proton" --column="Path" \
+                "${rows[@]}" FALSE "New prefix" "-" "-" "-" "new" --print-column=6
+            ;;
+        kdialog)
+            local args=()
+            while IFS=$'\t' read -r path name when settings version pinned; do
+                label="$name"; (( pinned )) && label="$name (shared)"
+                args+=("$path" "$label — last EVE use $when — $settings settings files")
+            done < "$records"
+            kdialog --title "Choose the Proton prefix" --menu "$intro" "${args[@]}" new "Create a new prefix (EVE defaults)"
+            ;;
+        *)
+            local idx=0 pick
+            local -a paths=()
+            printf '\n%s\n\nReusable EveJS Proton prefixes (best first):\n' "$intro" >&2
+            while IFS=$'\t' read -r path name when settings version pinned; do
+                idx=$((idx+1)); paths[$idx]="$path"
+                label="$name"; (( pinned )) && label="$name (shared)"
+                printf '  [%d] %s — last EVE use %s, %s settings files, Proton %s\n' \
+                    "$idx" "$label" "$when" "$settings" "$version" >&2
+            done < "$records"
+            printf '  [%d] Create a new prefix (EVE defaults)\n' "$((idx+1))" >&2
+            read -r -p "Choose [1-$((idx+1)), default 1]: " pick
+            pick="${pick:-1}"
+            if [[ "$pick" == "$((idx+1))" ]]; then
+                printf 'new\n'
+            elif [[ "$pick" =~ ^[0-9]+$ && -n "${paths[$pick]:-}" ]]; then
+                printf '%s\n' "${paths[$pick]}"
+            else
+                return 1
+            fi
+            ;;
+    esac
+}
+
+# Chooses the prefix for a Proton binary: --prefix reuse|new|PATH, otherwise asks when a
+# reusable prefix exists. Prints the chosen path, or "new".
+choose_proton_prefix() {
+    local proton_bin="$1" request="${ARG_PREFIX:-}" records version chosen=""
+    version="$(proton_prefix_version "$proton_bin")"
+    records="$(mktemp)"
+    case "$request" in
+        ''|reuse|new) list_reusable_prefixes "$records" "$version" ;;
+        *) list_reusable_prefixes "$records" "$version" "$request" ;;
+    esac
+    case "$request" in
+        new) chosen="new" ;;
+        reuse) chosen="$(awk -F'\t' 'NR==1 {print $1}' "$records")"; chosen="${chosen:-new}" ;;
+        '')
+            if [[ -s "$records" ]]; then
+                chosen="$(ui_choose_prefix "$records")" || chosen=""
+            else
+                chosen="new"
+            fi
+            ;;
+        *)
+            chosen="$(readlink -f "$request" 2>/dev/null || true)"
+            awk -F'\t' -v p="$chosen" '$1==p {found=1} END {exit !found}' "$records" || chosen="invalid"
+            ;;
+    esac
+    rm -f "$records"
+    [[ "$chosen" != "invalid" ]] || die "--prefix $request is not a reusable EveJS Proton prefix for this Proton (prefix version ${version:-unknown})."
+    [[ -n "$chosen" ]] || return 1
+    printf '%s\n' "$chosen"
+}
+
+# Remembers the prefix later installations should offer first.
+remember_shared_prefix() {
+    mkdir -p "$(dirname "$SHARED_PREFIX_MARKER")"
+    printf '%s\n' "$1" > "$SHARED_PREFIX_MARKER.tmp" && mv -f "$SHARED_PREFIX_MARKER.tmp" "$SHARED_PREFIX_MARKER"
+}
+
+# Points an existing installation's launcher at a reusable prefix. The old prefix stays
+# on disk untouched.
+switch_existing_prefix() {
+    local repo current proton_bin chosen
+    repo="$(choose_existing_repo)" || return 1
+    current="$(bash -c 'source "$1" >/dev/null 2>&1 || exit 1; printf "%s" "${PROTON_PREFIX:-}"' _ "$repo/.evejs-linux.conf" 2>/dev/null || true)"
+    proton_bin="$(bash -c 'source "$1" >/dev/null 2>&1 || exit 1; printf "%s" "${PROTON_BIN:-}"' _ "$repo/.evejs-linux.conf" 2>/dev/null || true)"
+    [[ -f "$proton_bin" ]] || die "The Proton this installation uses is missing: ${proton_bin:-not configured}. Nothing was changed."
+    if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq ":(${CDN_PORT}|443|5222|26000|26001|26002|26003|26400|40110|40111)$"; then
+        die "EveJS is running. Stop the EVE client, Game server and Market server first. Nothing was changed."
+    fi
+    chosen="$(choose_proton_prefix "$proton_bin")" || return 1
+    if [[ "$chosen" == "new" ]]; then
+        ui_info "Prefix unchanged" "No other prefix was chosen. $repo keeps\n$current"
+        exit 0
+    fi
+    if [[ "$(readlink -f "$current" 2>/dev/null || true)" == "$chosen" ]]; then
+        remember_shared_prefix "$chosen"
+        ui_info "Already shared" "$repo already uses\n$chosen\n\nNew installations will now offer it first."
+        exit 0
+    fi
+    ui_yesno "Use this Proton prefix?" "Point the launcher of\n$repo\nat\n$chosen ?\n\nThe EVE client will use that prefix's graphics and UI settings. The current prefix stays on disk:\n${current:-none}" || exit 0
+    set_launcher_config "$repo" "PROTON_PREFIX=$chosen"
+    if [[ -f "$repo/INSTALL-LINUX-SUMMARY.txt" ]]; then
+        sed -i "s|^Proton prefix: .*|Proton prefix:     $chosen|" "$repo/INSTALL-LINUX-SUMMARY.txt" || true
+    fi
+    remember_shared_prefix "$chosen"
+    ui_info "Shared prefix set" "$repo now uses\n$chosen\n\nThe old prefix was kept:\n${current:-none}\nDelete it yourself once you no longer need it."
+    exit 0
+}
 
 choose_existing_repo() {
     local chosen configured
@@ -2074,7 +2291,7 @@ prepare_existing_runtime_compatibility() {
     fi
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.16 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.17 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
     exit 0
 }
 
@@ -2168,9 +2385,13 @@ case "$SETUP_ACTION" in
         fi
         exit 0
         ;;
+    prefix)
+        command -v python3 >/dev/null 2>&1 || die "Python 3 is required to choose a prefix."
+        switch_existing_prefix || exit 1
+        ;;
     install) ;;
     *)
-        die "Unknown setup mode '$SETUP_ACTION'. Choose install, update, restore, reseed, compat, or backups."
+        die "Unknown setup mode '$SETUP_ACTION'. Choose install, update, restore, reseed, compat, backups, or prefix."
         ;;
 esac
 
@@ -2285,6 +2506,14 @@ The installer prefers the newest numbered official Proton. Proton Experimental r
 fi
 resolve_proton "$SELECTED_PROTON" "$PROTON_RECORDS"
 ok "Selected Proton: $(basename "$PROTON_DIR")"
+
+# Proton prefix: reuse an existing EveJS prefix (keeps EVE graphics/UI settings) or make one.
+PREFIX_CHOICE="$(choose_proton_prefix "$PROTON_BIN")" || die "No Proton prefix was selected."
+if [[ "$PREFIX_CHOICE" == "new" ]]; then
+    ok "A new Proton prefix will be created for this installation."
+else
+    ok "Reusing Proton prefix: $PREFIX_CHOICE"
+fi
 
 # Market profile
 if [[ -n "$ARG_MARKET" ]]; then
@@ -2556,8 +2785,13 @@ ok "EVE client is configured for local EveJS, exact-hash offline patched, and tr
 # ── Write portable launcher config ─────────────────────────────────────────────
 stage "Installing portable Linux launcher"
 PREFIX_HASH="$(printf '%s' "$EVEJS_REPO" | sha256sum | awk '{print substr($1,1,12)}')"
-PROTON_PREFIX="$HOME/.local/share/evejs-linux/prefixes/${EVEJS_VERSION}-${PREFIX_HASH}"
-mkdir -p "$PROTON_PREFIX"
+if [[ "$PREFIX_CHOICE" == "new" ]]; then
+    PROTON_PREFIX="$PREFIX_ROOT/${EVEJS_VERSION}-${PREFIX_HASH}"
+    mkdir -p "$PROTON_PREFIX"
+else
+    PROTON_PREFIX="$PREFIX_CHOICE"
+    remember_shared_prefix "$PROTON_PREFIX"
+fi
 
 install_runtime_compatibility_files "$EVEJS_REPO"
 python3 "$EVEJS_REPO/.evejs-linux-tools/evejs-linux-update.py" --repo "$EVEJS_REPO" \

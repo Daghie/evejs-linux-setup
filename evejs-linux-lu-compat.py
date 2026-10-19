@@ -15,7 +15,7 @@ import sys
 import tempfile
 
 XPATCH_VERSION = "0.3.2"
-SETUP_VERSION = "v1.16"
+SETUP_VERSION = "v1.17"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).absolute().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"

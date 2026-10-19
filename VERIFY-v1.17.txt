@@ -1,3 +1,26 @@
+EveJS Universal Linux Setup v1.17 Stock-Only — Verification
+==========================================================
+Date: 2026-10-19
+Host: Fedora-based standard Linux x86_64, Node 24.18.0, Cargo 1.97, Proton 11.0
+
+v1.17 adds shared Proton prefix reuse. Everything else is unchanged from v1.16.1; the v1.16
+results below still apply.
+
+PASS  Prefix detection, read-only on the owner's real prefixes: 16 of 19 qualify (the 3
+      empty, never-initialized ones are skipped); none qualify for Proton 9 (all were last
+      used by Proton 11).
+PASS  On disposable fake prefixes: --prefix reuse (newest EVE use wins; remembered prefix
+      wins over it), --prefix new, --prefix <path>, rejected path (no EVE settings), rejected
+      newer-Proton prefix, text menu default/pick/invalid input, empty prefix folder -> new.
+PASS  Menu option 7 (--mode prefix) on a disposable installation: launcher config and install
+      summary repointed, file mode kept, choice remembered; re-run reports "already shared";
+      declining changes nothing.
+PASS  Launcher warns when its prefix was last used by a newer Proton; silent otherwise.
+PASS  Full fresh install of EveJS 261018.1 (standard Linux, Market v1, --prefix reuse) with
+      the prefix folder redirected to a disposable location: exit 0, launcher config and
+      summary point at the reused prefix, choice remembered, no new prefix created.
+
+==== v1.16 verification ====
 EveJS Universal Linux Setup v1.16 Stock-Only — Verification
 ==========================================================
 Date: 2026-10-18

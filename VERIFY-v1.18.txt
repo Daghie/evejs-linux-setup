@@ -1,3 +1,33 @@
+EveJS Universal Linux Setup v1.18 Stock-Only — Verification
+==========================================================
+Date: 2026-10-29
+Host: Fedora-based standard Linux x86_64, Node 24.18.0, Cargo 1.97, Proton 11.0
+Input: EveJS-261028.1.zip SHA-256 081828a4cde7e70bb8b93539e61c9e28a12201365f165d5aeaf257a7115e7d8d
+
+v1.18 supports EveJS 261028.1 and labels each reusable Proton prefix with the EveJS version it
+was made for. 261028.1 vs 261018.1: Market server and seeders byte-identical (same source
+digest), npm lockfiles differ only in the version field (SteamOS bundle fingerprints still
+match, no rebuild), EVE client build still 3396210.
+
+All runs used a disposable folder and a disposable copy of the client's tq folder (resource
+cache linked read-only). No EVE client was started. The owner's EveJS session held the EveJS
+ports during testing, so the installer's listener pre-check was skipped in the test copy, and
+the update, restore and boot runs used a private network namespace (unshare --net).
+
+PASS  Prefix chooser on the owner's real prefixes (read-only): prefixes made for EveJS 0.12.6,
+      0.12.9 and 261018.1 are all offered for 261028.1, labelled with their EveJS version;
+      the remembered shared prefix is listed first.
+PASS  Fresh install of EveJS 261028.1 (standard Linux, Market v1, --prefix reuse): exit 0;
+      reuses the shared prefix; runtime check and client pre-check pass.
+PASS  Forced-SteamOS fresh install of 261028.1: portable bundle identity, binding and artifact
+      checks pass, 0 crates compiled, CDN port 8443, runtime check passes.
+PASS  Headless boot of the 261028.1 install: 9 listeners, all on 127.0.0.1; 0 error lines.
+PASS  Update 261018.1 -> 261028.1 through the installer's Update option: exit 0; Node
+      packages left alone; Market program prepared; runtime check passes.
+PASS  Undo through Restore: EveJS 261018.1 back, server/src identical to the release,
+      launcher config identical; runtime check passes.
+
+==== v1.17 verification ====
 EveJS Universal Linux Setup v1.17 Stock-Only — Verification
 ==========================================================
 Date: 2026-10-19

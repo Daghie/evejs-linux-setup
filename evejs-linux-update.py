@@ -46,9 +46,9 @@ import sys
 import tempfile
 import zipfile
 
-SETUP_VERSION = "v1.18"
+SETUP_VERSION = "v1.18.1"
 STAMP_FORMAT = "%Y%m%d-%H%M%S"
-TOOLS_DIR = Path(__file__).absolute().parent
+TOOLS_DIR = Path(__file__).resolve().parent
 POLICY_REL = "tools/Updater/update-policy.json"
 LINUX_DATA = "_linux-data"
 AFTER_LIST = "installed-files-after.json"
@@ -749,7 +749,7 @@ def backups_dir(root: Path) -> Path:
 
 
 def cmd_update(args) -> int:
-    root = Path(args.repo).absolute()
+    root = Path(args.repo).expanduser().resolve()
     zip_path = Path(args.zip).expanduser().absolute()
     conf = read_linux_conf(root)
     compat = load_compat()
@@ -930,7 +930,7 @@ def describe_backup(path: Path) -> str:
 
 
 def cmd_list(args) -> int:
-    root = Path(args.repo).absolute()
+    root = Path(args.repo).expanduser().resolve()
     backups = list_backups(root)
     if not backups:
         say(f"No backups in {backups_dir(root)}")
@@ -941,7 +941,7 @@ def cmd_list(args) -> int:
 
 
 def cmd_prune(args) -> int:
-    root = Path(args.repo).absolute()
+    root = Path(args.repo).expanduser().resolve()
     backups = list_backups(root)
     doomed = backups[:-args.keep] if args.keep > 0 else backups
     if not doomed:
@@ -970,7 +970,7 @@ def resolve_backup(root: Path, name: str | None) -> Path:
 
 
 def cmd_restore(args) -> int:
-    root = Path(args.repo).absolute()
+    root = Path(args.repo).expanduser().resolve()
     conf = read_linux_conf(root)
     compat = load_compat()
     backup = resolve_backup(root, args.backup)
@@ -1088,7 +1088,7 @@ MARKET_DB_DIR = "externalservices/market-server/data/generated"
 
 
 def cmd_reseed(args) -> int:
-    root = Path(args.repo).absolute()
+    root = Path(args.repo).expanduser().resolve()
     conf = read_linux_conf(root)
     compat = load_compat()
     profile = (args.profile or "").lower()
@@ -1172,7 +1172,7 @@ def cmd_reseed(args) -> int:
 
 def cmd_record_install(args) -> int:
     """Called by the installer after a fresh install: record the release and what it installed."""
-    root = Path(args.repo).absolute()
+    root = Path(args.repo).expanduser().resolve()
     release_dir = Path(args.release_dir).absolute()
     compat = load_compat()
     policy = Policy([load_json(release_dir / POLICY_REL)])

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.18 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Universal Linux Setup v1.18.1 — Stock-Only Edition (standard Linux + SteamOS portable)
 # Target: EveJS 261018.1 and newer releases / EVE build named by each release's recipes
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -33,7 +33,7 @@ IFS=$'\n\t'
 # (tools/update-evejs-linux.sh) follows each release's own update policy.
 INSTALLER_MIN_VERSION="261018.1"
 INSTALLER_TESTED_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.18 Stock-Only Edition"
+INSTALLER_CANDIDATE_NAME="v1.18.1 Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -300,7 +300,7 @@ ui_choose_setup_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="EveJS Universal Linux Setup v1.18 — Stock Only" --width=980 --height=500 \
+                --title="EveJS Universal Linux Setup v1.18.1 — Stock Only" --width=980 --height=500 \
                 --text="Install EveJS, update an existing installation, or look after one. This Stock-only edition does not install Living Universe." \
                 --column="Use" --column="Action" --column="Description" \
                 TRUE  "install"  "Install EveJS into an existing empty folder" \
@@ -313,7 +313,7 @@ ui_choose_setup_action() {
                 --print-column=2
             ;;
         kdialog)
-            kdialog --title "EveJS Universal Linux Setup v1.18 — Stock Only" --menu \
+            kdialog --title "EveJS Universal Linux Setup v1.18.1 — Stock Only" --menu \
                 "Choose what you want to do:" \
                 install "Install EveJS into an empty folder" \
                 update "Update an existing installation (keeps your world)" \
@@ -325,7 +325,7 @@ ui_choose_setup_action() {
             ;;
         *)
             local pick
-            printf '\nEveJS Universal Linux Setup v1.18 — Stock Only\n' >&2
+            printf '\nEveJS Universal Linux Setup v1.18.1 — Stock Only\n' >&2
             printf '  [1] Install EveJS\n' >&2
             printf '  [2] Update an existing installation (keeps your world)\n' >&2
             printf '  [3] Undo an update or reseed from a backup\n' >&2
@@ -2299,7 +2299,7 @@ prepare_existing_runtime_compatibility() {
     fi
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.18 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.18.1 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
     exit 0
 }
 

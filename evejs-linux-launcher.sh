@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.18 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Portable Linux Launcher v1.18.1 — Stock-Only Edition (standard Linux + SteamOS portable)
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -32,7 +32,7 @@
 set -uo pipefail
 IFS=$'\n\t'
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 CONFIG="$SCRIPT_DIR/.evejs-linux.conf"
 [[ -f "$CONFIG" ]] || { echo "[ERROR] Missing launcher config: $CONFIG" >&2; exit 1; }
 # shellcheck disable=SC1090
@@ -579,7 +579,7 @@ detect_mods() {
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
         echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS $EVEJS_VERSION"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.18 edition)"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.18.1 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -1299,7 +1299,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.18 Stock Only"
+printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.18.1 Stock Only"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"

@@ -15,9 +15,9 @@ import sys
 import tempfile
 
 XPATCH_VERSION = "0.3.2"
-SETUP_VERSION = "v1.18"
+SETUP_VERSION = "v1.18.1"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
-SCRIPT_DIR = Path(__file__).absolute().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
 STOCK_MANIFEST_GLOB = "market-stock-v*.json"
 # Written by the installer and tools/update-evejs-linux.sh from the official release
@@ -180,7 +180,7 @@ def match_stock_identity(repo: Path, version: str, records: list[dict]) -> tuple
 
 
 def record_release(repo: Path, release_dir: Path, zip_path: Path | None) -> dict:
-    repo = repo.expanduser().absolute()
+    repo = repo.expanduser().resolve()
     release_dir = release_dir.expanduser().absolute()
     version = read_evejs_version(release_dir)
     if read_evejs_version(repo) != version:
@@ -224,7 +224,7 @@ def detect_partial_xpatch(repo: Path) -> list[str]:
 
 
 def classify(repo: Path) -> dict:
-    repo = repo.expanduser().absolute()
+    repo = repo.expanduser().resolve()
     if not repo.is_dir():
         raise CompatError(f"EveJS directory not found: {repo}")
     version = read_evejs_version(repo)
@@ -279,7 +279,7 @@ def classify(repo: Path) -> dict:
     }
 
 def runtime_root_for(repo: Path) -> Path:
-    repo_abs = repo.expanduser().absolute()
+    repo_abs = repo.expanduser().resolve()
     identity = hashlib.sha256(str(repo_abs).encode()).hexdigest()[:16]
     return repo_abs.parent / ".evejs-linux-runtime" / identity
 

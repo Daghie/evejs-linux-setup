@@ -1,4 +1,4 @@
-# EveJS Universal Linux Setup v1.18 — Stock-Only
+# EveJS Universal Linux Setup v1.18.1 — Stock-Only
 
 Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
 copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
@@ -74,6 +74,12 @@ What an update does:
 - Reinstalls Node packages only when the release changed them, runs the release's one-time
   sovereignty step, records the official release for the launcher, and prepares a Market
   server program for the new Market source (built with Cargo, or taken from the SteamOS bundle).
+
+Installations reached through a symbolic link (for example `~/drives -> /mnt`) work from v1.18.1.
+Older versions of `tools/update-evejs-linux.sh`, run from the linked path, stored the new Market
+server program where the launcher does not look, so the launcher then reported *No verified
+Market runtime build exists*. To repair such an installation, run this Setup and choose
+**Prepare/verify runtime compatibility**.
 
 Reseeding replaces every Market order (including your own and what they hold); hangars,
 wallets and the rest of the world are untouched. The previous Market is backed up to

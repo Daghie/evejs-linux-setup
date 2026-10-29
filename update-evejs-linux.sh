@@ -16,11 +16,11 @@
 # ==============================================================================
 set -euo pipefail
 
-SELF_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SELF_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # Installed as <EveJS>/tools/update-evejs-linux.sh; also works beside the engine.
 if [[ -f "$SELF_DIR/evejs-linux-update.py" ]]; then
     ENGINE="$SELF_DIR/evejs-linux-update.py"
-    REPO_DEFAULT="$PWD"
+    REPO_DEFAULT="$(pwd -P)"
 else
     REPO_DEFAULT="$(dirname "$SELF_DIR")"
     ENGINE="$REPO_DEFAULT/.evejs-linux-tools/evejs-linux-update.py"

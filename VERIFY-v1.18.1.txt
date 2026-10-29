@@ -1,3 +1,29 @@
+EveJS Universal Linux Setup v1.18.1 Stock-Only — Verification
+============================================================
+Date: 2026-10-29
+Host: Fedora-based standard Linux x86_64, Node 24.18.0, Cargo 1.97, Proton 11.0
+
+v1.18.1 fixes installations reached through a symbolic link (user report: an installation
+under a home-folder link to /mnt could not be updated in place). The updater, the runtime
+helper and tools/update-evejs-linux.sh now use the installation's real path. Before, the
+Market runtime cache was keyed by the path as typed, so an update run from the linked path
+stored the new Market program where the launcher (which uses the real path) never looks.
+
+Disposable folder on the game SSD, reached through a link in /tmp; EveJS 261018.1 installed
+through the link; owner's live session untouched (update/restore in a private network
+namespace, installer listener pre-check skipped in the test copy).
+
+PASS  Install through the linked path: exit 0; launcher config stores the real path.
+PASS  Installer Update option with the linked path: exit 0; runtime check passes.
+FAIL→ v1.18 tools/update-evejs-linux.sh restore run from the linked path with the Market
+      build cache absent: tool reports success, launcher check then fails with "No verified
+      Market runtime build exists" (bug reproduced).
+PASS  v1.18.1 tools: update 261018.1 -> 261028.1 and restore back, run from the linked
+      path with the cache absent: Market program built under the real-path cache; runtime
+      check passes from both the real and the linked path; no second cache folder.
+PASS  bash -n on all shell scripts; compatibility helper self-test.
+
+==== v1.18 verification ====
 EveJS Universal Linux Setup v1.18 Stock-Only — Verification
 ==========================================================
 Date: 2026-10-29

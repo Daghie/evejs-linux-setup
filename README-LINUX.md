@@ -1,4 +1,4 @@
-# EveJS Universal Linux Setup v1.17 — Stock-Only
+# EveJS Universal Linux Setup v1.18 — Stock-Only
 
 Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
 copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
@@ -35,7 +35,8 @@ made a new prefix for every installation, so those settings started from scratch
 
 From v1.17 a fresh installation looks in `~/.local/share/evejs-linux/prefixes/` for a prefix
 an EveJS launcher already used (Proton files, Z: drive and EVE settings present) and offers to
-reuse it, newest EVE use first; the prefix you reuse is remembered in
+reuse it, newest EVE use first. Prefixes made for any earlier EveJS version qualify, and the list
+shows which version each one came from (for example `0.12.9-97ff901ca799 (EveJS 0.12.9, shared)`); the prefix you reuse is remembered in
 `~/.local/share/evejs-linux/shared-prefix` and offered first next time. Choose
 **Create a new prefix** for a clean one. Prefixes last used by a newer Proton than the one
 you picked are not offered, because Proton would rebuild them.
@@ -81,7 +82,7 @@ wallets and the rest of the world are untouched. The previous Market is backed u
 ## Which EveJS releases the launcher accepts
 
 The launcher runs stock EveJS whose Market server source is either in this Setup's audited
-list (`compatibility/market-stock-v*.json`: 0.12.9 and 261018.1) or exactly what the official
+list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1 and 261028.1) or exactly what the official
 release ZIP recorded by the installer or updater shipped (`_local/evejs-linux-setup/release.json`).
 Living Universe, X-Patch and unknown source states fail closed.
 

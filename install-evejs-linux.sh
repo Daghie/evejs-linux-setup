@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.17 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Universal Linux Setup v1.18 — Stock-Only Edition (standard Linux + SteamOS portable)
 # Target: EveJS 261018.1 and newer releases / EVE build named by each release's recipes
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -33,7 +33,7 @@ IFS=$'\n\t'
 # (tools/update-evejs-linux.sh) follows each release's own update policy.
 INSTALLER_MIN_VERSION="261018.1"
 INSTALLER_TESTED_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.17 Stock-Only Edition"
+INSTALLER_CANDIDATE_NAME="v1.18 Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -300,7 +300,7 @@ ui_choose_setup_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="EveJS Universal Linux Setup v1.17 — Stock Only" --width=980 --height=500 \
+                --title="EveJS Universal Linux Setup v1.18 — Stock Only" --width=980 --height=500 \
                 --text="Install EveJS, update an existing installation, or look after one. This Stock-only edition does not install Living Universe." \
                 --column="Use" --column="Action" --column="Description" \
                 TRUE  "install"  "Install EveJS into an existing empty folder" \
@@ -313,7 +313,7 @@ ui_choose_setup_action() {
                 --print-column=2
             ;;
         kdialog)
-            kdialog --title "EveJS Universal Linux Setup v1.17 — Stock Only" --menu \
+            kdialog --title "EveJS Universal Linux Setup v1.18 — Stock Only" --menu \
                 "Choose what you want to do:" \
                 install "Install EveJS into an empty folder" \
                 update "Update an existing installation (keeps your world)" \
@@ -325,7 +325,7 @@ ui_choose_setup_action() {
             ;;
         *)
             local pick
-            printf '\nEveJS Universal Linux Setup v1.17 — Stock Only\n' >&2
+            printf '\nEveJS Universal Linux Setup v1.18 — Stock Only\n' >&2
             printf '  [1] Install EveJS\n' >&2
             printf '  [2] Update an existing installation (keeps your world)\n' >&2
             printf '  [3] Undo an update or reseed from a backup\n' >&2
@@ -2096,15 +2096,23 @@ with open(out, "w", encoding="utf-8") as stream:
 PY
 }
 
+# "0.12.9-97ff901ca799" -> "0.12.9-97ff901ca799 (EveJS 0.12.9, shared)".
+prefix_label() {
+    local name="$1" pinned="$2" notes=""
+    [[ "$name" =~ ^(.+)-[0-9a-f]{12}$ ]] && notes="EveJS ${BASH_REMATCH[1]}"
+    (( pinned )) && notes="${notes:+$notes, }shared"
+    printf '%s%s\n' "$name" "${notes:+ ($notes)}"
+}
+
 # Prints the chosen prefix path, or "new". $1 = TSV from list_reusable_prefixes.
 ui_choose_prefix() {
     local records="$1" path name when settings version pinned label
-    local intro="Your EVE graphics and UI settings live inside the Proton prefix. Reusing an existing EveJS prefix keeps them; a new prefix starts from EVE defaults."
+    local intro="Your EVE graphics and UI settings live inside the Proton prefix. Reusing an existing EveJS prefix keeps them, including prefixes made for earlier EveJS versions; a new prefix starts from EVE defaults."
     case "$UI" in
         zenity)
             local rows=() first=TRUE
             while IFS=$'\t' read -r path name when settings version pinned; do
-                label="$name"; (( pinned )) && label="$name (shared)"
+                label="$(prefix_label "$name" "$pinned")"
                 rows+=("$first" "$label" "$when" "$settings" "$version" "$path"); first=FALSE
             done < "$records"
             zenity --list --radiolist \
@@ -2117,7 +2125,7 @@ ui_choose_prefix() {
         kdialog)
             local args=()
             while IFS=$'\t' read -r path name when settings version pinned; do
-                label="$name"; (( pinned )) && label="$name (shared)"
+                label="$(prefix_label "$name" "$pinned")"
                 args+=("$path" "$label — last EVE use $when — $settings settings files")
             done < "$records"
             kdialog --title "Choose the Proton prefix" --menu "$intro" "${args[@]}" new "Create a new prefix (EVE defaults)"
@@ -2128,7 +2136,7 @@ ui_choose_prefix() {
             printf '\n%s\n\nReusable EveJS Proton prefixes (best first):\n' "$intro" >&2
             while IFS=$'\t' read -r path name when settings version pinned; do
                 idx=$((idx+1)); paths[$idx]="$path"
-                label="$name"; (( pinned )) && label="$name (shared)"
+                label="$(prefix_label "$name" "$pinned")"
                 printf '  [%d] %s — last EVE use %s, %s settings files, Proton %s\n' \
                     "$idx" "$label" "$when" "$settings" "$version" >&2
             done < "$records"
@@ -2291,7 +2299,7 @@ prepare_existing_runtime_compatibility() {
     fi
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.17 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.18 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
     exit 0
 }
 

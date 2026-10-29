@@ -46,7 +46,7 @@ import sys
 import tempfile
 import zipfile
 
-SETUP_VERSION = "v1.17"
+SETUP_VERSION = "v1.18"
 STAMP_FORMAT = "%Y%m%d-%H%M%S"
 TOOLS_DIR = Path(__file__).absolute().parent
 POLICY_REL = "tools/Updater/update-policy.json"

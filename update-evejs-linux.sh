@@ -6,7 +6,7 @@
 #   tools/update-evejs-linux.sh list
 #   tools/update-evejs-linux.sh restore [backup-name] [--program-only|--data-only]
 #   tools/update-evejs-linux.sh prune --keep 3
-#   tools/update-evejs-linux.sh reseed-market v1|v2|v3
+#   tools/update-evejs-linux.sh reseed-market v1|v2|v3|v4
 #
 # The Linux twin of EveJS's UpdateEveJS.bat. It follows the release's own
 # tools/Updater/update-policy.json, keeps your world, Market, settings and

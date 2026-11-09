@@ -25,7 +25,7 @@ Commands (see --help):
   restore [backup]       put a backup back (default: the newest)
   list                   show backups
   prune --keep N         delete all but the newest N backups
-  reseed-market [v1|v2|v3]  rebuild the Market database with an install-time seed profile
+  reseed-market [v1|v2|v3|v4]  rebuild the Market database with an install-time seed profile
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ import sys
 import tempfile
 import zipfile
 
-SETUP_VERSION = "v1.18.1"
+SETUP_VERSION = "v1.19"
 STAMP_FORMAT = "%Y%m%d-%H%M%S"
 TOOLS_DIR = Path(__file__).resolve().parent
 POLICY_REL = "tools/Updater/update-policy.json"
@@ -1083,7 +1083,13 @@ MARKET_PROFILES = {
             ["--config", "config/market-seederv3.local.toml", "snapshot-info", "--download", "--reuse-download"],
             ["--config", "config/market-seederv3.local.toml", "audit"],
             ["--config", "config/market-seederv3.local.toml", "build", "--yes"]]),
+    # Iron Man (EveJS 261108.1+): the v2 importer with its own config and the strict filter.
+    "v4": ("v4 — Iron Man: authentic NPC station orders only", "tools/market-seederv2", "market-seederv2",
+           [["--config", "../market-seederv4/config/market-seederv4.local.toml", "build", "--yes",
+             "--reuse-download", "--order-filter", "iron-man"]]),
 }
+# Profiles that need more than their crate.
+MARKET_PROFILE_FILES = {"v4": "tools/market-seederv4/config/market-seederv4.local.toml"}
 MARKET_DB_DIR = "externalservices/market-server/data/generated"
 
 
@@ -1098,6 +1104,9 @@ def cmd_reseed(args) -> int:
     label, crate, binary_name, steps = MARKET_PROFILES[profile]
     if not (root / crate / "Cargo.toml").is_file() and not (root / crate / "target/release" / binary_name).is_file():
         raise UpdateError(f"This EveJS release has no {crate}.")
+    if profile in MARKET_PROFILE_FILES and not (root / MARKET_PROFILE_FILES[profile]).is_file():
+        raise UpdateError(f"This EveJS release has no {label.split(' — ')[0]} Market seeder "
+                          f"({MARKET_PROFILE_FILES[profile]}); it arrived in EveJS 261108.1.")
     assert_stopped(root, conf)
     say("Reseed the Market", "step")
     say(f"Folder  : {root}")

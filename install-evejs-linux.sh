@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.18.1 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Universal Linux Setup v1.19 — Stock-Only Edition (standard Linux + SteamOS portable)
 # Target: EveJS 261018.1 and newer releases / EVE build named by each release's recipes
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
@@ -33,7 +33,7 @@ IFS=$'\n\t'
 # (tools/update-evejs-linux.sh) follows each release's own update policy.
 INSTALLER_MIN_VERSION="261018.1"
 INSTALLER_TESTED_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.18.1 Stock-Only Edition"
+INSTALLER_CANDIDATE_NAME="v1.19 Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -87,7 +87,7 @@ Options:
   --client PATH       EVE tq directory or copied shared-cache root.
   --dest PATH         Destination for clean EveJS installation.
   --proton PATH       Proton directory or proton executable.
-  --market PROFILE    Market seed profile: v1, v2, or v3.
+  --market PROFILE    Market seed profile: v1, v2, v3, or v4 (v4 needs EveJS 261108.1 or newer).
   --no-launch         Do not launch EveJS when setup finishes.
   --no-desktop        Do not offer/create a desktop-menu shortcut.
   --mode MODE         install, update, restore, reseed, compat, backups, or prefix.
@@ -257,7 +257,11 @@ ui_choose_proton() {
 }
 
 
+# $1 = 1 when the release ships the v4 (Iron Man) seeder config.
 ui_choose_market() {
+    local with_v4="${1:-0}"
+    local -a v4_row=()
+    (( with_v4 )) && v4_row=(FALSE "v4" "Iron Man — only authentic NPC station orders (BPOs, skillbooks, trade goods); downloads TQ snapshot")
     case "$UI" in
         zenity)
             zenity --list --radiolist \
@@ -267,15 +271,19 @@ ui_choose_market() {
                 TRUE  "v1" "Synthetic Jita + New Caldari — deterministic, offline, recommended first test" \
                 FALSE "v2" "Live Tranquility snapshot — Jita live market + NPC catalog; downloads current snapshot" \
                 FALSE "v3" "Jita 4-4 manufacturing-cost index + authentic TQ NPC catalog; audited" \
+                "${v4_row[@]}" \
                 --print-column=2
             ;;
         kdialog)
             local pick
+            local -a v4_item=()
+            (( with_v4 )) && v4_item=(v4 "Iron Man — authentic NPC station orders only")
             pick="$(kdialog --title "Choose EveJS market" --menu \
                 "Choose one market seed strategy. v1 is recommended for the first Linux acceptance run." \
                 v1 "Synthetic Jita + New Caldari — deterministic/offline" \
                 v2 "Live TQ snapshot — Jita + NPC catalog" \
-                v3 "Cost-priced Jita 4-4 + authentic NPC catalog")" || return 1
+                v3 "Cost-priced Jita 4-4 + authentic NPC catalog" \
+                "${v4_item[@]}")" || return 1
             printf '%s\n' "$pick"
             ;;
         *)
@@ -284,11 +292,13 @@ ui_choose_market() {
             printf '  [1] v1 — Synthetic Jita + New Caldari (recommended first test)\n' >&2
             printf '  [2] v2 — Live TQ snapshot, Jita + NPC catalog\n' >&2
             printf '  [3] v3 — Cost-priced Jita 4-4 + authentic NPC catalog\n' >&2
-            read -r -p "Choose [1-3, default 1]: " pick
+            (( with_v4 )) && printf '  [4] v4 — Iron Man: authentic NPC station orders only\n' >&2
+            read -r -p "Choose [1-$((3 + with_v4)), default 1]: " pick
             case "${pick:-1}" in
                 1) printf 'v1\n' ;;
                 2) printf 'v2\n' ;;
                 3) printf 'v3\n' ;;
+                4) (( with_v4 )) && printf 'v4\n' || return 1 ;;
                 *) return 1 ;;
             esac
             ;;
@@ -300,20 +310,20 @@ ui_choose_setup_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="EveJS Universal Linux Setup v1.18.1 — Stock Only" --width=980 --height=500 \
+                --title="EveJS Universal Linux Setup v1.19 — Stock Only" --width=980 --height=500 \
                 --text="Install EveJS, update an existing installation, or look after one. This Stock-only edition does not install Living Universe." \
                 --column="Use" --column="Action" --column="Description" \
                 TRUE  "install"  "Install EveJS into an existing empty folder" \
                 FALSE "update"   "Update an existing EveJS installation from a newer release ZIP (keeps your world)" \
                 FALSE "restore"  "Undo an update or reseed: restore program files and/or world from a backup" \
-                FALSE "reseed"   "Reseed the Market of an existing installation (v1, v2 or v3)" \
+                FALSE "reseed"   "Reseed the Market of an existing installation (v1, v2, v3 or v4)" \
                 FALSE "compat"   "Prepare/verify runtime compatibility and refresh the launcher and tools" \
                 FALSE "backups"  "List or delete update/reseed backups" \
                 FALSE "prefix"   "Make an existing installation use a shared Proton prefix (keeps EVE settings)" \
                 --print-column=2
             ;;
         kdialog)
-            kdialog --title "EveJS Universal Linux Setup v1.18.1 — Stock Only" --menu \
+            kdialog --title "EveJS Universal Linux Setup v1.19 — Stock Only" --menu \
                 "Choose what you want to do:" \
                 install "Install EveJS into an empty folder" \
                 update "Update an existing installation (keeps your world)" \
@@ -325,7 +335,7 @@ ui_choose_setup_action() {
             ;;
         *)
             local pick
-            printf '\nEveJS Universal Linux Setup v1.18.1 — Stock Only\n' >&2
+            printf '\nEveJS Universal Linux Setup v1.19 — Stock Only\n' >&2
             printf '  [1] Install EveJS\n' >&2
             printf '  [2] Update an existing installation (keeps your world)\n' >&2
             printf '  [3] Undo an update or reseed from a backup\n' >&2
@@ -1184,6 +1194,11 @@ PY
         cd "$repo/server"
         "$NODE_BIN" -e "const DB=require('better-sqlite3');const db=new DB(':memory:');db.exec('CREATE TABLE t(x INTEGER)');db.close();require('protobufjs');console.log('SteamOS portable Node dependency smoke test PASS')"
     )
+}
+
+# Prints 1 when the EveJS tree at $1 ships the Iron Man (v4) seeder config, else 0.
+release_has_v4_seeder() {
+    [[ -f "$1/tools/market-seederv4/config/market-seederv4.local.toml" ]] && echo 1 || echo 0
 }
 
 run_market_tool() {
@@ -2299,7 +2314,7 @@ prepare_existing_runtime_compatibility() {
     fi
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.18.1 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.19 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
     exit 0
 }
 
@@ -2377,7 +2392,7 @@ case "$SETUP_ACTION" in
         if [[ -n "$ARG_MARKET" ]]; then
             RESEED_PROFILE="${ARG_MARKET,,}"
         else
-            RESEED_PROFILE="$(ui_choose_market)" || exit 1
+            RESEED_PROFILE="$(ui_choose_market "$(release_has_v4_seeder "$RESEED_REPO")")" || exit 1
         fi
         ui_yesno "Reseed the Market" "Reseed the Market of\n$RESEED_REPO\nwith profile $RESEED_PROFILE?\n\nEvery buy and sell order is replaced by the fresh seed, including your own orders and the items/ISK held in them. Hangars, wallets and the rest of the world are not touched. The current Market is backed up first and can be restored." || exit 0
         run_updater "$RESEED_REPO" reseed-market "$RESEED_PROFILE" --yes || die "Reseeding failed; the previous Market was put back."
@@ -2527,7 +2542,7 @@ fi
 if [[ -n "$ARG_MARKET" ]]; then
     MARKET_PROFILE="${ARG_MARKET,,}"
 else
-    MARKET_PROFILE="$(ui_choose_market)" || die "No market profile was selected."
+    MARKET_PROFILE="$(ui_choose_market "$(release_has_v4_seeder "$SOURCE_ROOT")")" || die "No market profile was selected."
 fi
 
 case "$MARKET_PROFILE" in
@@ -2540,8 +2555,13 @@ case "$MARKET_PROFILE" in
     v3)
         MARKET_LABEL="v3 — Cost-priced Jita 4-4 + authentic NPC catalog"
         ;;
+    v4)
+        (( $(release_has_v4_seeder "$SOURCE_ROOT") )) \
+            || die "EveJS $EVEJS_VERSION has no Iron Man (v4) Market seeder. Choose v1, v2, or v3."
+        MARKET_LABEL="v4 — Iron Man: authentic NPC station orders only"
+        ;;
     *)
-        die "Unknown market profile '$MARKET_PROFILE'. Choose v1, v2, or v3."
+        die "Unknown market profile '$MARKET_PROFILE'. Choose v1, v2, v3, or v4."
         ;;
 esac
 ok "Market profile: $MARKET_LABEL"
@@ -2763,6 +2783,15 @@ case "$MARKET_PROFILE" in
 
         run_market_tool "$MARKET_SEED_DIR" market-seederv3 \
             --config config/market-seederv3.local.toml build --yes
+        ;;
+    v4)
+        # Iron Man reuses the v2 importer and snapshot cache with its own config; the
+        # strict filter is passed explicitly, as EveJS's own launcher does.
+        MARKET_SEED_DIR="$EVEJS_REPO/tools/market-seederv2"
+        [[ -f "$MARKET_SEED_DIR/Cargo.toml" ]] || die "This release's market-seederv2 is missing."
+        run_market_tool "$MARKET_SEED_DIR" market-seederv2 \
+            --config ../market-seederv4/config/market-seederv4.local.toml \
+            build --yes --reuse-download --order-filter iron-man
         ;;
 esac
 

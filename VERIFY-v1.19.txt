@@ -1,3 +1,40 @@
+EveJS Universal Linux Setup v1.19 Stock-Only — Verification
+==========================================================
+Date: 2026-11-09
+Host: Fedora-based standard Linux x86_64, Node 24.18.0, Cargo 1.97, Proton 11.0
+Input: EveJS-261108.1.zip SHA-256 373266a05fd9acf0c220d06d5469907637a6d09bf2cf926adf4aaee97a3ccc59
+
+v1.19 supports EveJS 261108.1 and adds its new Market seed type v4 "Iron Man".
+261108.1 vs 261028.1: Market server source changed (digest 378F9430...6BB8), market-seed and
+market-seederv2 sources changed, Node dependencies unchanged, EVE client build still 3396210,
+update policy unchanged. The SteamOS bundle was rebuilt from 261108.1. v4 runs the v2 importer
+with tools/market-seederv4's config and --order-filter iron-man, as EveJS's own launcher does.
+
+All runs used a disposable folder on the game SSD with a copy of the client's tq folder
+(resource cache linked read-only) and a redirected prefix folder. No EVE client was started.
+Boots were headless (Market + game server). Once the owner's game started, boots, update,
+restore and reseeds ran in private network namespaces (unshare; pasta with no port
+forwarding where internet was needed) so the owner's session was never seen or touched.
+
+PASS  Fresh install of 261108.1, standard Linux, Market v4: exit 0; 547,705 NPC station
+      orders seeded (467,775 sells, 79,930 buys), Market-server doctor passed; runtime check
+      on the audited 261108.1 Market source passes.
+PASS  Boot of that install: 9/9 listeners, all on 127.0.0.1, 0 errors; whole process group
+      stopped, nothing left running.
+PASS  Forced-SteamOS fresh install of 261108.1 (Market v1, no Cargo on PATH): rebuilt bundle's
+      identity, artifact and Node smoke checks pass; nothing compiled. Boot: 9/9 loopback, 0 errors.
+PASS  Update 261028.1 -> 261108.1 through the installer's Update option on a booted world:
+      exit 0, new Market program built for the new source; boot afterwards 9/9, 0 errors.
+PASS  Market reseed v4 through tools/update-evejs-linux.sh on the updated install: exit 0,
+      profile recorded, 79,930 buy orders (same as the fresh v4 install).
+PASS  Reseed v4 without internet: seeder fails, previous Market put back byte for byte.
+PASS  Undo of the update through the installer's Restore option: 261028.1 back, world and Market
+      databases byte-identical to before the update, runtime check passes.
+PASS  Reseed v4 on 261028.1 is refused with a clear message, nothing changed. Market chooser
+      offers v4 only for releases that ship it.
+NOTE  The v1.19 SteamOS bundle matches 261108.1 only; on SteamOS install 261028.1 with v1.18.1.
+
+==== v1.18.1 verification ====
 EveJS Universal Linux Setup v1.18.1 Stock-Only — Verification
 ============================================================
 Date: 2026-10-29

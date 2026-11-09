@@ -1,0 +1,59 @@
+{
+  "schema": "evejs-linux-market-build-inputs/1",
+  "kind": "stock",
+  "evejsVersion": "261108.1",
+  "generatedFrom": "EveJS-261108.1.zip SHA-256 373266a05fd9acf0c220d06d5469907637a6d09bf2cf926adf4aaee97a3ccc59",
+  "sourceDigest": "378F943091C8E932580095F74ED6226166B084996A439C6A5FB150737ECE6BB8",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "size": 28581,
+      "sha256": "5E377597076C16D313CF5483D49D7625D7190E5793A99EFC9E8F762176B68507"
+    },
+    {
+      "path": "Cargo.toml",
+      "size": 612,
+      "sha256": "4A5ED461834535DC4D04DC59FDE3AD082AB3C7333DB6B33BB131F069B76414DE"
+    },
+    {
+      "path": "crates/market-common/Cargo.toml",
+      "size": 229,
+      "sha256": "80FAD73C83BF3764202391FA28BF815CDD64F149B096B36E00BF6D10C008D435"
+    },
+    {
+      "path": "crates/market-common/src/lib.rs",
+      "size": 20882,
+      "sha256": "7DF28FC7E7F62D9E44649C85DD50D538798C5C48B5F5AC1DD770E135E9927E4D"
+    },
+    {
+      "path": "src/config.rs",
+      "size": 7282,
+      "sha256": "50A3E4864449057D8107E73D7237FBFDEDF624421C20D59781774DA378E93782"
+    },
+    {
+      "path": "src/main.rs",
+      "size": 24491,
+      "sha256": "352781A30FD57AB4967BA8CC136869E39F18AFAD3584431D44F1D5A680E4F01A"
+    },
+    {
+      "path": "src/rpc.rs",
+      "size": 12275,
+      "sha256": "C5EDFF9A3C5E5B2D3308B5DEBD88BAFB3545707AEB1BAB112ABFD1205519351C"
+    },
+    {
+      "path": "src/state.rs",
+      "size": 151494,
+      "sha256": "7539DEFF4A6B7CEC2991000D690455CC903ACA8331BAEA30E11E4AB78611A611"
+    },
+    {
+      "path": "src/state/order_book_tests.rs",
+      "size": 7989,
+      "sha256": "FCBD1415C1310D03936283F5AF9E56AA90476F6F711C8C5E24E4D83D04B657BB"
+    },
+    {
+      "path": "src/state/transaction_tests.rs",
+      "size": 28159,
+      "sha256": "6F2993F264522C4E31E895A6D98386556A8329B1D20DF8D87163501726F5FDE0"
+    }
+  ]
+}

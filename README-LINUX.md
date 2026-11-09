@@ -1,4 +1,4 @@
-# EveJS Universal Linux Setup v1.18.1 — Stock-Only
+# EveJS Universal Linux Setup v1.19 — Stock-Only
 
 Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
 copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
@@ -20,7 +20,7 @@ Run `./install-evejs-linux.sh` and choose:
    settings and certificates stay in place (see *Updating* below).
 3. **Undo an update or reseed**: restore program files and/or data from a backup.
 4. **Reseed the Market** of an existing installation with one of the install-time seed
-   profiles (v1, v2 or v3).
+   profiles (v1, v2, v3, or v4 Iron Man on EveJS 261108.1 and newer).
 5. **Prepare/verify runtime compatibility**: re-checks an installation and refreshes the
    launcher, client pre-check and `tools/update-evejs-linux.sh` to this Setup's versions.
 6. **List or delete backups.**
@@ -56,7 +56,7 @@ tools/update-evejs-linux.sh list                                               #
 tools/update-evejs-linux.sh restore                                            # undo the newest update
 tools/update-evejs-linux.sh restore <backup> --program-only | --data-only
 tools/update-evejs-linux.sh prune --keep 3
-tools/update-evejs-linux.sh reseed-market v1|v2|v3
+tools/update-evejs-linux.sh reseed-market v1|v2|v3|v4
 ```
 
 What an update does:
@@ -88,7 +88,7 @@ wallets and the rest of the world are untouched. The previous Market is backed u
 ## Which EveJS releases the launcher accepts
 
 The launcher runs stock EveJS whose Market server source is either in this Setup's audited
-list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1 and 261028.1) or exactly what the official
+list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1, 261028.1 and 261108.1) or exactly what the official
 release ZIP recorded by the installer or updater shipped (`_local/evejs-linux-setup/release.json`).
 Living Universe, X-Patch and unknown source states fail closed.
 
@@ -96,7 +96,9 @@ Living Universe, X-Patch and unknown source states fail closed.
 
 The bundle is bound to the parts of a release it was built from (lockfile contents and each
 Rust program's source), so it keeps working across releases that leave them unchanged. When a
-release changes them, rebuild it on a Linux PC with podman or docker:
+release changes them, rebuild it on a Linux PC with podman or docker. The bundle in Setup v1.19
+is built for EveJS 261108.1 (its Market programs changed); on SteamOS, install older releases with
+the Setup version made for them (261028.1: v1.18.1).
 
 ```bash
 tools/build-steamos-payload.sh ~/Downloads/EveJS-<version>.zip
@@ -107,3 +109,7 @@ tools/build-steamos-payload.sh ~/Downloads/EveJS-<version>.zip
 Choose **1**, select the EveJS release ZIP, a separate copied EVE client (build named by the
 release, currently 3396210) with its resource cache, your normal official Steam Proton, and a
 new empty EveJS destination. Market v1 remains the recommended first profile.
+
+Market **v4 "Iron Man"** (EveJS 261108.1 and newer) seeds only authentic NPC station orders from
+the Tranquility snapshot (blueprint originals, skillbooks, command centers, trade goods); everything
+else has to be made or found in game. It downloads the snapshot like v2 and shares its cache.

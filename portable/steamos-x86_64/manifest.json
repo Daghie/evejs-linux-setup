@@ -1,13 +1,13 @@
 {
   "schema": "evejs-steamos-portable-payload/2",
-  "builtFromEvejsVersion": "261018.1",
+  "builtFromEvejsVersion": "261108.1",
   "eveBuild": 3396210,
   "platform": "linux-x86_64",
-  "sourceArchiveSha256": "2bd63d39b95308c7a383e39ec1d749ff82449b4591dcafa70e4e2414ba4aabeb",
+  "sourceArchiveSha256": "373266a05fd9acf0c220d06d5469907637a6d09bf2cf926adf4aaee97a3ccc59",
   "payload": {
     "file": "payload.tar.xz",
-    "size": 11544792,
-    "sha256": "aff8eb81a6313a0c29ccca4e38894bcad0f1ef23885e4d372e8a1d5f47c2c7dc"
+    "size": 11546944,
+    "sha256": "9d05bbff9d087ef9b0036f3625bc8a531e65cbfc7e4eb0d715c69844ee5206ed"
   },
   "buildEnvironment": {
     "rustImage": "docker.io/library/rust:1.97-alpine",
@@ -23,32 +23,32 @@
   "artifacts": [
     {
       "path": "externalservices/market-server/target/release/market-server",
-      "size": 8579344,
-      "sha256": "7572f3036177504647f34915d821dc44a72f00793e541953f2b2190aa434c656",
+      "size": 8610424,
+      "sha256": "df8c76d2e7efb40776bbc158ca176e2c9daeb3946f5c8cc090bfe6dfef4d8eac",
       "linkage": "static-pie-musl",
       "crate": "externalservices/market-server",
-      "sourceDigest": "64FC2E44222B78EDB5FD585C5BCF67E124F060BCD2CB9495160177A17F7A2E34"
+      "sourceDigest": "378F943091C8E932580095F74ED6226166B084996A439C6A5FB150737ECE6BB8"
     },
     {
       "path": "tools/market-seed/target/release/market-seed",
       "size": 4939544,
-      "sha256": "8627a5604b51c11a80080e9f35f51e658bf5ff610b415ae9c8603e380367f9b4",
+      "sha256": "f4b6e3b90818bd7a96b057f186343427c8457c088ae29b97926bf838de9ea1c6",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seed",
-      "sourceDigest": "B2CA4CA850793DB3B83EE428A199459E147BF683B031AC905A773F53F8DAAD3C"
+      "sourceDigest": "43B43EAC4156E99D831F756A19AD8EAF09BF9B5B53E8F5EF25D9F21C2653F200"
     },
     {
       "path": "tools/market-seederv2/target/release/market-seederv2",
-      "size": 8897088,
-      "sha256": "d8639e1fffdd5a55a30c0bd71e62c54ad9547742f56576ce5bf0beb7eac70b44",
+      "size": 8898120,
+      "sha256": "ea355a3c16022a6d19ca4e93a49f0dea409857e3f411dadffe1102d8a386a4bf",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seederv2",
-      "sourceDigest": "9BE31AFF42C12813B7C4878A197D933643B166EA2FBC3F35BD321B2A3AFA6958"
+      "sourceDigest": "E7B28ACF67793F87C66878792AD72B180646328D8C80469DFA454E31B9215CEA"
     },
     {
       "path": "tools/market-seederv3/target/release/market-seederv3",
       "size": 10277056,
-      "sha256": "120833a17371ed5391ff72ef90311a41c6c5538120b9d37c5c3fcab9bfa3335b",
+      "sha256": "3f400e1de3bea1ffdca7b4dd5d4be9ca28ce7cb56e5f74c863d0f8bb2cf71588",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seederv3",
       "sourceDigest": "73FFE6837D6D3DAFA5385E6D4F828FACEE9455DA565C92CCE67EBDD60A3B5672"

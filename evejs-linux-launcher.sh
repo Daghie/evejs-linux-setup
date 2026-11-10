@@ -27,6 +27,14 @@
 # The launcher never installs/updates/repairs EveJS or Living Universe. It may perform the
 # mandatory EveJS CA/client migration, limited by exact certificate and binary identities.
 # Market binaries are verified external runtime builds matched to installed source.
+#
+# Every service runs under a small supervisor shell (runner_supervisor_block): the launcher
+# stops a service by sending SIGTERM to that supervisor, which forwards it, waits for the
+# service and exits 0. Terminals report a session process that died from a signal as a
+# crashed program and keep the window open; a supervisor keeps windows closing normally.
+# Bash gives an asynchronous (backgrounded) command its stdin from /dev/null, and the EVE
+# client exits at once when it has no stdin, so the supervisor hands the terminal's own
+# stdin to the service instead.
 # ==============================================================================
 
 set -uo pipefail
@@ -367,7 +375,12 @@ stop_process_tree() {
     for child in "${descendants[@]}"; do
         is_pid_running "$child" && kill -KILL "$child" 2>/dev/null || true
     done
-    is_pid_running "$pid" && kill -KILL "$pid" 2>/dev/null || true
+
+    # A runner supervisor exits on its own the moment its service is gone. Let it do
+    # that, so the terminal sees a normal exit, and only signal-kill it as a last resort.
+    if ! wait_pid_exit "$pid" 5; then
+        is_pid_running "$pid" && kill -KILL "$pid" 2>/dev/null || true
+    fi
 
     wait_pid_exit "$pid" 3 || true
     echo "  ✓ $label process tree terminated"
@@ -613,11 +626,22 @@ refresh_runtime_compatibility() {
 }
 
 market_process_binary_matches() {
-    local pid="$1" expected actual
+    # The runner keeps its supervisor shell as the process-tree root, so the verified
+    # Market program is a child of the PID recorded in market.pid, not that PID itself.
+    local pid="$1" expected candidate actual
     is_pid_running "$pid" || return 1
     expected="$(readlink -f "$MARKET_BIN" 2>/dev/null || true)"
-    actual="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
-    [[ -n "$expected" && "$actual" == "$expected" ]]
+    [[ -n "$expected" ]] || return 1
+
+    local -a candidates=("$pid") descendants
+    mapfile -t descendants < <(collect_descendants "$pid" | awk 'NF')
+    candidates+=("${descendants[@]}")
+
+    for candidate in "${candidates[@]}"; do
+        actual="$(readlink -f "/proc/$candidate/exe" 2>/dev/null || true)"
+        [[ -n "$actual" && "$actual" == "$expected" ]] && return 0
+    done
+    return 1
 }
 
 market_rpc_probe_integrated_lu() { return 0; }
@@ -872,6 +896,60 @@ repair_client_ca_bundles || exit 1
 detect_mods
 
 # ── Runners ───────────────────────────────────────────────────────────────────
+# Appended to every generated runner. The launcher stops a service by sending SIGTERM to
+# the PID the runner records in its .pid file. Exec'ing the service means that PID dies
+# from the signal, and Konsole (and other emulators) then report "Program 'bash' crashed."
+# and leave the window open. The supervisor keeps that PID as a shell instead: it forwards
+# the stop, waits for the service to finish and exits 0, so the window closes normally.
+# A service that dies on its own keeps its real exit status.
+runner_supervisor_block() {
+    cat <<'SUPERVISOR'
+# --- runner supervisor (written by the EveJS Linux launcher) ---
+service_pid=""
+stopping=0
+service_alive() { [[ -n "${service_pid:-}" ]] && kill -0 "$service_pid" 2>/dev/null; }
+request_stop() {
+    stopping=1
+    service_alive && kill -TERM "$service_pid" 2>/dev/null || true
+}
+trap request_stop TERM INT HUP
+
+# The log pipeline (tee) is a child of this shell. If the launcher terminates that child
+# while the service is still shutting down, a write here would otherwise kill this shell
+# with SIGPIPE and the terminal would report a crashed shell again.
+log_pipe_broken=0
+trap 'log_pipe_broken=1' PIPE
+
+# Start the service as a background job so `wait` returns as soon as a signal arrives and
+# the supervisor can forward it. Bash redirects a background job's stdin from /dev/null;
+# exefile.exe treats that as "nothing to do" and exits immediately, so duplicate the real
+# stdin on fd 3 and give it to the service, which then closes the inherited fd 3.
+service_stdin=""
+{ exec 3<&0; } 2>/dev/null && service_stdin=3
+if [[ -n "$service_stdin" ]]; then
+    { exec 3<&-; exec "${SERVICE_CMD[@]}"; } <&3 &
+else
+    "${SERVICE_CMD[@]}" &
+fi
+service_pid=$!
+
+# wait returns early when one of the trapped signals reaches this shell; keep waiting
+# until the service itself is really gone so it is never left running behind us.
+while true; do
+    wait "$service_pid"
+    service_status=$?
+    service_alive || break
+done
+
+if (( stopping )); then
+    (( log_pipe_broken )) || echo "[runner] service stopped by the launcher"
+    exit 0
+fi
+(( log_pipe_broken )) || echo "[runner] service exited on its own with status $service_status"
+exit "$service_status"
+SUPERVISOR
+}
+
 write_market_runner() {
     local runner="$RUNNER_DIR/run-market.sh" pidfile="$PID_DIR/market.pid"
     cat > "$runner" <<EOF
@@ -890,7 +968,8 @@ echo '  Source:  $(printf '%s' "$EVEJS_MARKET_SOURCE_DIGEST")'
 echo '  HTTP: 127.0.0.1:40110'
 echo '  RPC : 127.0.0.1:40111'
 echo '══════════════════════════════════════════'
-exec $(printf '%q' "$MARKET_BIN") --config config/market-server.local.toml serve
+SERVICE_CMD=( $(printf '%q' "$MARKET_BIN") --config config/market-server.local.toml serve )
+$(runner_supervisor_block)
 EOF
     chmod +x "$runner"
     printf '%s\n' "$runner"
@@ -1002,8 +1081,9 @@ echo "  HTTPS/CDN:       127.0.0.1:$CDN_PORT"
 echo '  XMPP/TLS:        127.0.0.1:5222'
 echo '  XMPP advertised: 127.0.0.1'
 echo '══════════════════════════════════════════'
-exec "${NODE_ARGS[@]}"
+SERVICE_CMD=( "${NODE_ARGS[@]}" )
 EOF
+        runner_supervisor_block
     } > "$runner"
     chmod +x "$runner"
     printf '%s\n' "$runner"
@@ -1156,7 +1236,8 @@ echo '  ResFiles:$RESFILES'
 echo '  CA path: $ca_win'
 echo '══════════════════════════════════════════'
 
-exec $(printf '%q' "$PROTON_BIN") run $(printf '%q' "$TQ_PATH/bin64/exefile.exe") "/port:$GAME_PORT"
+SERVICE_CMD=( $(printf '%q' "$PROTON_BIN") run $(printf '%q' "$TQ_PATH/bin64/exefile.exe") "/port:$GAME_PORT" )
+$(runner_supervisor_block)
 EOF
     chmod +x "$runner"
     printf '%s\n' "$runner"

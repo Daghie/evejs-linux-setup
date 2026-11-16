@@ -1,4 +1,4 @@
-# EveJS Universal Linux Setup v1.19 — Stock-Only
+# EveJS Universal Linux Setup v1.20 — Stock-Only
 
 Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
 copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
@@ -44,6 +44,20 @@ you picked are not offered, because Proton would rebuild them.
 Menu option 7 points an existing installation at a shared prefix; its old prefix stays on disk
 until you delete it. Non-interactive: `--prefix reuse`, `--prefix new` or `--prefix <path>`.
 
+## EVE client (launcher)
+
+- **Renderer:** EVE uses DX11 by default. Launcher option **[V]** switches between DX11 and DX12
+  (saved as `EVEJS_CLIENT_RENDERER` in `.evejs-linux.conf`); restart the client to use it. As in
+  EveJS's own launcher, DX12 falls back to DX11 when the client has no `_trinity_dx12.dll`. EveJS
+  has not fully verified DX12 yet.
+- **Offline crash settings:** like EveJS's `Play.bat`, the launcher starts the client with
+  `/noCrashReportUpload` and the local `/resfileserver`, and before each start it sets
+  `sentry_io_dsn` (local EveJS proxy) and `breakpadUpload=0` in that client's `prefs.ini` inside the
+  Proton prefix. Only those two lines change; the first change keeps `prefs.ini.evejs-offline-backup`.
+- **Stopping:** each service window runs under a small supervisor, so stopping Market, Game or a
+  client from the launcher closes its window normally instead of reporting a crashed `bash`
+  (contributed by crw72).
+
 ## Updating
 
 Every installation gets `tools/update-evejs-linux.sh`, the Linux twin of EveJS's own
@@ -88,7 +102,7 @@ wallets and the rest of the world are untouched. The previous Market is backed u
 ## Which EveJS releases the launcher accepts
 
 The launcher runs stock EveJS whose Market server source is either in this Setup's audited
-list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1, 261028.1 and 261108.1) or exactly what the official
+list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1, 261028.1, 261108.1 and 261115.2) or exactly what the official
 release ZIP recorded by the installer or updater shipped (`_local/evejs-linux-setup/release.json`).
 Living Universe, X-Patch and unknown source states fail closed.
 
@@ -96,9 +110,9 @@ Living Universe, X-Patch and unknown source states fail closed.
 
 The bundle is bound to the parts of a release it was built from (lockfile contents and each
 Rust program's source), so it keeps working across releases that leave them unchanged. When a
-release changes them, rebuild it on a Linux PC with podman or docker. The bundle in Setup v1.19
-is built for EveJS 261108.1 (its Market programs changed); on SteamOS, install older releases with
-the Setup version made for them (261028.1: v1.18.1).
+release changes them, rebuild it on a Linux PC with podman or docker. The bundle in Setup v1.20
+is built for EveJS 261115.2; on SteamOS, install older releases with the Setup version made for
+them (261108.1: v1.19, 261028.1: v1.18.1).
 
 ```bash
 tools/build-steamos-payload.sh ~/Downloads/EveJS-<version>.zip

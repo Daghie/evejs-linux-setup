@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Portable Linux Launcher v1.19 — Stock-Only Edition (standard Linux + SteamOS portable)
+# EveJS Portable Linux Launcher v1.20 — Stock-Only Edition (standard Linux + SteamOS portable)
 #
 # Reads .evejs-linux.conf from the EveJS repository.
 #
@@ -27,6 +27,14 @@
 # The launcher never installs/updates/repairs EveJS or Living Universe. It may perform the
 # mandatory EveJS CA/client migration, limited by exact certificate and binary identities.
 # Market binaries are verified external runtime builds matched to installed source.
+#
+# Every service runs under a small supervisor shell (runner_supervisor_block): the launcher
+# stops a service by sending SIGTERM to that supervisor, which forwards it, waits for the
+# service and exits 0. Terminals report a session process that died from a signal as a
+# crashed program and keep the window open; a supervisor keeps windows closing normally.
+# Bash gives an asynchronous (backgrounded) command its stdin from /dev/null, and the EVE
+# client exits at once when it has no stdin, so the supervisor hands the terminal's own
+# stdin to the service instead.
 # ==============================================================================
 
 set -uo pipefail
@@ -367,7 +375,12 @@ stop_process_tree() {
     for child in "${descendants[@]}"; do
         is_pid_running "$child" && kill -KILL "$child" 2>/dev/null || true
     done
-    is_pid_running "$pid" && kill -KILL "$pid" 2>/dev/null || true
+
+    # A runner supervisor exits on its own the moment its service is gone. Let it do
+    # that, so the terminal sees a normal exit, and only signal-kill it as a last resort.
+    if ! wait_pid_exit "$pid" 5; then
+        is_pid_running "$pid" && kill -KILL "$pid" 2>/dev/null || true
+    fi
 
     wait_pid_exit "$pid" 3 || true
     echo "  ✓ $label process tree terminated"
@@ -579,7 +592,7 @@ detect_mods() {
 show_mods() {
     if (( DISABLED_LU_LOADER )); then
         echo "  [LU] mods/x-eve-living-universe is present but DISABLED on EveJS $EVEJS_VERSION"
-        echo "       (Living Universe is unavailable in the Stock-only Setup v1.19 edition)"
+        echo "       (Living Universe is unavailable in the Stock-only Setup v1.20 edition)"
     fi
     if (( MOD_COUNT == 0 )); then
         echo "  [MODS] no enabled loader mods detected"
@@ -613,11 +626,22 @@ refresh_runtime_compatibility() {
 }
 
 market_process_binary_matches() {
-    local pid="$1" expected actual
+    # The runner keeps its supervisor shell as the process-tree root, so the verified
+    # Market program is a child of the PID recorded in market.pid, not that PID itself.
+    local pid="$1" expected candidate actual
     is_pid_running "$pid" || return 1
     expected="$(readlink -f "$MARKET_BIN" 2>/dev/null || true)"
-    actual="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
-    [[ -n "$expected" && "$actual" == "$expected" ]]
+    [[ -n "$expected" ]] || return 1
+
+    local -a candidates=("$pid") descendants
+    mapfile -t descendants < <(collect_descendants "$pid" | awk 'NF')
+    candidates+=("${descendants[@]}")
+
+    for candidate in "${candidates[@]}"; do
+        actual="$(readlink -f "/proc/$candidate/exe" 2>/dev/null || true)"
+        [[ -n "$actual" && "$actual" == "$expected" ]] && return 0
+    done
+    return 1
 }
 
 market_rpc_probe_integrated_lu() { return 0; }
@@ -798,6 +822,47 @@ ensure_proton_prefix() {
     return 1
 }
 
+# The EVE client's per-install settings folder name (utillib.GetClientUniqueFolderName):
+# its Windows tq path, lower-cased, separators -> "_", ":" dropped, spaces -> "_", + server.
+client_settings_dir() {
+    local key
+    key="$(windows_z_path "$TQ_PATH")"
+    key="${key,,}"; key="${key//\\/_}"; key="${key//\//_}"; key="${key//:/}"; key="${key// /_}"
+    printf '%s\n' "$PROTON_PREFIX/pfx/drive_c/users/steamuser/AppData/Local/CCP/EVE/${key}_127.0.0.1/settings"
+}
+
+# Same gate as EveJS's Prepare-EvEJSOfflinePreferences.ps1 (run by Play.bat before every
+# client start): this client's prefs.ini sends Sentry reports to the local EveJS proxy and
+# disables crash uploads. Only those two keys change; the first change keeps a backup.
+prepare_offline_client_preferences() {
+    local dsn="http://evejs@127.0.0.1:${PROXY_URL##*:}/1"
+    python3 - "$(client_settings_dir)" "$dsn" <<'PY' || { echo "  ✗ Could not prepare the client's offline crash/Sentry preferences."; return 1; }
+import os, re, sys
+settings, dsn = sys.argv[1], sys.argv[2]
+if not re.fullmatch(r"http://evejs@127\.0\.0\.1:[0-9]{1,5}/1", dsn):
+    sys.exit(f"Unexpected Sentry DSN {dsn!r}")
+prefs = os.path.join(settings, "prefs.ini")
+backup = prefs + ".evejs-offline-backup"
+for path in (settings, prefs, backup):
+    if os.path.islink(path):
+        sys.exit(f"Refusing a symbolic link in the client settings path: {path}")
+os.makedirs(settings, exist_ok=True)
+old = open(prefs, "rb").read() if os.path.isfile(prefs) else b""
+keep = [line for line in old.decode("cp1252").splitlines()
+        if not re.match(r"\s*(sentry_io_dsn|breakpadUpload)\s*=", line)]
+new = ("\r\n".join(keep + [f"sentry_io_dsn={dsn}", "breakpadUpload=0"]) + "\r\n").encode("cp1252")
+if new != old:
+    if old and not os.path.exists(backup):
+        with open(backup, "wb") as stream:
+            stream.write(old)
+    temporary = prefs + ".evejs-tmp"
+    with open(temporary, "wb") as stream:
+        stream.write(new); stream.flush(); os.fsync(stream.fileno())
+    os.replace(temporary, prefs)
+PY
+    echo "  ✓ Client crash uploads off; Sentry reports stay on this PC (as EveJS's Play.bat sets them)"
+}
+
 windows_z_path() {
     local p="$1"
     p="${p//\//\\}"
@@ -872,6 +937,60 @@ repair_client_ca_bundles || exit 1
 detect_mods
 
 # ── Runners ───────────────────────────────────────────────────────────────────
+# Appended to every generated runner. The launcher stops a service by sending SIGTERM to
+# the PID the runner records in its .pid file. Exec'ing the service means that PID dies
+# from the signal, and Konsole (and other emulators) then report "Program 'bash' crashed."
+# and leave the window open. The supervisor keeps that PID as a shell instead: it forwards
+# the stop, waits for the service to finish and exits 0, so the window closes normally.
+# A service that dies on its own keeps its real exit status.
+runner_supervisor_block() {
+    cat <<'SUPERVISOR'
+# --- runner supervisor (written by the EveJS Linux launcher) ---
+service_pid=""
+stopping=0
+service_alive() { [[ -n "${service_pid:-}" ]] && kill -0 "$service_pid" 2>/dev/null; }
+request_stop() {
+    stopping=1
+    service_alive && kill -TERM "$service_pid" 2>/dev/null || true
+}
+trap request_stop TERM INT HUP
+
+# The log pipeline (tee) is a child of this shell. If the launcher terminates that child
+# while the service is still shutting down, a write here would otherwise kill this shell
+# with SIGPIPE and the terminal would report a crashed shell again.
+log_pipe_broken=0
+trap 'log_pipe_broken=1' PIPE
+
+# Start the service as a background job so `wait` returns as soon as a signal arrives and
+# the supervisor can forward it. Bash redirects a background job's stdin from /dev/null;
+# exefile.exe treats that as "nothing to do" and exits immediately, so duplicate the real
+# stdin on fd 3 and give it to the service, which then closes the inherited fd 3.
+service_stdin=""
+{ exec 3<&0; } 2>/dev/null && service_stdin=3
+if [[ -n "$service_stdin" ]]; then
+    { exec 3<&-; exec "${SERVICE_CMD[@]}"; } <&3 &
+else
+    "${SERVICE_CMD[@]}" &
+fi
+service_pid=$!
+
+# wait returns early when one of the trapped signals reaches this shell; keep waiting
+# until the service itself is really gone so it is never left running behind us.
+while true; do
+    wait "$service_pid"
+    service_status=$?
+    service_alive || break
+done
+
+if (( stopping )); then
+    (( log_pipe_broken )) || echo "[runner] service stopped by the launcher"
+    exit 0
+fi
+(( log_pipe_broken )) || echo "[runner] service exited on its own with status $service_status"
+exit "$service_status"
+SUPERVISOR
+}
+
 write_market_runner() {
     local runner="$RUNNER_DIR/run-market.sh" pidfile="$PID_DIR/market.pid"
     cat > "$runner" <<EOF
@@ -890,7 +1009,8 @@ echo '  Source:  $(printf '%s' "$EVEJS_MARKET_SOURCE_DIGEST")'
 echo '  HTTP: 127.0.0.1:40110'
 echo '  RPC : 127.0.0.1:40111'
 echo '══════════════════════════════════════════'
-exec $(printf '%q' "$MARKET_BIN") --config config/market-server.local.toml serve
+SERVICE_CMD=( $(printf '%q' "$MARKET_BIN") --config config/market-server.local.toml serve )
+$(runner_supervisor_block)
 EOF
     chmod +x "$runner"
     printf '%s\n' "$runner"
@@ -1002,8 +1122,9 @@ echo "  HTTPS/CDN:       127.0.0.1:$CDN_PORT"
 echo '  XMPP/TLS:        127.0.0.1:5222'
 echo '  XMPP advertised: 127.0.0.1'
 echo '══════════════════════════════════════════'
-exec "${NODE_ARGS[@]}"
+SERVICE_CMD=( "${NODE_ARGS[@]}" )
 EOF
+        runner_supervisor_block
     } > "$runner"
     chmod +x "$runner"
     printf '%s\n' "$runner"
@@ -1097,13 +1218,41 @@ launch_game_server() {
     return 1
 }
 
+# EVE client renderer (EveJS 261115.2+ reads it from TRINITYPLATFORM). Same precedence as
+# EveJS's Play.bat: EVEJS_CLIENT_RENDERER (launcher config or environment), then an
+# inherited TRINITYPLATFORM, then DX11. DX12 falls back to DX11 when the client lacks it.
+resolve_client_renderer() {
+    local requested="${EVEJS_CLIENT_RENDERER:-${TRINITYPLATFORM:-dx11}}"
+    requested="${requested,,}"
+    case "$requested" in
+        dx11|dx12) ;;
+        *) echo "  ! Unknown renderer '$requested' (use dx11 or dx12); using DX11." >&2; requested="dx11" ;;
+    esac
+    if [[ "$requested" == "dx12" && ! -f "$TQ_PATH/bin64/_trinity_dx12.dll" ]]; then
+        echo "  ! DX12 unavailable: _trinity_dx12.dll is missing; using DX11." >&2
+        requested="dx11"
+    fi
+    printf '%s\n' "$requested"
+}
+
+# Saves the renderer choice in .evejs-linux.conf; the next client start uses it.
+set_client_renderer() {
+    local value="$1" tmp
+    tmp="$(mktemp "$CONFIG.XXXXXX")" || return 1
+    grep -v '^EVEJS_CLIENT_RENDERER=' "$CONFIG" > "$tmp"
+    printf 'EVEJS_CLIENT_RENDERER=%q\n' "$value" >> "$tmp"
+    chmod --reference="$CONFIG" "$tmp" && mv -f "$tmp" "$CONFIG" || { rm -f "$tmp"; return 1; }
+    EVEJS_CLIENT_RENDERER="$value"
+}
+
 write_client_runner() {
     # Optional arguments let additional clients use their own runner, PID file
     # and log while sharing the same verified backend, prefix and client copy.
     local runner="${1:-$RUNNER_DIR/run-client.sh}" pidfile="${2:-$PID_DIR/client.pid}"
     local client_log="${3:-$CLIENT_LOG}" client_label="${4:-primary}"
-    local ca_win
+    local ca_win renderer
     ca_win="$(windows_z_path "$CA_CERT")"
+    renderer="$(resolve_client_renderer)"
 
     cat > "$runner" <<EOF
 #!/usr/bin/env bash
@@ -1141,6 +1290,7 @@ export LAUNCHDARKLY_OFFLINE=true
 export LAUNCHDARKLY_SEND_EVENTS=false
 export LD_SEND_EVENTS=false
 export EO_REMOTEFILECACHEFOLDER=$(printf '%q' "$RESFILES")
+export TRINITYPLATFORM=$(printf '%q' "$renderer")
 
 cd $(printf '%q' "$TQ_PATH") || exit 1
 exec > >(tee -a $(printf '%q' "$client_log")) 2>&1
@@ -1154,9 +1304,11 @@ echo '  Proton:  $(basename "$PROTON_DIR")'
 echo '  tq:      $TQ_PATH'
 echo '  ResFiles:$RESFILES'
 echo '  CA path: $ca_win'
+echo '  Renderer: ${renderer^^}'
 echo '══════════════════════════════════════════'
 
-exec $(printf '%q' "$PROTON_BIN") run $(printf '%q' "$TQ_PATH/bin64/exefile.exe") "/port:$GAME_PORT"
+SERVICE_CMD=( $(printf '%q' "$PROTON_BIN") run $(printf '%q' "$TQ_PATH/bin64/exefile.exe") /noCrashReportUpload $(printf '%q' "/resfileserver=$PROXY_URL/resfiles/") "/port:$GAME_PORT" )
+$(runner_supervisor_block)
 EOF
     chmod +x "$runner"
     printf '%s\n' "$runner"
@@ -1189,6 +1341,7 @@ client_backend_ready() {
     verify_tls_endpoint "$XMPP_BIND_HOST" "$XMPP_PORT" localhost XMPP || return 1
     verify_tls_endpoint "$GATEWAY_TLS_HOST" "$GATEWAY_TLS_PORT" "$GATEWAY_TLS_SNI" gateway || return 1
     ensure_proton_prefix || return 1
+    prepare_offline_client_preferences || return 1
 }
 
 launch_client() {
@@ -1299,7 +1452,7 @@ restart_all() {
 
 echo
 echo "╔════════════════════════════════════════════════════════════╗"
-printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.19 Stock Only"
+printf "║  %-58s║\n" "EveJS $EVEJS_VERSION Linux Launcher - v1.20 Stock Only"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo " EveJS:   v$EVEJS_VERSION"
 echo " Repo:    $EVEJS_REPO"
@@ -1373,8 +1526,9 @@ while true; do
     echo "[S] Show mods"
     echo "[D] Diagnose required ports"
     echo "[P] Show paths"
+    echo "[V] Switch renderer DX11/DX12 (now ${EVEJS_CLIENT_RENDERER:-dx11}; used from the next client start)"
     echo "[Q] Quit"
-    read -r -p "Choose [1/2/3/N/X/R/M/A/S/D/P/Q]: " choice
+    read -r -p "Choose [1/2/3/N/X/R/M/A/S/D/P/V/Q]: " choice
 
     case "${choice,,}" in
         1)
@@ -1464,6 +1618,15 @@ while true; do
             echo "Client log:    $CLIENT_LOG"
             echo "Extra logs:    $LOG_DIR/client-<N>-latest.log"
             echo
+            ;;
+        v)
+            if [[ "${EVEJS_CLIENT_RENDERER:-dx11}" == "dx12" ]]; then next="dx11"; else next="dx12"; fi
+            if set_client_renderer "$next"; then
+                echo "Renderer set to ${next^^}. Restart the EVE client ([3] twice) to use it."
+                [[ "$next" == "dx12" ]] && echo "EveJS has not fully verified DX12 yet; switch back with [V] if the client misbehaves."
+            else
+                echo "Could not save the renderer choice in $CONFIG."
+            fi
             ;;
         q) exit 0 ;;
         *) echo "Invalid choice." ;;

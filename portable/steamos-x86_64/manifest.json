@@ -1,13 +1,13 @@
 {
   "schema": "evejs-steamos-portable-payload/2",
-  "builtFromEvejsVersion": "261108.1",
+  "builtFromEvejsVersion": "261115.2",
   "eveBuild": 3396210,
   "platform": "linux-x86_64",
-  "sourceArchiveSha256": "373266a05fd9acf0c220d06d5469907637a6d09bf2cf926adf4aaee97a3ccc59",
+  "sourceArchiveSha256": "899ca7dd19abd4d9441966a60bbecc37008b459284c0601ae2af8edc29271be0",
   "payload": {
     "file": "payload.tar.xz",
-    "size": 11546944,
-    "sha256": "9d05bbff9d087ef9b0036f3625bc8a531e65cbfc7e4eb0d715c69844ee5206ed"
+    "size": 11546520,
+    "sha256": "0a72c00973d001d523235f2c7d1fde4d89c3bfb879b06f90d12b952656382a55"
   },
   "buildEnvironment": {
     "rustImage": "docker.io/library/rust:1.97-alpine",
@@ -17,8 +17,8 @@
     "npm": "11.16.0"
   },
   "dependencyFingerprints": {
-    "package-lock.json": "25db8bf0db7c206d4202d279926f2973e086cd340ccb6be3e8cabcebfbf8d84c",
-    "server/package-lock.json": "fd42ce60b204c9b0613dc4db3fbbe0efa7a0c1bb28cb5d68320effd876f4903c"
+    "package-lock.json": "361edd0739c33c6aa3ad4565f961a6616d47e9db696481c6fdd4a231116bc618",
+    "server/package-lock.json": "8046589aab54def82af2e5077df00bebe7d8fcd7edf058f7e9b275840cb2dde6"
   },
   "artifacts": [
     {
@@ -47,11 +47,11 @@
     },
     {
       "path": "tools/market-seederv3/target/release/market-seederv3",
-      "size": 10277056,
-      "sha256": "3f400e1de3bea1ffdca7b4dd5d4be9ca28ce7cb56e5f74c863d0f8bb2cf71588",
+      "size": 10277088,
+      "sha256": "a47020f2fece611223a99f794dcdf906dea8abe67516e040e4a1f83e88adf931",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seederv3",
-      "sourceDigest": "73FFE6837D6D3DAFA5385E6D4F828FACEE9455DA565C92CCE67EBDD60A3B5672"
+      "sourceDigest": "B6078C0A389A3CC31A3BDB8BBE55EF87180EB9E247DF990F26B77FEB6288FD68"
     },
     {
       "path": "server/node_modules/better-sqlite3/build/Release/better_sqlite3.node",

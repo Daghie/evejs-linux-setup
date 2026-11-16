@@ -1,3 +1,49 @@
+EveJS Universal Linux Setup v1.20 Stock-Only — Verification
+==========================================================
+Date: 2026-11-16
+Host: Fedora-based standard Linux x86_64, Node 24.18.0, Cargo 1.97, Proton 11.0
+Input: EveJS-261115.2.zip SHA-256 899ca7dd19abd4d9441966a60bbecc37008b459284c0601ae2af8edc29271be0
+
+v1.20 supports EveJS 261115.2. 261115.2 vs 261108.1: Market server, v1/v2/v4 seeders and the
+client patch recipe are unchanged (recipe differs only in line endings); market-seederv3 changed;
+both Node lockfiles only add engines.node >=24 (same packages). The SteamOS bundle was rebuilt.
+New in 261115.2: a DX11/DX12 renderer choice (TRINITYPLATFORM), mirrored as launcher option [V].
+
+Also in v1.20:
+- The Linux client now starts like EveJS's Play.bat: /noCrashReportUpload, a loopback
+  /resfileserver, and prefs.ini sentry_io_dsn (local proxy) + breakpadUpload=0. The Linux launcher
+  never did this before. Found while investigating a researcher's Linux-only client freeze.
+- PR #5 by crw72 (supervised service windows) is included as its own commit.
+
+All runs used a disposable folder (EveJS Stuff/v1.20-test) with a copy of the client's tq folder,
+a redirected prefix folder and no EVE client start. Another EveJS session held a port on this PC,
+so installs ran under pasta (internet, no host ports visible) and boots/restore in private network
+namespaces; nothing outside the test folder was touched.
+
+PASS  Fresh install of 261115.2, standard Linux, Market v1: exit 0; runtime check passes on the
+      audited 261115.2 Market source. Boot: 9/9 listeners on 127.0.0.1 (CDN 443), 0 errors.
+PASS  Forced-SteamOS fresh install with the rebuilt bundle (no Cargo on PATH): bundle identity,
+      artifact and Node smoke checks pass, nothing compiled. Boot: 9/9 loopback, 0 errors.
+PASS  PR #5 runners with the real Market and game server (launcher's own runner, ownership and stop
+      functions): ports owned by the runner trees, Market binary check passes through the
+      supervisor, both stopped gracefully, runner exit 0 (was 143 = "crashed" with the old exec
+      runner), pid files removed, nothing left running. Dummy-service checks: a service's own exit
+      status is kept, stdin is handed through, a service ignoring SIGTERM is waited for.
+PASS  Update 261108.1 -> 261115.2 through the installer on a booted world: exit 0 (Node packages
+      reinstalled once because of the new engines field). Boot afterwards 9/9, 0 errors.
+PASS  Undo of that update through Restore: 261108.1 back, world and Market byte-identical.
+PASS  Client offline settings, on copies of the owner's prefs.ini: result = original + line end +
+      the two keys (byte-exact, CRLF kept); second run changes nothing; stale values replaced; a
+      symbolic link is refused; backup equals the original; settings folder name matches the one
+      the client already uses. Generated client runner: TRINITYPLATFORM, /noCrashReportUpload,
+      /resfileserver and /port present; bash -n passes.
+PASS  Renderer choice: default DX11; DX12 from the saved choice or an inherited TRINITYPLATFORM;
+      the saved choice wins; unknown values and a missing _trinity_dx12.dll fall back to DX11;
+      [V] rewrites only its own line in .evejs-linux.conf and keeps the file mode.
+NOT TESTED  Starting the EVE client itself (by rule no client is launched in tests): DX12
+      rendering, and whether the offline settings stop the reported freeze. Needs a player retest.
+
+==== v1.19 verification ====
 EveJS Universal Linux Setup v1.19 Stock-Only — Verification
 ==========================================================
 Date: 2026-11-09

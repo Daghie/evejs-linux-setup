@@ -94,6 +94,12 @@ stop_tree() {
     kill -TERM "$root" 2>/dev/null || true
     sleep 2
     for pid in "${descendants[@]}"; do kill -KILL "$pid" 2>/dev/null || true; done
+    # A runner supervisor stops by itself once its service is gone; prefer that exit
+    # over signal-killing it, which is what makes a terminal report a crashed shell.
+    for _ in $(seq 1 50); do
+        kill -0 "$root" 2>/dev/null || { echo "Stopped $label."; return 0; }
+        sleep 0.1
+    done
     kill -KILL "$root" 2>/dev/null || true
 }
 

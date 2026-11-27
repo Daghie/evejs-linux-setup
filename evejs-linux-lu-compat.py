@@ -15,7 +15,7 @@ import sys
 import tempfile
 
 XPATCH_VERSION = "0.3.2"
-SETUP_VERSION = "v1.20"
+SETUP_VERSION = "v1.21"
 MOD_LU_PATH = Path("mods/x-eve-living-universe/loader.js")
 SCRIPT_DIR = Path(__file__).resolve().parent
 COMPAT_DIR = SCRIPT_DIR / "compatibility"
@@ -511,6 +511,48 @@ def self_test():
     preserve_executable_path("~/.cargo/bin/cargo")
     print("PASS stock-only compatibility helper self-test")
 
+def unwrap_release_zip(zip_path: Path, out_dir: Path) -> Path:
+    """EveJS 261126 ships a wrapper zip: <name>/EveJS-<ver>.zip + EvEJS-Updater.zip + SHA256SUMS.txt.
+
+    If zip_path is such a wrapper, extract the inner release zip into out_dir after checking it
+    against the wrapper's SHA256SUMS.txt and return its path. Any other zip is returned unchanged."""
+    import zipfile
+    zip_path = Path(zip_path)
+    try:
+        archive = zipfile.ZipFile(zip_path)
+    except (zipfile.BadZipFile, OSError):
+        return zip_path
+    with archive:
+        names = [i.filename.replace("\\", "/") for i in archive.infolist() if not i.filename.endswith("/")]
+        if any(re.fullmatch(r"(?:[^/]+/)?config/version\.json", n) for n in names):
+            return zip_path
+        inner = [n for n in names if re.fullmatch(r"(?:[^/]+/)?EveJS-[0-9][0-9.]*\.zip", n, re.I)]
+        if len(inner) != 1:
+            return zip_path
+        member = inner[0]
+        sums_name = member.rsplit("/", 1)[0] + "/SHA256SUMS.txt" if "/" in member else "SHA256SUMS.txt"
+        if sums_name not in names:
+            raise CompatError(f"{zip_path.name} looks like an EveJS wrapper but has no SHA256SUMS.txt to verify {member}.")
+        wanted = ""
+        for line in archive.read(sums_name).decode("utf-8", "replace").splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[-1].lstrip("*").replace("\\", "/").rsplit("/", 1)[-1] == member.rsplit("/", 1)[-1]:
+                wanted = parts[0].lower()
+        if not wanted:
+            raise CompatError(f"SHA256SUMS.txt in {zip_path.name} does not list {member}.")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        target = out_dir / member.rsplit("/", 1)[-1]
+        digest = hashlib.sha256()
+        with archive.open(member) as src, open(target, "wb") as dst:
+            for chunk in iter(lambda: src.read(1 << 20), b""):
+                digest.update(chunk)
+                dst.write(chunk)
+        if digest.hexdigest() != wanted:
+            target.unlink(missing_ok=True)
+            raise CompatError(f"The release zip inside {zip_path.name} fails its SHA-256 check. Download the package again.")
+        return target
+
+
 def main():
     ap = argparse.ArgumentParser(description="EveJS Stock-only runtime compatibility authority")
     sub = ap.add_subparsers(dest="command", required=True)
@@ -535,6 +577,10 @@ def main():
     p.add_argument("--zip")
     p.add_argument("--json", action="store_true")
 
+    p = sub.add_parser("unwrap")
+    p.add_argument("--zip", required=True)
+    p.add_argument("--out", required=True)
+
     sub.add_parser("self-test")
     args = ap.parse_args()
 
@@ -543,6 +589,9 @@ def main():
             self_test()
             return
 
+        if args.command == "unwrap":
+            print(unwrap_release_zip(Path(args.zip), Path(args.out)))
+            return
         repo = Path(args.repo)
         if args.command == "record-release":
             receipt = record_release(repo, Path(args.release_dir), Path(args.zip) if args.zip else None)

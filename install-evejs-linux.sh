@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# EveJS Universal Linux Setup v1.20 — Stock-Only Edition (standard Linux + SteamOS portable)
-# Target: EveJS 261018.1 and newer releases / EVE build named by each release's recipes
+# EveJS Universal Linux Setup v1.21 — Stock-Only Edition (standard Linux + SteamOS portable)
+# Target: EveJS 261126.2 and newer releases / EVE build named by each release's recipes
 # Architecture baseline: live-accepted v0.12.4.1 Universal Linux Installer v1.4
 #
 # Goals:
@@ -31,9 +31,12 @@ IFS=$'\n\t'
 
 # Oldest EveJS release this Setup installs. Newer releases are accepted too; the updater
 # (tools/update-evejs-linux.sh) follows each release's own update policy.
-INSTALLER_MIN_VERSION="261018.1"
-INSTALLER_TESTED_BUILD="3396210"
-INSTALLER_CANDIDATE_NAME="v1.20 Stock-Only Edition"
+INSTALLER_MIN_VERSION="261126.2"
+INSTALLER_TESTED_BUILD="3724492"
+# EveJS 261126.2 declares engines.node ^26.13.1 in both package.json files.
+NODE_TARGET_MAJOR="26"
+NODE_TARGET_MIN="26.13.1"
+INSTALLER_CANDIDATE_NAME="v1.21 Stock-Only Edition"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHER_SOURCE="$SCRIPT_DIR/evejs-linux-launcher.sh"
@@ -41,6 +44,8 @@ STALE_CLEANUP_SOURCE="$SCRIPT_DIR/evejs-stale-processes.sh"
 UPDATER_SOURCE="$SCRIPT_DIR/evejs-linux-update.py"
 UPDATER_WRAPPER_SOURCE="$SCRIPT_DIR/update-evejs-linux.sh"
 COMPAT_SOURCE="$SCRIPT_DIR/evejs-linux-lu-compat.py"
+STATIC_DATA_SOURCE="$SCRIPT_DIR/evejs-linux-static-data.py"
+WINPY_RUNNER_SOURCE="$SCRIPT_DIR/tools/winpy-runner.py"
 CLIENT_PREFLIGHT_SOURCE="$SCRIPT_DIR/evejs-linux-client-preflight.py"
 COMPAT_DATA_SOURCE="$SCRIPT_DIR/compatibility"
 PORTABLE_PAYLOAD_DIR="$SCRIPT_DIR/portable/steamos-x86_64"
@@ -61,6 +66,7 @@ ARG_MODE=""
 ARG_EXISTING=""
 ARG_BACKUP=""
 ARG_PREFIX=""
+ARG_CLIENT_RECORDS=""
 
 while (($#)); do
     case "$1" in
@@ -76,6 +82,7 @@ while (($#)); do
         --existing) ARG_EXISTING="${2:-}"; shift 2 ;;
         --backup) ARG_BACKUP="${2:-}"; shift 2 ;;
         --prefix) ARG_PREFIX="${2:-}"; shift 2 ;;
+        --client-records) ARG_CLIENT_RECORDS="${2:-}"; shift 2 ;;
         -h|--help)
             cat <<'EOF'
 Usage:
@@ -93,6 +100,9 @@ Options:
   --mode MODE         install, update, restore, reseed, compat, backups, or prefix.
   --existing PATH     Existing EveJS installation for update/restore/reseed/backups.
   --backup NAME       Backup folder name (under _backup/) for restore; default: newest.
+  --client-records DIR  Folder of EVE client records for the release's client build (holds
+                      records.json). Default: look in $EVEJS_CLIENT_RECORDS_ROOT/<build>, beside this
+                      Setup in client-records/<build>, then extract them through Proton.
   --prefix CHOICE     Proton prefix: reuse (best existing EveJS prefix), new, or a prefix PATH.
                       Default: ask when a reusable EveJS prefix exists.
 EOF
@@ -310,7 +320,7 @@ ui_choose_setup_action() {
     case "$UI" in
         zenity)
             zenity --list --radiolist \
-                --title="EveJS Universal Linux Setup v1.20 — Stock Only" --width=980 --height=500 \
+                --title="EveJS Universal Linux Setup v1.21 — Stock Only" --width=980 --height=500 \
                 --text="Install EveJS, update an existing installation, or look after one. This Stock-only edition does not install Living Universe." \
                 --column="Use" --column="Action" --column="Description" \
                 TRUE  "install"  "Install EveJS into an existing empty folder" \
@@ -323,7 +333,7 @@ ui_choose_setup_action() {
                 --print-column=2
             ;;
         kdialog)
-            kdialog --title "EveJS Universal Linux Setup v1.20 — Stock Only" --menu \
+            kdialog --title "EveJS Universal Linux Setup v1.21 — Stock Only" --menu \
                 "Choose what you want to do:" \
                 install "Install EveJS into an empty folder" \
                 update "Update an existing installation (keeps your world)" \
@@ -335,7 +345,7 @@ ui_choose_setup_action() {
             ;;
         *)
             local pick
-            printf '\nEveJS Universal Linux Setup v1.20 — Stock Only\n' >&2
+            printf '\nEveJS Universal Linux Setup v1.21 — Stock Only\n' >&2
             printf '  [1] Install EveJS\n' >&2
             printf '  [2] Update an existing installation (keeps your world)\n' >&2
             printf '  [3] Undo an update or reseed from a backup\n' >&2
@@ -1001,48 +1011,44 @@ This distribution was not recognized for automatic package installation. Install
     ((${#missing[@]} == 0)) || die "Some prerequisites are still missing: ${missing[*]}"
 }
 
+# 0 when the Node.js at $1 is at least NODE_TARGET_MIN and the same major (EveJS 261126.2:
+# engines.node ^26.13.1).
+node_meets_target() {
+    local bin="$1" v
+    [[ -x "$bin" ]] || return 1
+    v="$("$bin" --version 2>/dev/null)" || return 1
+    python3 -c '
+import re, sys
+m = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", sys.argv[1].strip())
+w = tuple(int(x) for x in sys.argv[3].split("."))
+sys.exit(0 if m and int(m[1]) == int(sys.argv[2]) and tuple(int(x) for x in m.groups()) >= w else 1)
+' "$v" "$NODE_TARGET_MAJOR" "$NODE_TARGET_MIN"
+}
+
 ensure_node() {
-    local major=0 version=""
-    if command -v node >/dev/null 2>&1; then
-        major="$(node -p 'Number(process.versions.node.split(".")[0])' 2>/dev/null || echo 0)"
-        version="$(node --version 2>/dev/null || true)"
-    fi
+    local node_home="$HOME/.local/share/evejs-linux/node$NODE_TARGET_MAJOR" bin=""
 
-    # The EveJS README specifies Node.js 24 LTS.
-    if [[ "$major" == "24" ]] && command -v npm >/dev/null 2>&1; then
-        NODE_BIN="$(command -v node)"
-        NPM_BIN="$(command -v npm)"
-        ok "Using recommended Node $version from $NODE_BIN"
-        return 0
-    fi
-
-    # EveJS doc/NON_DOCKER_SETUP_AUDIT.md documents the current lock as
-    # compatible with Node 20 and 22-26, but not Node 21.
-    if ! is_steamos_portable && [[ "$major" =~ ^(20|22|23|25|26)$ ]] && command -v npm >/dev/null 2>&1; then
-        if ui_yesno "Use compatible Node $version?" \
-"EveJS recommends Node.js 24 LTS.
-
-The detected $version is within the compatibility range documented by the EveJS non-Docker setup audit, but it is not the recommended Node 24 target.
-
-Use this existing Node installation?
-
-Choose No to install a private Node 24.x runtime for EveJS."; then
-            NODE_BIN="$(command -v node)"
-            NPM_BIN="$(command -v npm)"
-            ok "Using compatible Node $version from $NODE_BIN"
+    # A private copy from an earlier run of this Setup, then whatever is on PATH.
+    for bin in "$node_home/bin/node" "$(command -v node 2>/dev/null || true)"; do
+        [[ -n "$bin" ]] || continue
+        if node_meets_target "$bin" && [[ -x "$(dirname "$bin")/npm" ]]; then
+            NODE_BIN="$bin"
+            NPM_BIN="$(dirname "$bin")/npm"
+            export PATH="$(dirname "$bin"):$PATH"
+            export EVEJS_SETUP_NODE_BIN="$NODE_BIN"
+            ok "Using Node $("$bin" --version) from $NODE_BIN"
             return 0
         fi
-    elif [[ "$major" == "21" ]]; then
-        ui_warn "Unsupported Node 21 detected" \
-"EveJS's non-Docker setup audit specifically excludes Node 21 for the current dependency lock.
+    done
 
-The installer will offer Node 24 LTS instead."
-    elif [[ "$major" =~ ^[0-9]+$ ]] && (( major > 0 )); then
-        ui_warn "Unvalidated Node version" \
-"Detected $version.
-
-EveJS recommends Node 24 LTS. The installer will offer a private Node 24 runtime rather than assume this major is compatible."
-    fi
+    local found
+    found="$(command -v node 2>/dev/null && node --version 2>/dev/null | head -n1 || true)"
+    ui_warn "Node.js $NODE_TARGET_MAJOR needed" \
+"EveJS 261126.2 and later need Node.js $NODE_TARGET_MAJOR LTS ($NODE_TARGET_MIN or newer).
+${found:+
+Found: $(printf '%s' "$found" | tr '\n' ' ')
+}
+The installer will offer a private Node $NODE_TARGET_MAJOR for EveJS. Your own Node and any older EveJS install are left alone."
 
     local arch
     case "$(uname -m)" in
@@ -1051,32 +1057,29 @@ EveJS recommends Node 24 LTS. The installer will offer a private Node 24 runtime
         *) die "Automatic Node installation does not support architecture $(uname -m)." ;;
     esac
 
-    if ! ui_yesno "Install Node.js 24 LTS?" \
-"EveJS recommends Node.js 24 LTS.
+    if ! ui_yesno "Install Node.js $NODE_TARGET_MAJOR LTS?" \
+"Install the newest Node $NODE_TARGET_MAJOR.x binary (checked against nodejs.org's SHA-256 list) in your user account under:
 
-Install the newest Node 24.x binary in your user account under:
-
-$HOME/.local/share/evejs-linux/node
+$node_home
 
 No system Node packages will be replaced."; then
         die "A compatible Node.js runtime is required."
     fi
 
-    stage "Installing user-local Node.js 24 LTS"
-    local base="https://nodejs.org/dist/latest-v24.x"
+    stage "Installing user-local Node.js $NODE_TARGET_MAJOR LTS"
+    local base="https://nodejs.org/dist/latest-v$NODE_TARGET_MAJOR.x"
     local tmp
     tmp="$(mktemp -d)"
     curl -fL --retry 3 "$base/SHASUMS256.txt" -o "$tmp/SHASUMS256.txt"
     local filename
-    filename="$(awk -v a="$arch" '$2 ~ ("node-v24\\..*-linux-" a "\\.tar\\.xz$") {print $2; exit}' "$tmp/SHASUMS256.txt")"
-    [[ -n "$filename" ]] || die "Could not resolve the latest Node 24.x Linux $arch archive."
+    filename="$(awk -v a="$arch" -v m="$NODE_TARGET_MAJOR" '$2 ~ ("^node-v" m "\\..*-linux-" a "\\.tar\\.xz$") {print $2; exit}' "$tmp/SHASUMS256.txt")"
+    [[ -n "$filename" ]] || die "Could not resolve the latest Node $NODE_TARGET_MAJOR.x Linux $arch archive."
     curl -fL --retry 3 "$base/$filename" -o "$tmp/$filename"
     (
         cd "$tmp"
         grep "  $filename\$" SHASUMS256.txt | sha256sum -c -
     ) || die "Node.js download checksum verification failed."
 
-    local node_home="$HOME/.local/share/evejs-linux/node"
     rm -rf "$node_home"
     mkdir -p "$node_home"
     tar -xJf "$tmp/$filename" --strip-components=1 -C "$node_home"
@@ -1086,6 +1089,8 @@ No system Node packages will be replaced."; then
     NODE_BIN="$node_home/bin/node"
     NPM_BIN="$node_home/bin/npm"
     [[ -x "$NODE_BIN" && -x "$NPM_BIN" ]] || die "User-local Node installation failed."
+    node_meets_target "$NODE_BIN" || die "The downloaded Node $("$NODE_BIN" --version) does not meet Node $NODE_TARGET_MAJOR >= $NODE_TARGET_MIN."
+    export EVEJS_SETUP_NODE_BIN="$NODE_BIN"
     ok "Installed $("$NODE_BIN" --version) at $node_home"
 }
 
@@ -1351,6 +1356,15 @@ with zipfile.ZipFile(zpath) as z:
         raise SystemExit(1)
 print('EveJS ZIP path-safety check PASS')
 PYZIP
+}
+
+# EveJS 261126 and later are delivered as a wrapper zip holding the release zip, the
+# Windows updater zip and SHA256SUMS.txt. Return the inner release zip (verified against
+# SHA256SUMS.txt) for a wrapper, or the same path for anything else.
+unwrap_release_zip() {
+    local zip="$1" out
+    out="$(python3 "$COMPAT_SOURCE" unwrap --zip "$zip" --out "$WRAP_TMP" 2>&1)" || { printf '%s\n' "$out" >&2; return 1; }
+    printf '%s\n' "$out"
 }
 
 unzip_evejs_release() {
@@ -1755,6 +1769,12 @@ choose_valid_evejs_zip() {
     while true; do
         selected="$(ui_file "Select the EveJS release ZIP" "$SCRIPT_DIR")" || return 1
         [[ -n "$selected" ]] || continue
+        if [[ -f "$selected" ]]; then
+            selected="$(unwrap_release_zip "$selected")" || {
+                ui_warn "Release package problem" "$selected"
+                continue
+            }
+        fi
 
         if [[ ! -f "$selected" ]]; then
             ui_warn "Invalid EveJS file" \
@@ -1984,8 +2004,10 @@ install_runtime_compatibility_files() {
     cp -a "$COMPAT_SOURCE" "$tools/evejs-linux-lu-compat.py"
     cp -a "$CLIENT_PREFLIGHT_SOURCE" "$tools/evejs-linux-client-preflight.py"
     cp -a "$UPDATER_SOURCE" "$tools/evejs-linux-update.py"
+    cp -a "$STATIC_DATA_SOURCE" "$tools/evejs-linux-static-data.py"
+    cp -a "$WINPY_RUNNER_SOURCE" "$tools/winpy-runner.py"
     cp -a "$COMPAT_DATA_SOURCE"/. "$tools/compatibility/"
-    chmod +x "$tools/evejs-linux-lu-compat.py" "$tools/evejs-linux-client-preflight.py" "$tools/evejs-linux-update.py"
+    chmod +x "$tools/evejs-linux-static-data.py" "$tools/evejs-linux-lu-compat.py" "$tools/evejs-linux-client-preflight.py" "$tools/evejs-linux-update.py"
     mkdir -p "$repo/tools"
     cp -a "$UPDATER_WRAPPER_SOURCE" "$repo/tools/update-evejs-linux.sh"
     chmod +x "$repo/tools/update-evejs-linux.sh"
@@ -2314,13 +2336,14 @@ prepare_existing_runtime_compatibility() {
     fi
     python3 "$repo/.evejs-linux-tools/evejs-linux-lu-compat.py" verify-runtime --repo "$repo" \
         || die "Stock runtime verification failed."
-    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.20 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
+    ui_info "Stock runtime compatibility ready" "The EveJS installation is ready for the v1.21 Stock-only Launcher.\nLauncher, client pre-check and tools/update-evejs-linux.sh were refreshed.\n\n$repo\n\n$detection"
     exit 0
 }
 
 
 # ── Main wizard ───────────────────────────────────────────────────────────────
-trap '[[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"; [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "${HOST_TOOLCHAIN_REPORT:-}" ]] && rm -f "$HOST_TOOLCHAIN_REPORT"' EXIT
+trap '[[ -n "${WRAP_TMP:-}" ]] && rm -rf "$WRAP_TMP"; [[ -n "${INSPECT_TMP:-}" ]] && rm -rf "$INSPECT_TMP"; [[ -n "${HOST_TOOLCHAIN_REPORT:-}" && -f "${HOST_TOOLCHAIN_REPORT:-}" ]] && rm -f "$HOST_TOOLCHAIN_REPORT"' EXIT
+WRAP_TMP="$(mktemp -d)"
 
 configure_platform_mode
 if is_steamos_portable; then
@@ -2350,7 +2373,7 @@ case "$SETUP_ACTION" in
         ensure_rust
         UPDATE_REPO="$(choose_existing_repo)" || exit 1
         if [[ -n "$ARG_ZIP" ]]; then
-            UPDATE_ZIP="$(readlink -f "$ARG_ZIP")"
+            UPDATE_ZIP="$(unwrap_release_zip "$(readlink -f "$ARG_ZIP")")" || die "Could not use $ARG_ZIP as an EveJS release."
         else
             UPDATE_ZIP="$(choose_valid_evejs_zip)" || exit 1
         fi
@@ -2428,6 +2451,7 @@ ensure_rust
 [[ -f "$STALE_CLEANUP_SOURCE" ]] || die "Stale-process cleanup tool is missing beside the installer: $STALE_CLEANUP_SOURCE"
 [[ -f "$UPDATER_SOURCE" && -f "$UPDATER_WRAPPER_SOURCE" ]] || die "Updater is missing beside the installer: $UPDATER_SOURCE"
 [[ -f "$COMPAT_SOURCE" ]] || die "Runtime compatibility helper is missing beside the installer: $COMPAT_SOURCE"
+[[ -f "$STATIC_DATA_SOURCE" && -f "$WINPY_RUNNER_SOURCE" ]] || die "Static data helper is missing beside the installer: $STATIC_DATA_SOURCE"
 [[ -f "$CLIENT_PREFLIGHT_SOURCE" ]] || die "Client preflight helper is missing beside the installer: $CLIENT_PREFLIGHT_SOURCE"
 [[ -d "$COMPAT_DATA_SOURCE" ]] || die "Runtime compatibility data is missing beside the installer: $COMPAT_DATA_SOURCE"
 
@@ -2458,6 +2482,7 @@ Do not select the EVE installation you use for normal Tranquility play."
 if [[ -n "$ARG_ZIP" ]]; then
     SOURCE_ZIP="$(readlink -f "$ARG_ZIP" 2>/dev/null || true)"
     [[ -f "$SOURCE_ZIP" ]] || die "EveJS ZIP not found: $ARG_ZIP"
+    SOURCE_ZIP="$(unwrap_release_zip "$SOURCE_ZIP")" || die "Could not use $ARG_ZIP as an EveJS release."
     inspect_evejs_archive "$SOURCE_ZIP"
 else
     mapfile -t nearby_zips < <(find "$SCRIPT_DIR" -maxdepth 1 -type f -iname 'EveJS*.zip' -print | sort)
@@ -2466,7 +2491,7 @@ else
 ${nearby_zips[0]}"; then
         # Even an auto-detected ZIP gets validated. If it is wrong, fall back
         # into the chooser instead of terminating the installer.
-        candidate="$(readlink -f "${nearby_zips[0]}")"
+        candidate="$(unwrap_release_zip "$(readlink -f "${nearby_zips[0]}")" 2>/dev/null || readlink -f "${nearby_zips[0]}")"
         probe_tmp="$(mktemp -d)"
         probe_ok=0
         if unzip_evejs_release "$candidate" "$probe_tmp" >/dev/null 2>&1; then
@@ -2721,27 +2746,39 @@ fi
 ok "Server dependencies installed."
 
 stage "Building clean EveJS static/runtime database"
-SDE_URL="https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-${SUPPORTED_BUILD}-jsonl.zip"
-SDE_ZIP="$EVEJS_REPO/_local/downloads/sde/eve-online-static-data-${SUPPORTED_BUILD}-jsonl.zip"
-SDE_DIR="$EVEJS_REPO/_local/sde/eve-online-static-data-${SUPPORTED_BUILD}-jsonl"
-mkdir -p "$(dirname "$SDE_ZIP")" "$SDE_DIR"
-
-if [[ ! -s "$SDE_ZIP" ]]; then
-    curl -fL --retry 3 --retry-delay 2 "$SDE_URL" -o "$SDE_ZIP"
-fi
-if [[ ! -f "$SDE_DIR/_sde.jsonl" ]]; then
-    rm -rf "$SDE_DIR"
-    mkdir -p "$SDE_DIR"
-    unzip -q "$SDE_ZIP" -d "$SDE_DIR"
+# EveJS 261126.2 pins the client build and the CCP SDE archive separately, and needs EVE client
+# records: evejs-linux-static-data.py downloads/stamps the SDE and finds or extracts the records.
+stage "Preparing the CCP static data and EVE client records"
+STATIC_ASSIGNMENTS="$(python3 "$STATIC_DATA_SOURCE" prepare --repo "$EVEJS_REPO" --node "$NODE_BIN" \
+    --supported-build "$SUPPORTED_BUILD" --client-records "${ARG_CLIENT_RECORDS:-}" \
+    --proton "${PROTON_BIN:-}" --prefix "${PROTON_PREFIX:-}" --steam-root "${STEAM_ROOT:-}" --cache-root "${CACHE_ROOT:-}" --shell)" \
+    || die "Could not prepare the static data inputs (see the message above)."
+eval "$STATIC_ASSIGNMENTS"
+ok "SDE: $SDE_DIR (build $SDE_BUILD)"
+creator_args=()
+if [[ -n "$CLIENT_RECORDS_DIR" ]]; then
+    ok "Client records: $CLIENT_RECORDS_DIR"
+    creator_args=(--client-build "$CLIENT_RECORDS_BUILD" --client-records "$CLIENT_RECORDS_DIR")
 fi
 node --max-old-space-size=8192 \
     "$EVEJS_REPO/tools/DatabaseCreator/database-creator.js" \
     --sde-dir "$SDE_DIR" \
     --out "$EVEJS_REPO/_local/gameStore/data" \
-    --build "$SUPPORTED_BUILD" \
+    --build "$SDE_BUILD" \
     --sde-url "$SDE_URL" \
+    "${creator_args[@]}" \
     --force
 [[ -f "$EVEJS_REPO/_local/gameStore/manifest.json" ]] || die "Game database manifest was not created."
+if [[ -f "$EVEJS_REPO/server/src/gameStore/startupSharedStore.js" ]]; then
+    node "$EVEJS_REPO/server/src/gameStore/startupSharedStore.js" "$EVEJS_REPO/_local/gameStore/gamestore.sqlite" \
+        || die "Could not initialize the runtime game database."
+fi
+if [[ -f "$EVEJS_REPO/tools/moon-data/generate-moon-composition-pack.js" ]]; then
+    EVEJS_GAMESTORE_DATA_DIR="$EVEJS_REPO/_local/gameStore/data" \
+        node "$EVEJS_REPO/tools/moon-data/generate-moon-composition-pack.js" --if-missing \
+        --out "$EVEJS_REPO/_local/gameStore/moon-compositions.json" \
+        || warn "The moon composition pack was not generated; the server can still start."
+fi
 ok "Clean game database created."
 
 stage "Building standalone market: $MARKET_LABEL"

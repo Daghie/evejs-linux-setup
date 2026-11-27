@@ -1,0 +1,19 @@
+VERIFY v1.21 - EveJS 261126.2 (client build 3724492), tested 27 Nov 2026
+Setup: EveJS Universal Linux Setup v1.21 Stock-Only. Host: Fedora-based, Node 26.13.1, Proton 11.0, podman.
+All runs used a private network namespace (pasta / unshare) so a running EveJS game kept its ports; test prefixes and
+the EVE client were copies (the real build 3724492 client was never patched; blue.dll hash still the original).
+
+PASS  Release package: wrapper zip EveJS-261126.2.zip (release zip + updater zip + SHA256SUMS.txt) accepted by installer
+      and updater; inner zip verified against SHA256SUMS.txt.
+PASS  Client network recipes validate (443 and 8443); exact-hash patching of the client copy (blue.dll, exefile.exe,
+      launchdarkly pyd) verified.
+PASS  Fresh standard install (Node 26, SDE 3720952 stamped as 3724492, client records, database, Market compiled with
+      rusqlite 0.43, certificates, launcher): twice, once with each version of the records step.
+PASS  Forced SteamOS-portable install (rebuilt Node 26 bundle, static Rust executables, no compiler).
+PASS  Update 261115.2 (Node 24) -> 261126.2: Node switched to 26, Node packages reinstalled, generated game data
+      refreshed (72 tables), Market rebuilt, runtime verified.
+PASS  Headless boot of the three installs: 9 loopback listeners (26000-26003, 26400, 40110, 40111, 5222, CDN port),
+      no errors (only AuthorityTiming warnings under CPU load).
+PASS  Client records through Proton + Windows Python 3.10 (pythonw.exe) in the installer's own code path: 46 s,
+      records.json identical to the first extraction. python.exe (console) hangs under Proton, so pythonw is used.
+NOT TESTED  restore after this update; a real EVE client login; the researcher's DX11/DX12 retest from v1.20.

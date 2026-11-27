@@ -1,62 +1,62 @@
 {
   "schema": "evejs-steamos-portable-payload/2",
-  "builtFromEvejsVersion": "261115.2",
-  "eveBuild": 3396210,
+  "builtFromEvejsVersion": "261126.2",
+  "eveBuild": 3724492,
   "platform": "linux-x86_64",
-  "sourceArchiveSha256": "899ca7dd19abd4d9441966a60bbecc37008b459284c0601ae2af8edc29271be0",
+  "sourceArchiveSha256": "caf74b9ce38164ad4aa3ab3733434ff059884c84821352267616c56801ef98e2",
   "payload": {
     "file": "payload.tar.xz",
-    "size": 11546520,
-    "sha256": "0a72c00973d001d523235f2c7d1fde4d89c3bfb879b06f90d12b952656382a55"
+    "size": 16881196,
+    "sha256": "fbc9c2acb6f365bb2701a2df5e1cd5aa31cc7d8024ef02ed76795b711a5582a5"
   },
   "buildEnvironment": {
     "rustImage": "docker.io/library/rust:1.97-alpine",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-    "nodeImage": "docker.io/library/node:24-bookworm-slim",
-    "node": "v24.18.0",
-    "npm": "11.16.0"
+    "nodeImage": "docker.io/library/node:26-bookworm-slim",
+    "node": "v26.13.1",
+    "npm": "11.20.0"
   },
   "dependencyFingerprints": {
-    "package-lock.json": "361edd0739c33c6aa3ad4565f961a6616d47e9db696481c6fdd4a231116bc618",
-    "server/package-lock.json": "8046589aab54def82af2e5077df00bebe7d8fcd7edf058f7e9b275840cb2dde6"
+    "package-lock.json": "a3ff8c38c25fd9ac040d8563d75187f8207f09fe3fc4ad956c09265f70115f13",
+    "server/package-lock.json": "2c459f4e52dbbc5b8bef71a592cf79cbf3d255dac0c641a9ee7bbae5bbf3ddfd"
   },
   "artifacts": [
     {
       "path": "externalservices/market-server/target/release/market-server",
-      "size": 8610424,
-      "sha256": "df8c76d2e7efb40776bbc158ca176e2c9daeb3946f5c8cc090bfe6dfef4d8eac",
+      "size": 8712752,
+      "sha256": "e45a271299544d05df77fa369fcef84df4332a719dd596971c576c9ecc590f2d",
       "linkage": "static-pie-musl",
       "crate": "externalservices/market-server",
-      "sourceDigest": "378F943091C8E932580095F74ED6226166B084996A439C6A5FB150737ECE6BB8"
+      "sourceDigest": "47BB0EC4D1DD710961B08D56E64F1A25A7A58E36C421BE4E3894E0B9F09B1326"
     },
     {
       "path": "tools/market-seed/target/release/market-seed",
-      "size": 4939544,
-      "sha256": "f4b6e3b90818bd7a96b057f186343427c8457c088ae29b97926bf838de9ea1c6",
+      "size": 5066432,
+      "sha256": "a9f3e086dc7826d7a66602c38f4c7f807dd8aa9145b699a0cca23c27b20e8533",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seed",
-      "sourceDigest": "43B43EAC4156E99D831F756A19AD8EAF09BF9B5B53E8F5EF25D9F21C2653F200"
+      "sourceDigest": "35F60D0E1ED4EF61DCA1F58CE2CAF23FBB344833536AE58F2467DE622B32AD06"
     },
     {
       "path": "tools/market-seederv2/target/release/market-seederv2",
-      "size": 8898120,
-      "sha256": "ea355a3c16022a6d19ca4e93a49f0dea409857e3f411dadffe1102d8a386a4bf",
+      "size": 9016752,
+      "sha256": "66e8c963a35d20b4b3988ad5d8556d720c8e7a70c001d56d34e4eae186a4c2ff",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seederv2",
-      "sourceDigest": "E7B28ACF67793F87C66878792AD72B180646328D8C80469DFA454E31B9215CEA"
+      "sourceDigest": "8F0A8DD6E222DDE4543B25AF82D2020F86701E5CA19E7848507AB6995F6F2484"
     },
     {
       "path": "tools/market-seederv3/target/release/market-seederv3",
-      "size": 10277088,
-      "sha256": "a47020f2fece611223a99f794dcdf906dea8abe67516e040e4a1f83e88adf931",
+      "size": 10416760,
+      "sha256": "f7ffee81c15c26f5ad9fc7d58f2d34e672dcd0727520b936a8cf0b12e604b38e",
       "linkage": "static-pie-musl",
       "crate": "tools/market-seederv3",
-      "sourceDigest": "B6078C0A389A3CC31A3BDB8BBE55EF87180EB9E247DF990F26B77FEB6288FD68"
+      "sourceDigest": "D212D5EBB4DD77F14DB16AA165F486AF4A9243F7B6972013C4EE840412EA1B8D"
     },
     {
-      "path": "server/node_modules/better-sqlite3/build/Release/better_sqlite3.node",
-      "size": 2122448,
-      "sha256": "45cb92a176fb758533db6d9a343acdfc73e4de27ac4c20a0cb2a6fb5be3e84f2",
+      "path": "server/node_modules/better-sqlite3/prebuilds/linux-x64.node",
+      "size": 2275768,
+      "sha256": "1a03a2916dd210925f8a074d460f0f7a2a28b1aeed2a1c3e2bf1a3b0322276cf",
       "linkage": "official-linux-x64-prebuild"
     }
   ]

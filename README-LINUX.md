@@ -1,6 +1,6 @@
-# EveJS Universal Linux Setup v1.20 — Stock-Only
+# EveJS Universal Linux Setup v1.21 — Stock-Only
 
-Installs, updates and looks after **stock EveJS** (release 261018.1 or newer) on Linux, with a
+Installs, updates and looks after **stock EveJS** (release 261126.2 or newer) on Linux, with a
 copied EVE client running under Steam Proton. It has **no Living Universe installation option**.
 
 ## Platforms
@@ -102,7 +102,7 @@ wallets and the rest of the world are untouched. The previous Market is backed u
 ## Which EveJS releases the launcher accepts
 
 The launcher runs stock EveJS whose Market server source is either in this Setup's audited
-list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1, 261028.1, 261108.1 and 261115.2) or exactly what the official
+list (`compatibility/market-stock-v*.json`: 0.12.9, 261018.1, 261028.1, 261108.1, 261115.2 and 261126.2) or exactly what the official
 release ZIP recorded by the installer or updater shipped (`_local/evejs-linux-setup/release.json`).
 Living Universe, X-Patch and unknown source states fail closed.
 
@@ -110,18 +110,38 @@ Living Universe, X-Patch and unknown source states fail closed.
 
 The bundle is bound to the parts of a release it was built from (lockfile contents and each
 Rust program's source), so it keeps working across releases that leave them unchanged. When a
-release changes them, rebuild it on a Linux PC with podman or docker. The bundle in Setup v1.20
-is built for EveJS 261115.2; on SteamOS, install older releases with the Setup version made for
-them (261108.1: v1.19, 261028.1: v1.18.1).
+release changes them, rebuild it on a Linux PC with podman or docker. The bundle in Setup v1.21
+is built for EveJS 261126.2 (Node.js 26); on SteamOS, install older releases with the Setup version made for
+them (261115.2: v1.20, 261108.1: v1.19, 261028.1: v1.18.1).
 
 ```bash
 tools/build-steamos-payload.sh ~/Downloads/EveJS-<version>.zip
 ```
 
+## Release package, Node.js and client build (EveJS 261126.2)
+
+- EveJS 261126.2 is downloaded as a wrapper zip that holds the release zip, the Windows updater zip
+  and `SHA256SUMS.txt`. Pick the wrapper itself: Setup and the updater unpack the inner release zip
+  and check it against `SHA256SUMS.txt` first.
+- It needs **Node.js 26** (26.13.1 or newer). Setup uses a matching Node it finds, or offers a private
+  copy under `~/.local/share/evejs-linux/node26`. Your own Node and older EveJS installs are not
+  touched. Updating an install that ran on Node 24 switches it to Node 26 and reinstalls the Node packages.
+- The EVE client is build **3724492**. EVE keeps its settings in a folder named after the client's path,
+  so a client copied to a new folder starts with fresh in-game settings even on a shared Proton prefix.
+- **EVE client records.** 261126.2 builds part of its game database from tables read out of the EVE client with the
+  client's own Windows Python, which only runs on Windows. Setup does this once through Proton, using the official
+  Windows Python 3.10 (embeddable zip from python.org, SHA-256 checked), and keeps the result (about 480 MB) in
+  `~/.local/share/evejs-linux/client-records/<build>` for every install of that build. To skip the Proton step, pass
+  `--client-records <folder holding records.json>` (made on Windows with `CreateDatabase.bat --export-client-records`) or
+  set `EVEJS_CLIENT_RECORDS_ROOT`. CCP's SDE archive (3720952) is stamped as the client build, as the release's own
+  `CreateDatabase.bat` does.
+- Updating from an earlier release also converts an old save and refreshes the generated game data (the update
+  prints what it does). The launcher refuses the old client until you set up a build 3724492 copy.
+
 ## Fresh installation
 
 Choose **1**, select the EveJS release ZIP, a separate copied EVE client (build named by the
-release, currently 3396210) with its resource cache, your normal official Steam Proton, and a
+release, currently 3724492) with its resource cache, your normal official Steam Proton, and a
 new empty EveJS destination. Market v1 remains the recommended first profile.
 
 Market **v4 "Iron Man"** (EveJS 261108.1 and newer) seeds only authentic NPC station orders from

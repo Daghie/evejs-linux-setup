@@ -23,7 +23,7 @@
 set -euo pipefail
 
 RUST_IMAGE="${RUST_IMAGE:-docker.io/library/rust:1.97-alpine}"
-NODE_IMAGE="${NODE_IMAGE:-docker.io/library/node:24-bookworm-slim}"
+NODE_IMAGE="${NODE_IMAGE:-docker.io/library/node:26-bookworm-slim}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SETUP_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -66,12 +66,12 @@ echo "[2/5] Building static musl programs in $RUST_IMAGE"
         done
         rustc --version > /src/.rustc-version'
 
-echo "[3/5] Installing Node packages in $NODE_IMAGE (official prebuilds only)"
+echo "[3/5] Installing Node packages in $NODE_IMAGE (official prebuilds only, no install scripts)"
 "$ENGINE" run --rm --memory=4g --cpus=4 \
     -e npm_config_build_from_source=false -e npm_config_update_notifier=false \
     -v "$SRC:/src:Z" -w /src "$NODE_IMAGE" sh -euc '
-        npm ci --no-audit --no-fund --loglevel=error
-        (cd server && npm ci --no-audit --no-fund --loglevel=error)
+        npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
+        (cd server && npm ci --ignore-scripts --no-audit --no-fund --loglevel=error)
         node --version > /src/.node-version; npm --version > /src/.npm-version
         cd server && node -e "const D=require(\"better-sqlite3\");const d=new D(\":memory:\");d.exec(\"create table t(x)\");d.close();require(\"protobufjs\");console.log(\"      Node dependency smoke test PASS\")"'
 
@@ -111,7 +111,7 @@ for crate in crates:
         "path": binary.relative_to(src).as_posix(), "size": binary.stat().st_size, "sha256": sha(binary),
         "linkage": "static-pie-musl", "crate": crate, "sourceDigest": compat.build_source_digest(records),
     })
-sqlite = src / "server/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+sqlite = src / "server/node_modules/better-sqlite3/prebuilds/linux-x64.node"  # better-sqlite3 13+ ships it in the package
 artifacts.append({"path": sqlite.relative_to(src).as_posix(), "size": sqlite.stat().st_size, "sha256": sha(sqlite),
                   "linkage": "official-linux-x64-prebuild"})
 

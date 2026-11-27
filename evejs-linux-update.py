@@ -30,6 +30,7 @@ Commands (see --help):
 from __future__ import annotations
 
 import argparse
+import atexit
 import datetime as dt
 import fnmatch
 import hashlib
@@ -46,7 +47,7 @@ import sys
 import tempfile
 import zipfile
 
-SETUP_VERSION = "v1.20"
+SETUP_VERSION = "v1.21"
 STAMP_FORMAT = "%Y%m%d-%H%M%S"
 TOOLS_DIR = Path(__file__).resolve().parent
 POLICY_REL = "tools/Updater/update-policy.json"
@@ -185,6 +186,7 @@ def read_linux_conf(root: Path) -> dict:
             key, _, value = item.partition(b"=")
             values[key.decode()] = value.decode(errors="replace")
     keys = ("EVEJS_REPO", "EVEJS_VERSION", "SUPPORTED_BUILD", "NODE_BIN", "NODE_BIN_DIR", "CARGO_BIN",
+            "CACHE_ROOT", "PROTON_BIN", "PROTON_PREFIX", "STEAM_ROOT",
             "EVEJS_PLATFORM_MODE", "EVEJS_CDN_PORT", "MARKET_PROFILE", "MARKET_LABEL", "TQ_PATH")
     return {k: values[k] for k in keys if k in values}
 
@@ -642,6 +644,70 @@ def reinstall_node_packages(root: Path, conf: dict, staging_fingerprints: dict, 
                 raise UpdateError(f"npm ci failed in {directory}.")
 
 
+def load_static_data():
+    path = TOOLS_DIR / "evejs-linux-static-data.py"
+    if not path.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("evejs_linux_static_data", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def run_game_data_steps(root: Path, conf: dict) -> list[str]:
+    """After an update: convert an old save, then refresh the generated static tables when the
+    release changed them (EveJS 261126.2: new SDE/client build, needs client records)."""
+    problems = []
+    node = tool_path(conf, "node")
+    store = root / "_local/gameStore"
+    upgrade = root / "tools/Maintenance/upgrade-legacy-save.js"
+    refresh = root / "tools/Maintenance/refresh-static-data.js"
+    if not node or not (store / "manifest.json").is_file():
+        return problems
+    if upgrade.is_file():
+        check = subprocess.run([node, str(upgrade), "--check", "--store-root", str(store)], cwd=root, env=tool_env(conf),
+                               capture_output=True, text=True)
+        if check.returncode == 3:
+            say("Upgrading the saved game to the shared schema (the original is kept next to it) ...", "step")
+            if run([node, str(upgrade), "--store-root", str(store)], root, conf) != 0:
+                problems.append("The saved game could not be upgraded. Run: node tools/Maintenance/upgrade-legacy-save.js --store-root _local/gameStore")
+                return problems
+    if not refresh.is_file():
+        return problems
+    check = subprocess.run([node, str(refresh), "--store-root", str(store), "--check"], cwd=root, env=tool_env(conf),
+                           capture_output=True, text=True)
+    if check.returncode == 0:
+        return problems
+    if check.returncode != 3:
+        problems.append(f"Could not check the game data build: {(check.stdout + check.stderr).strip()[:300]}")
+        return problems
+    say("The release changed the generated game data. Refreshing the static tables ...", "step")
+    static = load_static_data()
+    if static is None:
+        problems.append("The Setup's static data helper is missing. Run the Setup and choose 'Prepare/verify runtime compatibility', then update again.")
+        return problems
+    try:
+        info = static.prepare(root, node, None, conf.get("PROTON_BIN"), conf.get("PROTON_PREFIX"), conf.get("STEAM_ROOT"),
+                              conf.get("CACHE_ROOT"), int(conf["SUPPORTED_BUILD"]) if conf.get("SUPPORTED_BUILD", "").isdigit() else None)
+    except Exception as exc:
+        problems.append(f"Could not prepare the data for the refresh: {exc}")
+        return problems
+    env = tool_env(conf)
+    if info.get("recordsDir"):
+        env["EVEJS_CLIENT_RECORDS_ROOT"] = str(Path(info["recordsDir"]).parent)
+        env["EVEJS_DATABASE_CLIENT_BUILD"] = str(info.get("clientBuild") or "")
+    say("$ node tools/Maintenance/refresh-static-data.js --force   (in " + str(root) + ")")
+    if subprocess.run([node, "--max-old-space-size=8192", str(refresh), "--store-root", str(store), "--sde-dir", info["sdeDir"], "--force"],
+                      cwd=root, env=env).returncode != 0:
+        problems.append("Refreshing the static game data failed. Stop the server and run the Setup's Update again.")
+        return problems
+    prepare_store = root / "server/src/gameStore/startupSharedStore.js"
+    if prepare_store.is_file():
+        run([node, str(prepare_store), str(store / "gamestore.sqlite")], root, conf)
+    say("Static game data refreshed.")
+    return problems
+
+
 def run_sovereignty_reset(root: Path, conf: dict, policy: Policy) -> None:
     tool = policy.raw.get("sovereigntyResetTool")
     if not tool:
@@ -748,11 +814,84 @@ def backups_dir(root: Path) -> Path:
     return root / policy.backup_root
 
 
+# ── Node.js requirement of the release ────────────────────────────────────────
+def parse_node_range(text: str):
+    """('^26.13.1' | '>=24' | '24.x') -> (kind, (major, minor, patch)) or None when not understood."""
+    m = re.fullmatch(r"\s*(\^|>=|~)?\s*v?(\d+)(?:\.(\d+|x))?(?:\.(\d+|x))?\s*", text or "")
+    if not m:
+        return None
+    nums = tuple(int(x) if x and x != "x" else 0 for x in m.groups()[1:])
+    return (m.group(1) or "^", nums)
+
+
+def node_satisfies(version: tuple, rng) -> bool:
+    kind, minimum = rng
+    if version < minimum:
+        return False
+    return kind == ">=" or version[0] == minimum[0]
+
+
+def node_version(binary: str | None):
+    if not binary or not Path(binary).is_file():
+        return None
+    try:
+        out = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=20).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    m = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", out)
+    return tuple(int(x) for x in m.groups()) if m else None
+
+
+def release_node_range(staging: Path):
+    for rel in ("package.json", "server/package.json"):
+        data = load_json(staging / rel)
+        rng = parse_node_range(((data or {}).get("engines") or {}).get("node", ""))
+        if rng:
+            return rng
+    return None
+
+
+def ensure_node_for_release(conf: dict, staging: Path, preview: bool) -> dict | None:
+    """Return None when the configured Node already fits the release, else the conf updates
+    (NODE_BIN, NODE_BIN_DIR) that switch the install to a Node that does. Raises when none fits."""
+    rng = release_node_range(staging)
+    if not rng:
+        return None
+    wanted = f"{'>=' if rng[0] == '>=' else ''}{'.'.join(map(str, rng[1]))}" if rng[0] == ">=" else f"Node {rng[1][0]} ({'.'.join(map(str, rng[1]))} or newer)"
+    current = node_version(conf.get("NODE_BIN"))
+    if current and node_satisfies(current, rng):
+        return None
+    candidates = [os.environ.get("EVEJS_SETUP_NODE_BIN"),
+                  str(Path.home() / f".local/share/evejs-linux/node{rng[1][0]}/bin/node"),
+                  shutil.which("node")]
+    for candidate in candidates:
+        found = node_version(candidate)
+        if found and node_satisfies(found, rng) and (Path(candidate).parent / "npm").is_file():
+            say(f"This release needs {wanted}; this install uses "
+                f"{'v' + '.'.join(map(str, current)) if current else 'no working Node'}.", "warn")
+            say(f"After the update it will use v{'.'.join(map(str, found))} from {candidate}. "
+                "The Node packages are reinstalled for it.", "warn")
+            return {"NODE_BIN": candidate, "NODE_BIN_DIR": str(Path(candidate).parent)}
+    raise UpdateError(
+        f"This release needs {wanted} and none was found (this install uses "
+        f"{'v' + '.'.join(map(str, current)) if current else 'no working Node'}). Nothing was changed.\n"
+        "Run the EveJS Universal Linux Setup (it installs a private Node for you) and choose Update.")
+
+
 def cmd_update(args) -> int:
     root = Path(args.repo).expanduser().resolve()
     zip_path = Path(args.zip).expanduser().absolute()
     conf = read_linux_conf(root)
     compat = load_compat()
+    wrap_dir = Path(tempfile.mkdtemp(prefix="evejs-unwrap-"))
+    atexit.register(shutil.rmtree, wrap_dir, True)
+    try:
+        inner = compat.unwrap_release_zip(zip_path, wrap_dir) if hasattr(compat, "unwrap_release_zip") else zip_path
+    except Exception as exc:
+        raise UpdateError(str(exc)) from exc
+    if inner != zip_path:
+        say(f"{zip_path.name} is a wrapper package; using the release zip inside it ({inner.name}).")
+        zip_path = inner
     installed_policy = load_json(root / POLICY_REL)
 
     say("Checking the installation ...", "step")
@@ -797,6 +936,9 @@ def cmd_update(args) -> int:
         if new_build and old_build and str(new_build) != str(old_build):
             say(f"This release needs EVE client build {new_build}; your client is set up for build {old_build}.", "warn")
             say("After the update the launcher will refuse the old client until it is replaced.", "warn")
+        node_switch = ensure_node_for_release(conf, staging, args.preview)
+        if node_switch:
+            plan["dependencyChanged"] = True
         if args.preview:
             say("Preview only. Nothing was changed.", "step")
             return 0
@@ -879,6 +1021,9 @@ def cmd_update(args) -> int:
             say(f"Recorded the official EveJS {release['version']} release for the launcher.")
         except Exception as exc:
             failures.append(f"Could not record the release: {exc}")
+        if node_switch:
+            set_linux_conf(root, node_switch)
+            conf.update(node_switch)
         if plan["dependencyChanged"]:
             say("The Node packages changed. Reinstalling them (this can take a few minutes) ...", "step")
             try:
@@ -886,6 +1031,7 @@ def cmd_update(args) -> int:
             except UpdateError as exc:
                 failures.append(str(exc))
         run_sovereignty_reset(root, conf, policy)
+        failures.extend(run_game_data_steps(root, conf))
         try:
             prepare_market_runtime(root, conf, compat)
         except Exception as exc:
